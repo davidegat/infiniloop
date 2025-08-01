@@ -1,7 +1,6 @@
 # INFINILOOP
 
 Infinite local music generation with AI + loop analysis and audio visualization
-**Designed for seamless creative performance.**
 
 <img width="1240" height="691" alt="immagine" src="https://github.com/user-attachments/assets/2cd31f04-2d92-4e42-a066-bc973a7098cd" />
 
