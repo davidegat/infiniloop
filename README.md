@@ -1,4 +1,4 @@
-# INFINILOOP ADVANCED
+# INFINILOOP
 
 Infinite local music generation with AI + loop analysis and audio visualization
 **Designed for seamless creative performance.**
@@ -131,7 +131,7 @@ See the full license text here: [https://www.gnu.org/licenses/gpl-3.0.html](http
 
 ---
 
-# INFINILOOP ADVANCED
+# INFINILOOP
 
 Generazione musicale infinita in locale con AI + analisi dei loop + visualizzazione audio
 **Pensato per performance creative senza interruzioni.**
