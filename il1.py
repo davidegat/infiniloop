@@ -36,7 +36,7 @@ class InfiniLoopUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Prompt
-        prompt_label = ttk.Label(main_frame, text="🎵 Prompt musicale:", style="Dark.TLabel")
+        prompt_label = ttk.Label(main_frame, text="🎵 Prompt:", style="Dark.TLabel")
         prompt_label.grid(row=0, column=0, sticky="w", padx=(0, 10))
         prompt_entry = ttk.Entry(main_frame, textvariable=self.prompt_var, width=50, style="Dark.TEntry")
         prompt_entry.grid(row=0, column=1, sticky="ew")
