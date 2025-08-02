@@ -92,10 +92,7 @@ At a minimum, your machine must be capable of running a medium‑sized audio mod
 ```bash
 # For Ubuntu/Debian:
 sudo apt update
-sudo apt install -y ffmpeg pulseaudio-utils alsa-utils python3-pip python3-dev
-
-# For GUI versions, also install:
-sudo apt install -y portaudio19-dev python3-tk
+sudo apt install -y ffmpeg pulseaudio-utils alsa-utils python3-pip python3-dev portaudio19-dev python3-tk
 ```
 
 ### Step 2: Install Python Dependencies
