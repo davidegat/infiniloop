@@ -101,14 +101,7 @@ sudo apt install -y portaudio19-dev python3-tk
 ### Step 2: Install Python Dependencies
 
 ```bash
-# Core dependencies
-pip install librosa soundfile scipy numpy pydub
-
-# For GUI versions, also install:
-pip install matplotlib pillow
-
-# Optional: For low-latency playback in GUI versions
-pip install pyaudio
+pip install librosa soundfile scipy numpy pydub matplotlib pillow pyaudio
 ```
 
 ### Step 3: Download INFINI LOOP
@@ -348,12 +341,7 @@ Come minimo, il tuo sistema deve avere le seguenti caratteristiche per far girar
 ### Passo 1: Installa Dipendenze di Sistema
 
 ```bash
-# Per Ubuntu/Debian:
-sudo apt update
-sudo apt install -y ffmpeg pulseaudio-utils alsa-utils python3-pip python3-dev
-
-# Per versioni GUI, installa anche:
-sudo apt install -y portaudio19-dev python3-tk
+pip install librosa soundfile scipy numpy pydub matplotlib pillow pyaudio
 ```
 
 ### Passo 2: Installa Dipendenze Python
