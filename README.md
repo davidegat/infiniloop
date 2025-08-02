@@ -2,6 +2,9 @@
 
 INFINI LOOP is an advanced AI-powered music generation system that creates seamless, infinite audio loops in real-time. It automatically generates musical fragments using AI, identifies optimal loop points, and plays them continuously while preparing the next segment, creating an uninterrupted musical experience.
 
+Two .wav files are included. One will be played on startup, providing music while the first generation is being prepared.
+Until now, if the software doesn't detect two previously generated .wav files, you'll have to wait in silence until both are ready.
+So, enjoy this AI-generated track in the meantime: yours will arrive shortly!
 
 Experimental GUI version (**not recomended**):
 
@@ -262,6 +265,9 @@ Bug reports and feature requests are welcome. Please include:
 
 INFINI LOOP è un sistema avanzato per la generazione musicale con intelligenza artificiale che crea loop audio continui e senza interruzioni in tempo reale. Genera automaticamente frammenti musicali usando l'AI, identifica i punti di loop ottimali e li riproduce continuamente mentre prepara il segmento successivo, creando un'esperienza musicale ininterrotta.
 
+Sono inclusi due file .wav. All'avvio, uno di essi verrà riprodotto per offrirti musica mentre viene generato il primo brano.
+Attualmente, se il software non rileva due file .wav generati in precedenza, dovrai attendere in silenzio finché entrambi non saranno pronti.
+Quindi, nel frattempo, goditi questa traccia generata dall’IA!
 ## Indice
 
 - [Caratteristiche](#caratteristiche)
