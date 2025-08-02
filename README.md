@@ -135,19 +135,6 @@ The software requires the MusicGPT AI model binary from repository (https://gith
 wget [MUSICGPT_DOWNLOAD_URL] -O musicgpt-x86_64-unknown-linux-gnu
 chmod +x musicgpt-x86_64-unknown-linux-gnu
 ```
-
-### 5. Create Resource Files (Optional - GUI Version Only)
-For enhanced experience with the GUI version:
-
-```bash
-# Artist names for random generation
-echo -e "AMBIENT COLLECTIVE\nDIGITAL DREAMS\nCYBER SOUNDSCAPE" > artisti.txt
-
-# Title word lists for random generation
-echo -e "INFINITE\nCOSMIC\nETHEREAL" > nomi.txt
-echo -e "JOURNEY\nVIBES\nWAVES" > nomi2.txt
-```
-
 ## Usage
 
 ### GUI Version (il2.py)
@@ -504,18 +491,6 @@ Il software richiede il binario del modello AI MusicGPT:
 # Scarica MusicGPT (sostituisci con il link di download effettivo)
 wget [MUSICGPT_DOWNLOAD_URL] -O musicgpt-x86_64-unknown-linux-gnu
 chmod +x musicgpt-x86_64-unknown-linux-gnu
-```
-
-### 5. Crea File Risorse (Opzionale - Solo Versione GUI)
-Per un'esperienza migliorata con la versione GUI:
-
-```bash
-# Nomi artista per generazione casuale
-echo -e "AMBIENT COLLECTIVE\nDIGITAL DREAMS\nCYBER SOUNDSCAPE" > artisti.txt
-
-# Liste parole titolo per generazione casuale
-echo -e "INFINITE\nCOSMIC\nETHEREAL" > nomi.txt
-echo -e "JOURNEY\nVIBES\nWAVES" > nomi2.txt
 ```
 
 ## Utilizzo
