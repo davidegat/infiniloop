@@ -216,7 +216,7 @@ python il2.py
 
 ## License
 
-Released under [GPL v3](https://www.gnu.org/licenses/gpl-3.0.html). Only for non-commercial use.
+Released under CC BY-NC 4.0. Only for non-commercial use.
 
 ---
 
@@ -424,7 +424,7 @@ python il2.py
 
 ## Licenza
 
-Distribuito con licenza [GPL v3](https://www.gnu.org/licenses/gpl-3.0.html). Solo per uso non commerciale.
+Distribuito con CC BY-NC 4.0. Solo per uso non commerciale.
 
 ---
 
