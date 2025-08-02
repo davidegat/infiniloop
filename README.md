@@ -83,6 +83,11 @@ Terminal version:
 - **Processor**: Multi-core CPU for better performance
 - **Audio**: PulseAudio with low-latency configuration
 
+At a minimum, your machine must be capable of running a medium‑sized audio model smoothly:
+- MusicGPT (medium) currently behaves best on a modern, high‑frequency CPU (GPU support is still marked experimental).
+- You should have at least 16 GB of system RAM—something on par with a mid‑range gaming PC.
+- Falling short on RAM or CPU performance often leads to memory allocation failures or severely slow inference.
+
 ## Installation
 
 ### Step 1: Install System Dependencies
@@ -338,6 +343,11 @@ INFINI LOOP è un sistema avanzato per la generazione musicale con intelligenza 
 - **Processore**: CPU multi-core per migliori prestazioni
 - **Audio**: PulseAudio con configurazione a bassa latenza
 
+Come minimo, il tuo sistema deve avere le seguenti caratteristiche per far girare con decenza un modello audio di medie dimensioni:
+- Il modello MusicGPT “medium” funziona meglio su una CPU moderna e veloce (il supporto GPU è al momento indicato come sperimentale).
+- È consigliabile avere almeno 16 GB di RAM di sistema, in linea con un PC da gaming di fascia media.
+- Con RAM insufficiente o prestazioni CPU limitate, è molto probabile incorrere in errori di allocazione di memoria o in una inferenza estremamente lenta.
+    
 ## Installazione
 
 ### Passo 1: Installa Dipendenze di Sistema
