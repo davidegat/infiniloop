@@ -17,7 +17,7 @@ A streamlined command-line version designed for minimal resource usage, server e
 ## Features
 
 ### Core Functionality (Both Versions)
-- **AI-Powered Generation**: Creates unique music loops using MusicGPT AI models
+- **AI-Powered Generation**: Creates unique music loops using MusicGPT AI models (https://github.com/gabotechs/MusicGPT)
 - **Infinite Seamless Playback**: Continuous loop playback with perfect transitions
 - **Smart Loop Detection**: Advanced algorithms to find optimal loop points
 - **Zero-Crossing Optimization**: Perfect cut points to eliminate audio clicks
@@ -84,7 +84,7 @@ Pillow>=8.0.0
 pyaudio>=0.2.11
 
 # Required external binary
-musicgpt-x86_64-unknown-linux-gnu
+musicgpt-x86_64-unknown-linux-gnu (https://github.com/gabotechs/MusicGPT)
 ```
 
 ## Installation
@@ -128,7 +128,7 @@ sudo pacman -S ffmpeg pulseaudio alsa-utils
 ```
 
 ### 4. Download MusicGPT Binary
-The software requires the MusicGPT AI model binary:
+The software requires the MusicGPT AI model binary from repository (https://github.com/gabotechs/MusicGPT):
 
 ```bash
 # Download MusicGPT (replace with actual download link)
@@ -299,10 +299,9 @@ sudo usermod -a -G audio $USER  # if needed
 infiniloop/
 ├── il2.py                              # Main GUI application
 ├── ilterm.py                           # Terminal/CLI application
-├── musicgpt-x86_64-unknown-linux-gnu   # AI model binary (required)
-├── artisti.txt                         # Artist names (optional, GUI only)
-├── nomi.txt                           # Title words part 1 (optional, GUI only)  
-├── nomi2.txt                          # Title words part 2 (optional, GUI only)
+├── artisti.txt                         # Artist names
+├── nomi.txt                           # Title words part 1
+├── nomi2.txt                          # Title words part 2
 ├── music1.wav                         # Temporary audio file 1
 ├── music2.wav                         # Temporary audio file 2
 └── README.md                          # This file
@@ -621,10 +620,9 @@ Usa analisi mel-spettrogramma per elaborazione più veloce con buoni risultati, 
 infiniloop/
 ├── il2.py                              # Applicazione GUI principale
 ├── ilterm.py                           # Applicazione Terminale/CLI
-├── musicgpt-x86_64-unknown-linux-gnu   # Binario modello AI (richiesto)
-├── artisti.txt                         # Nomi artista (opzionale, solo GUI)
-├── nomi.txt                           # Parole titolo parte 1 (opzionale, solo GUI)  
-├── nomi2.txt                          # Parole titolo parte 2 (opzionale, solo GUI)
+├── artisti.txt                         # Nomi artista
+├── nomi.txt                           # Parole titolo parte 1
+├── nomi2.txt                          # Parole titolo parte 2
 ├── music1.wav                         # File audio temporaneo 1
 ├── music2.wav                         # File audio temporaneo 2
 └── README.md                          # Questo file
