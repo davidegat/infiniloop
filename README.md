@@ -234,15 +234,12 @@ python ilterm.py --prompt "test" --debug
 debug on
 ```
 
-### File Validation
+### To-Do
 
-If experiencing corrupted audio files:
-
-```bash
-# In interactive mode
-validate both
-```
-
+- Preset support for music generation
+- Visual model integration, music change based on screen activities
+- Advanced GUI crossfade support and general enhancements
+ 
 ## License
 
 This project is released under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0). For commercial use, please contact the authors.
@@ -486,14 +483,11 @@ python ilterm.py --debug
 debug on
 ```
 
-### Validazione File
+### To-Do
 
-Se riscontri file audio corrotti:
-
-```bash
-# In modalità interattiva
-validate both
-```
+- Supporto preset per generare musica con un click
+- Integrazione con modello AI visuale, con cambio musica in base alle attività rilevate su schermo
+- Supporto crossfade sulla Advanced GUI e miglioramenti generali
 
 ## Licenza
 
