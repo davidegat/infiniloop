@@ -143,7 +143,6 @@ python ilterm.py --generate-only "jazz groove" output.wav
 * Automatic validation of loop integrity
 * Debug mode with detailed logs
 * Safe recovery from crash or corruption
-* Stable even on low-spec systems
 
 ---
 
