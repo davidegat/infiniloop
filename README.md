@@ -7,6 +7,18 @@ By combining AI music generation, optimized zero-crossing detection, and intelli
 > ⚠️ **Terminal version (`ilterm.py`)** and **lightweight GUI version (`il1.py`)** are more stable and support **real crossfade** between different loops.
 > **Advanced GUI version (`il2.py`)** is experimental and **does not perform crossfade**; playback is sequential.
 
+Experimental GUI version:
+
+<img width="1234" height="679" alt="immagine" src="https://github.com/user-attachments/assets/19390959-ba49-476e-8b26-df606c6dad36" />
+
+Lightweight GUI version:
+
+<img width="645" height="220" alt="immagine" src="https://github.com/user-attachments/assets/07bb2f14-af01-415e-a7fe-020309d928de" />
+
+Terminal version:
+
+<img width="791" height="460" alt="immagine" src="https://github.com/user-attachments/assets/02e13d3c-14bd-4ea5-b0b2-7a65f56ddc28" />
+
 ---
 
 ## Versions Available
