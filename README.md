@@ -342,13 +342,7 @@ pip install librosa soundfile scipy numpy pydub matplotlib pillow pyaudio
 
 ```bash
 # Installa dipendenze principali
-pip install librosa soundfile scipy numpy pydub
-
-# Per versioni GUI, installa anche:
-pip install matplotlib pillow
-
-# Opzionale: Per riproduzione a bassa latenza nelle versioni GUI
-pip install pyaudio
+pip install librosa soundfile scipy numpy pydub matplotlib pillow pyaudio
 ```
 
 ### Passo 3: Scarica INFINI LOOP
