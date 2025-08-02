@@ -1,19 +1,19 @@
-# 🎵 INFINI LOOP - Infinite AI Music Generation
+# INFINI LOOP - Infinite AI Music Generation
 
 **INFINI LOOP** is an advanced AI-powered music generation tool that creates seamless, infinite loops in real-time. Using sophisticated loop detection algorithms and AI music generation, it provides continuous, high-quality musical experiences perfect for ambient music, background tracks, and creative compositions.
 
 <img width="1234" height="679" alt="immagine" src="https://github.com/user-attachments/assets/19390959-ba49-476e-8b26-df606c6dad36" />
 
-## ✨ Features
+## Features
 
-### 🎼 Core Functionality
+### Core Functionality
 - **AI-Powered Generation**: Creates unique music loops using advanced AI models
 - **Infinite Seamless Playback**: Continuous loop playback with perfect transitions
 - **Real-Time Processing**: Live generation and playback with minimal latency
 - **Smart Loop Detection**: Advanced algorithms to find optimal loop points
 - **Crossfade Control**: Adjustable overlap timing for smooth transitions (1-5000ms)
 
-### 🧠 Advanced Algorithms
+### Advanced Algorithms
 - **Multi-Metric Analysis**: 
   - Spectral similarity analysis
   - Waveform continuity calculation
@@ -23,13 +23,13 @@
 - **Tempo & Beat Detection**: Musical timing awareness for better loops
 - **Mel-Spectrogram Analysis**: Frequency-domain processing for optimal results
 
-### 🎚️ Audio Engine
+### Audio Engine
 - **Low-Latency Playback**: PyAudio integration for professional audio performance
 - **Multiple Driver Support**: PulseAudio, ALSA, OSS compatibility
 - **Fallback Systems**: Automatic ffplay fallback for maximum compatibility
 - **Audio Optimization**: Automatic normalization and level control
 
-### 🖥️ User Interface
+### User Interface
 - **Modern Dark GUI**: Professional, eye-friendly interface
 - **Real-Time Visualization**: Live waveform and spectrum analysis
 - **Advanced Settings Panel**: Full control over generation parameters
@@ -37,7 +37,7 @@
 - **Track Information**: Generated titles and artist names
 - **Export Functionality**: Save perfect loops as WAV files
 
-## 📋 Requirements
+## Requirements
 
 ### System Requirements
 - **OS**: Linux (Ubuntu 20.04+ recommended)
@@ -66,7 +66,7 @@ pydub>=0.25.0
 # MusicGPT binary (see installation instructions)
 ```
 
-## 🚀 Installation
+## Installation
 
 ### 1. Clone the Repository
 ```bash
@@ -121,7 +121,7 @@ echo -e "INFINITE\nCOSMIC\nETHEREAL" > nomi.txt
 echo -e "JOURNEY\nVIBES\nWAVES" > nomi2.txt
 ```
 
-## 🎮 Usage
+## Usage
 
 ### Basic Usage
 1. **Launch the application**:
@@ -138,10 +138,10 @@ echo -e "JOURNEY\nVIBES\nWAVES" > nomi2.txt
    - **Advanced**: Multi-metric analysis (recommended)
    - **Classic**: Spectral similarity only (faster)
 
-4. **Click "🚀 AVVIA" (START)** to begin generation and playback
+4. **Click "AVVIA" (START)** to begin generation and playback
 
 ### Advanced Settings
-Access the settings panel (⚙️ SETUP) to configure:
+Access the settings panel (SETUP) to configure:
 
 - **AI Model**: 
   - Small (fast generation)
@@ -152,13 +152,13 @@ Access the settings panel (⚙️ SETUP) to configure:
 - **Crossfade Timing**: 1-5000ms overlap
 
 ### Controls
-- **🚀 AVVIA**: Start infinite loop generation
-- **⏹️ FERMA**: Stop playback and generation
-- **💾 SALVA**: Export current loop as WAV file
-- **⚙️ SETUP**: Open advanced settings
-- **🔀 OVERLAP**: Adjust crossfade timing
+- **AVVIA**: Start infinite loop generation
+- **FERMA**: Stop playback and generation
+- **SALVA**: Export current loop as WAV file
+- **SETUP**: Open advanced settings
+- **OVERLAP**: Adjust crossfade timing
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -199,12 +199,12 @@ sudo usermod -a -G audio $USER
 
 ### Logs and Debugging
 The application provides detailed logging in the console panel. Common log messages:
-- `✅ Modalità bassa latenza attiva!`: PyAudio working correctly
-- `⚠️ PyAudio non trovato`: Using ffplay fallback
-- `🧬 Loop perfetto!`: Successful loop detection
-- `❌ Errore`: Check system configuration
+- `Modalità bassa latenza attiva!`: PyAudio working correctly
+- `PyAudio non trovato`: Using ffplay fallback
+- `Loop perfetto!`: Successful loop detection
+- `Errore`: Check system configuration
 
-## 🎵 Algorithm Details
+## Algorithm Details
 
 ### Advanced Algorithm (Multi-Metric)
 The advanced algorithm analyzes multiple aspects:
@@ -222,7 +222,7 @@ Uses mel-spectrogram analysis for faster processing with good results.
 - Crossfade optimization
 - Audio normalization and level control
 
-## 📁 Project Structure
+## Project Structure
 ```
 infiniloop/
 ├── il2.py                              # Main application
@@ -235,7 +235,7 @@ infiniloop/
 └── README.md                          # This file
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -243,18 +243,18 @@ infiniloop/
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPL License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **librosa**: Audio analysis library
 - **MusicGPT**: AI music generation model
 - **PyAudio**: Low-latency audio playback
 - **NumPy/SciPy**: Mathematical computing
 
-## 📞 Support
+## Support
 
 For issues, questions, or contributions:
 - Open an issue on GitHub
@@ -263,22 +263,22 @@ For issues, questions, or contributions:
 
 ---
 
-## 🇮🇹 ITALIANO
+## ITALIANO
 
-# 🎵 INFINI LOOP - Generazione Musicale AI Infinita
+# INFINI LOOP - Generazione Musicale AI Infinita
 
 **INFINI LOOP** è uno strumento avanzato per la generazione musicale AI che crea loop seamless infiniti in tempo reale. Utilizzando algoritmi sofisticati di rilevamento loop e generazione musicale AI, fornisce esperienze musicali continue e di alta qualità, perfette per musica ambient, tracce di sottofondo e composizioni creative.
 
-## ✨ Caratteristiche
+## Caratteristiche
 
-### 🎼 Funzionalità Principali
+### Funzionalità Principali
 - **Generazione AI**: Crea loop musicali unici usando modelli AI avanzati
 - **Riproduzione Infinita Seamless**: Riproduzione continua con transizioni perfette
 - **Elaborazione in Tempo Reale**: Generazione e riproduzione live con latenza minima
 - **Rilevamento Loop Intelligente**: Algoritmi avanzati per trovare punti di loop ottimali
 - **Controllo Crossfade**: Timing di sovrapposizione regolabile per transizioni fluide (1-5000ms)
 
-### 🧠 Algoritmi Avanzati
+### Algoritmi Avanzati
 - **Analisi Multi-Metrica**:
   - Analisi similarità spettrale
   - Calcolo continuità della forma d'onda
@@ -288,13 +288,13 @@ For issues, questions, or contributions:
 - **Rilevamento Tempo e Beat**: Consapevolezza del timing musicale per loop migliori
 - **Analisi Mel-Spettrogramma**: Elaborazione dominio frequenza per risultati ottimali
 
-### 🎚️ Motore Audio
+### Motore Audio
 - **Riproduzione Bassa Latenza**: Integrazione PyAudio per prestazioni audio professionali
 - **Supporto Driver Multipli**: Compatibilità PulseAudio, ALSA, OSS
 - **Sistemi di Fallback**: Fallback automatico ffplay per massima compatibilità
 - **Ottimizzazione Audio**: Normalizzazione automatica e controllo livelli
 
-### 🖥️ Interfaccia Utente
+### Interfaccia Utente
 - **GUI Scura Moderna**: Interfaccia professionale e rilassante per gli occhi
 - **Visualizzazione Tempo Reale**: Analisi live forma d'onda e spettro
 - **Pannello Impostazioni Avanzate**: Controllo completo sui parametri di generazione
@@ -302,7 +302,7 @@ For issues, questions, or contributions:
 - **Informazioni Traccia**: Titoli e nomi artista generati
 - **Funzionalità Export**: Salva loop perfetti come file WAV
 
-## 📋 Requisiti
+## Requisiti
 
 ### Requisiti di Sistema
 - **OS**: Linux (Ubuntu 20.04+ raccomandato)
@@ -331,7 +331,7 @@ pydub>=0.25.0
 # Binario MusicGPT (vedi istruzioni installazione)
 ```
 
-## 🚀 Installazione
+## Installazione
 
 ### 1. Clona il Repository
 ```bash
@@ -386,7 +386,7 @@ echo -e "INFINITE\nCOSMIC\nETHEREAL" > nomi.txt
 echo -e "JOURNEY\nVIBES\nWAVES" > nomi2.txt
 ```
 
-## 🎮 Utilizzo
+## Utilizzo
 
 ### Utilizzo Base
 1. **Avvia l'applicazione**:
@@ -403,10 +403,10 @@ echo -e "JOURNEY\nVIBES\nWAVES" > nomi2.txt
    - **Avanzato**: Analisi multi-metrica (raccomandato)
    - **Classico**: Solo similarità spettrale (più veloce)
 
-4. **Clicca "🚀 AVVIA"** per iniziare generazione e riproduzione
+4. **Clicca "AVVIA"** per iniziare generazione e riproduzione
 
 ### Impostazioni Avanzate
-Accedi al pannello impostazioni (⚙️ SETUP) per configurare:
+Accedi al pannello impostazioni (SETUP) per configurare:
 
 - **Modello AI**:
   - Small (generazione veloce)
@@ -417,13 +417,13 @@ Accedi al pannello impostazioni (⚙️ SETUP) per configurare:
 - **Timing Crossfade**: 1-5000ms sovrapposizione
 
 ### Controlli
-- **🚀 AVVIA**: Inizia generazione loop infinito
-- **⏹️ FERMA**: Ferma riproduzione e generazione
-- **💾 SALVA**: Esporta loop corrente come file WAV
-- **⚙️ SETUP**: Apri impostazioni avanzate
-- **🔀 OVERLAP**: Regola timing crossfade
+- **AVVIA**: Inizia generazione loop infinito
+- **FERMA**: Ferma riproduzione e generazione
+- **SALVA**: Esporta loop corrente come file WAV
+- **SETUP**: Apri impostazioni avanzate
+- **OVERLAP**: Regola timing crossfade
 
-## 🔧 Risoluzione Problemi
+## Risoluzione Problemi
 
 ### Problemi Comuni
 
@@ -464,22 +464,66 @@ sudo usermod -a -G audio $USER
 
 ### Log e Debug
 L'applicazione fornisce logging dettagliato nel pannello console. Messaggi log comuni:
-- `✅ Modalità bassa latenza attiva!`: PyAudio funziona correttamente
-- `⚠️ PyAudio non trovato`: Uso fallback ffplay
-- `🧬 Loop perfetto!`: Rilevamento loop riuscito
-- `❌ Errore`: Controlla configurazione sistema
+- `Modalità bassa latenza attiva!`: PyAudio funziona correttamente
+- `PyAudio non trovato`: Uso fallback ffplay
+- `Loop perfetto!`: Rilevamento loop riuscito
+- `Errore`: Controlla configurazione sistema
 
-## 📄 Licenza
+## Dettagli Algoritmi
 
-Questo progetto è rilasciato sotto Licenza MIT - vedi il file [LICENSE](LICENSE) per dettagli.
+### Algoritmo Avanzato (Multi-Metrico)
+L'algoritmo avanzato analizza molteplici aspetti:
+1. **Similarità Spettrale** (25%): Corrispondenza contenuto frequenza
+2. **Continuità Forma d'Onda** (35%): Fluidità transizione ampiezza
+3. **Allineamento Beat** (25%): Sincronizzazione timing musicale
+4. **Continuità Fase** (15%): Ottimizzazione relazione fase
 
-## 🙏 Ringraziamenti
+### Algoritmo Classico (Spettrale)
+Usa analisi mel-spettrogramma per elaborazione più veloce con buoni risultati.
+
+### Ottimizzazione Loop
+- Rilevamento zero-crossing per transizioni senza click
+- Rilevamento automatico tempo e beat
+- Ottimizzazione crossfade
+- Normalizzazione audio e controllo livelli
+
+## Struttura Progetto
+```
+infiniloop/
+├── il2.py                              # Applicazione principale
+├── musicgpt-x86_64-unknown-linux-gnu   # Binario modello AI
+├── artisti.txt                         # Nomi artista (opzionale)
+├── nomi.txt                           # Parole titolo parte 1 (opzionale)  
+├── nomi2.txt                          # Parole titolo parte 2 (opzionale)
+├── music1.wav                         # File audio temporaneo
+├── music2.wav                         # File audio temporaneo
+└── README.md                          # Questo file
+```
+
+## Contribuire
+
+1. Forka il repository
+2. Crea un branch feature (`git checkout -b feature/amazing-feature`)
+3. Committa le tue modifiche (`git commit -m 'Add amazing feature'`)
+4. Pusha al branch (`git push origin feature/amazing-feature`)
+5. Apri una Pull Request
+
+## Licenza
+
+Questo progetto è rilasciato sotto Licenza GPL - vedi il file [LICENSE](LICENSE) per dettagli.
+
+## Ringraziamenti
 
 - **librosa**: Libreria analisi audio
 - **MusicGPT**: Modello generazione musicale AI
 - **PyAudio**: Riproduzione audio bassa latenza
 - **NumPy/SciPy**: Calcolo matematico
 
----
+## Supporto
 
-*Creato con ❤️ per la comunità della musica digitale*
+Per problemi, domande o contributi:
+- Apri un issue su GitHub
+- Controlla la sezione risoluzione problemi
+- Rivedi i log della console per informazioni dettagliate sugli errori
+
+---
