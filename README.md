@@ -31,7 +31,7 @@ Terminal version:
 
 ## Features
 
-- **AI Music Generation**: Powered by MusicGPT for high-quality audio synthesis
+- **Local AI Music Generation**: Powered by MusicGPT for high-quality audio synthesis (https://github.com/gabotechs/MusicGPT).
 - **Intelligent Loop Detection**: Multi-metric analysis including spectral similarity, waveform continuity, beat alignment, and phase coherence
 - **Seamless Playback**: Automatic crossfading between loops (terminal and lightweight GUI versions)
 - **Zero-Crossing Optimization**: Ensures smooth transitions without clicks or pops
@@ -253,7 +253,7 @@ This project is released under the Creative Commons Attribution-NonCommercial 4.
 
 ## Credits
 
-- MusicGPT by gabotechs for AI music generation
+- MusicGPT by gabotechs for AI music generation: https://github.com/gabotechs/MusicGPT
 - Developed with assistance from AI language models
 - Audio processing powered by librosa and soundfile
 
@@ -285,7 +285,7 @@ INFINI LOOP è un sistema avanzato per la generazione musicale con intelligenza 
 
 ## Caratteristiche
 
-- **Generazione Musicale AI**: Utilizza MusicGPT per sintesi audio di alta qualità
+- **Generazione Musicale AI in locale**: Utilizza MusicGPT per sintesi audio di alta qualità (https://github.com/gabotechs/MusicGPT)
 - **Rilevamento Loop Intelligente**: Analisi multi-metrica inclusi similarità spettrale, continuità della forma d'onda, allineamento dei beat e coerenza di fase
 - **Riproduzione Continua**: Crossfade automatico tra i loop (versioni terminale e GUI leggera)
 - **Ottimizzazione Zero-Crossing**: Garantisce transizioni fluide senza click o pop
@@ -508,7 +508,7 @@ Questo progetto è rilasciato sotto licenza Creative Commons Attribution-NonComm
 
 ## Crediti
 
-- MusicGPT di gabotechs per generazione musicale AI
+- MusicGPT di gabotechs per generazione musicale AI in locale: https://github.com/gabotechs/MusicGPT
 - Sviluppato con assistenza di modelli linguistici AI
 - Elaborazione audio basata su librosa e soundfile
 
