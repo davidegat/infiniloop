@@ -362,7 +362,7 @@ git clone https://github.com/yourusername/infiniloop.git
 cd infiniloop
 ```
 
-### Passo A: Scarica Binario MusicGPT
+### Passo 4: Scarica Binario MusicGPT
 
 1. Visita la [pagina releases di MusicGPT](https://github.com/gabotechs/MusicGPT/releases)
 2. Scarica `musicgpt-x86_64-unknown-linux-gnu`
