@@ -2,17 +2,21 @@
 
 INFINI LOOP is an advanced AI-powered music generation system that creates seamless, infinite audio loops in real-time. It automatically generates musical fragments using AI, identifies optimal loop points, and plays them continuously while preparing the next segment, creating an uninterrupted musical experience.
 
+
 Experimental GUI version:
 
 <img width="1234" height="679" alt="immagine" src="https://github.com/user-attachments/assets/19390959-ba49-476e-8b26-df606c6dad36" />
 
+
 Lightweight GUI version:
 
-<img width="645" height="220" alt="immagine" src="https://github.com/user-attachments/assets/07bb2f14-af01-415e-a7fe-020309d928de" />
+<img width="640" height="229" alt="immagine" src="https://github.com/user-attachments/assets/1f5e5e04-bb51-436a-8023-1a2c0a3f130d" />
+
 
 Terminal version:
 
 <img width="791" height="460" alt="immagine" src="https://github.com/user-attachments/assets/02e13d3c-14bd-4ea5-b0b2-7a65f56ddc28" />
+
 
 ## Table of Contents
 
