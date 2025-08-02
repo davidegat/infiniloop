@@ -120,9 +120,10 @@ python ilterm.py --prompt "ambient lofi loop"
 ```
 
 ### Interactive Mode
+no prompt, means entering interactive mode.
 
 ```bash
-python ilterm.py --interactive
+python ilterm.py
 ```
 
 ### One-shot Loop Export
@@ -321,9 +322,10 @@ python ilterm.py --prompt "ambient lofi loop"
 ```
 
 Interattivo:
+Se non si specificano prompt o comandi, si entra automaticamente in modalità interattiva.
 
 ```bash
-python ilterm.py --interactive
+python ilterm.py
 ```
 
 Solo generazione:
