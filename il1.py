@@ -45,7 +45,7 @@ class InfiniLoopUI:
         option_frame = ttk.Frame(main_frame, style="Dark.TFrame")
         option_frame.grid(row=1, column=0, columnspan=2, pady=(10, 0))
 
-        duration_label = ttk.Label(option_frame, text="⏱️ Durata:", style="Dark.TLabel")
+        duration_label = ttk.Label(option_frame, text="⏱️ Lenght:", style="Dark.TLabel")
         duration_label.pack(side=tk.LEFT, padx=(0, 5))
         duration_spin = ttk.Spinbox(option_frame, from_=5, to=30, textvariable=self.duration_var, width=5)
         duration_spin.pack(side=tk.LEFT, padx=(0, 15))
@@ -59,16 +59,16 @@ class InfiniLoopUI:
         button_frame = ttk.Frame(main_frame, style="Dark.TFrame")
         button_frame.grid(row=2, column=0, columnspan=2, pady=15)
 
-        start_button = ttk.Button(button_frame, text="▶️ Avvia", command=self.start_loop, style="Dark.TButton")
+        start_button = ttk.Button(button_frame, text="▶️ Start", command=self.start_loop, style="Dark.TButton")
         start_button.pack(side=tk.LEFT, padx=10)
 
-        exit_button = ttk.Button(button_frame, text="❌ Esci", command=self.exit_program, style="Dark.TButton")
+        exit_button = ttk.Button(button_frame, text="❌ Quit", command=self.exit_program, style="Dark.TButton")
         exit_button.pack(side=tk.LEFT, padx=10)
 
-        status_button = ttk.Button(button_frame, text="📊 Stato", command=self.show_status, style="Dark.TButton")
+        status_button = ttk.Button(button_frame, text="📊 Status", command=self.show_status, style="Dark.TButton")
         status_button.pack(side=tk.LEFT, padx=10)
 
-        save_button = ttk.Button(button_frame, text="💾 Salva", command=self.save_loop, style="Dark.TButton")
+        save_button = ttk.Button(button_frame, text="💾 Save", command=self.save_loop, style="Dark.TButton")
         save_button.pack(side=tk.LEFT, padx=10)
 
         main_frame.columnconfigure(1, weight=1)
@@ -76,7 +76,7 @@ class InfiniLoopUI:
     def start_loop(self):
         prompt = self.prompt_var.get().strip()
         if not prompt:
-            messagebox.showerror("Errore", "Inserisci un prompt valido.")
+            messagebox.showerror("Errore", "No prompt!")
             return
 
         self.app.duration = self.duration_var.get()
@@ -85,14 +85,11 @@ class InfiniLoopUI:
         threading.Thread(target=lambda: self.app.start_loop(prompt), daemon=True).start()
 
     def exit_program(self):
-        print("[INFO] ❌ Esci richiesto. Uccido processi ffplay + musicgpt + GUI...")
-
         # Termina ffplay
         for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
             try:
                 if 'ffplay' in proc.info['name']:
                     proc.kill()
-                    print(f"[KILLED] ffplay (PID: {proc.pid})")
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
 
@@ -102,27 +99,25 @@ class InfiniLoopUI:
                 cmdline = proc.info['cmdline']
                 if cmdline and 'musicgpt-x86_64-unknown-linux-gnu' in cmdline[0]:
                     proc.kill()
-                    print(f"[KILLED] musicgpt (PID: {proc.pid})")
             except (psutil.NoSuchProcess, psutil.AccessDenied, IndexError):
                 continue
 
-        print("[INFO] ✅ Tutti i processi terminati. Esco.")
         self.root.destroy()
         sys.exit(0)
 
     def show_status(self):
-        status_text = f"Status: {'ATTIVO' if self.app.is_playing else 'FERMO'}\n"
+        status_text = f"Status: {'RUNNING' if self.app.is_playing else 'STOPPED'}\n"
         status_text += f"Prompt: {self.app.PROMPT}\n"
-        status_text += f"Durata: {self.app.duration}s\n"
+        status_text += f"Duration: {self.app.duration}s\n"
         status_text += f"Driver: {self.app.audio_driver}\n"
-        messagebox.showinfo("Stato", status_text)
+        messagebox.showinfo("Status", status_text)
 
     def save_loop(self):
         filename = "loop_salvato.wav"
         if self.app.save_current_loop(filename):
-            messagebox.showinfo("Salvato", f"Loop salvato in {filename}")
+            messagebox.showinfo("Success", f"Loop saved to {filename}")
         else:
-            messagebox.showerror("Errore", "Impossibile salvare il loop.")
+            messagebox.showerror("Error", "Error saving loop.")
 
 if __name__ == '__main__':
     root = tk.Tk()
