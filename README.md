@@ -71,15 +71,12 @@ Terminal version:
 
 - **Operating System**: Linux (Ubuntu 20.04+ or equivalent)
 - **Python**: 3.8 or higher
-- **RAM**: 2GB (terminal), 4GB (GUI versions)
-- **Storage**: 2GB free space
 - **Audio**: Working audio subsystem (PulseAudio, ALSA, or OSS)
 
 ### Recommended Requirements
 
 - **Operating System**: Ubuntu 22.04 LTS
 - **Python**: 3.10 or higher
-- **RAM**: 4GB or more
 - **Processor**: Multi-core CPU for better performance
 - **Audio**: PulseAudio with low-latency configuration
 
@@ -331,15 +328,12 @@ INFINI LOOP è un sistema avanzato per la generazione musicale con intelligenza 
 
 - **Sistema Operativo**: Linux (Ubuntu 20.04+ o equivalente)
 - **Python**: 3.8 o superiore
-- **RAM**: 2GB (terminale), 4GB (versioni GUI)
-- **Spazio Disco**: 2GB liberi
 - **Audio**: Sottosistema audio funzionante (PulseAudio, ALSA o OSS)
 
 ### Requisiti Consigliati
 
 - **Sistema Operativo**: Ubuntu 22.04 LTS
 - **Python**: 3.10 o superiore
-- **RAM**: 4GB o più
 - **Processore**: CPU multi-core per migliori prestazioni
 - **Audio**: PulseAudio con configurazione a bassa latenza
 
