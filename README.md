@@ -2,7 +2,7 @@
 
 Infinite local music generation with AI + loop analysis and audio visualization
 
-<img width="1240" height="691" alt="immagine" src="https://github.com/user-attachments/assets/2cd31f04-2d92-4e42-a066-bc973a7098cd" />
+<img width="1234" height="679" alt="immagine" src="https://github.com/user-attachments/assets/19390959-ba49-476e-8b26-df606c6dad36" />
 
 ---
 
