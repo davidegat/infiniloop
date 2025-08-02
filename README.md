@@ -99,11 +99,7 @@ sudo apt install -y portaudio19-dev python3-tk
 ### Step 2: Install Python Dependencies
 
 ```bash
-# Create virtual environment (recommended)
-python3 -m venv infiniloop-env
-source infiniloop-env/bin/activate
-
-# Install core dependencies
+# Core dependencies
 pip install librosa soundfile scipy numpy pydub
 
 # For GUI versions, also install:
@@ -118,7 +114,7 @@ pip install pyaudio
 1. Visit the [MusicGPT releases page](https://github.com/gabotechs/MusicGPT/releases)
 2. Download `musicgpt-x86_64-unknown-linux-gnu`
 3. Place it in the same directory as the Python scripts
-4. Make it executable:
+5. Make it executable:
 
 ```bash
 chmod +x musicgpt-x86_64-unknown-linux-gnu
@@ -138,14 +134,8 @@ cd infiniloop
 #### Quick Start
 
 ```bash
-# Generate infinite loop with a prompt
-python ilterm.py --prompt "ambient lofi hip hop beat"
-
 # Interactive mode
 python ilterm.py
-
-# Generate single loop and export
-python ilterm.py --generate-only "jazz piano solo" output.wav
 
 # With custom settings
 python ilterm.py --prompt "electronic dance" --duration 20 --driver pulse
@@ -172,11 +162,10 @@ python il1.py
 ```
 
 1. Enter a musical prompt (e.g., "calm acoustic guitar")
-2. Select model size (Medium recommended)
-3. Adjust duration if needed (10-15 seconds optimal)
-4. Click "AVVIA" to start generation
-5. Use "SALVA" to export the current loop
-6. Click "ESCI" to quit
+2. Adjust duration if needed (10-15 seconds optimal)
+3. Click "AVVIA" to start generation
+4. Use "SALVA" to export the current loop
+5. Click "ESCI" to quit
 
 ### Advanced GUI Version (`il2.py`)
 
@@ -365,10 +354,6 @@ sudo apt install -y portaudio19-dev python3-tk
 ### Passo 2: Installa Dipendenze Python
 
 ```bash
-# Crea ambiente virtuale (consigliato)
-python3 -m venv infiniloop-env
-source infiniloop-env/bin/activate
-
 # Installa dipendenze principali
 pip install librosa soundfile scipy numpy pydub
 
@@ -404,14 +389,8 @@ cd infiniloop
 #### Avvio Rapido
 
 ```bash
-# Genera loop infinito con un prompt
-python ilterm.py --prompt "ambient lofi hip hop beat"
-
 # Modalità interattiva
 python ilterm.py
-
-# Genera singolo loop ed esporta
-python ilterm.py --generate-only "jazz piano solo" output.wav
 
 # Con impostazioni personalizzate
 python ilterm.py --prompt "electronic dance" --duration 20 --driver pulse
@@ -438,11 +417,10 @@ python il1.py
 ```
 
 1. Inserisci un prompt musicale (es. "calm acoustic guitar")
-2. Seleziona dimensione modello (Medium consigliato)
-3. Regola durata se necessario (10-15 secondi ottimali)
-4. Clicca "AVVIA" per iniziare generazione
-5. Usa "SALVA" per esportare il loop corrente
-6. Clicca "ESCI" per uscire
+2. Regola durata se necessario (10-15 secondi ottimali)
+3. Clicca "AVVIA" per iniziare generazione
+4. Usa "SALVA" per esportare il loop corrente
+5. Clicca "ESCI" per uscire
 
 ### Versione GUI Avanzata (`il2.py`)
 
@@ -509,7 +487,7 @@ Abilita modalità debug per log dettagliati:
 
 ```bash
 # Versione terminale
-python ilterm.py --prompt "test" --debug
+python ilterm.py --debug
 
 # In modalità interattiva
 debug on
