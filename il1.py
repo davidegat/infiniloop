@@ -3,6 +3,8 @@ from tkinter import ttk
 from tkinter import messagebox
 import threading
 import os
+import sys
+import psutil
 from ilterm import InfiniLoopTerminal
 
 class InfiniLoopUI:
@@ -60,8 +62,8 @@ class InfiniLoopUI:
         start_button = ttk.Button(button_frame, text="▶️ Avvia", command=self.start_loop, style="Dark.TButton")
         start_button.pack(side=tk.LEFT, padx=10)
 
-        stop_button = ttk.Button(button_frame, text="⏹️ Ferma", command=self.stop_loop, style="Dark.TButton")
-        stop_button.pack(side=tk.LEFT, padx=10)
+        exit_button = ttk.Button(button_frame, text="❌ Esci", command=self.exit_program, style="Dark.TButton")
+        exit_button.pack(side=tk.LEFT, padx=10)
 
         status_button = ttk.Button(button_frame, text="📊 Stato", command=self.show_status, style="Dark.TButton")
         status_button.pack(side=tk.LEFT, padx=10)
@@ -82,8 +84,31 @@ class InfiniLoopUI:
 
         threading.Thread(target=lambda: self.app.start_loop(prompt), daemon=True).start()
 
-    def stop_loop(self):
-        self.app.stop_loop()
+    def exit_program(self):
+        print("[INFO] ❌ Esci richiesto. Uccido processi ffplay + musicgpt + GUI...")
+
+        # Termina ffplay
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                if 'ffplay' in proc.info['name']:
+                    proc.kill()
+                    print(f"[KILLED] ffplay (PID: {proc.pid})")
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+
+        # Termina musicgpt
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                cmdline = proc.info['cmdline']
+                if cmdline and 'musicgpt-x86_64-unknown-linux-gnu' in cmdline[0]:
+                    proc.kill()
+                    print(f"[KILLED] musicgpt (PID: {proc.pid})")
+            except (psutil.NoSuchProcess, psutil.AccessDenied, IndexError):
+                continue
+
+        print("[INFO] ✅ Tutti i processi terminati. Esco.")
+        self.root.destroy()
+        sys.exit(0)
 
     def show_status(self):
         status_text = f"Status: {'ATTIVO' if self.app.is_playing else 'FERMO'}\n"
