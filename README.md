@@ -8,7 +8,7 @@ Experimental GUI version (**not recomended**):
 <img width="1234" height="679" alt="immagine" src="https://github.com/user-attachments/assets/19390959-ba49-476e-8b26-df606c6dad36" />
 
 
-Lightweight GUI version  (**recomended**):
+Lightweight GUI version  (**MOST recomended**):
 
 <img width="640" height="229" alt="immagine" src="https://github.com/user-attachments/assets/1f5e5e04-bb51-436a-8023-1a2c0a3f130d" />
 
@@ -41,14 +41,14 @@ Terminal version (**recomended**):
 
 ## Available Versions
 
-### 1. Terminal Version (`ilterm.py`) - Most Stable
+### 1. Terminal Version (`ilterm.py`) - Stable
 
 - Command-line interface with interactive mode
 - Real crossfade support between loops
 - Comprehensive audio validation and error recovery
 - Debug mode for troubleshooting
 
-### 2. Lightweight GUI Version (`il1.py`) - Stable
+### 2. Lightweight GUI Version (`il1.py`) - Most recomended!
 
 - Simple graphical interface with essential controls
 - Same audio engine as terminal version
@@ -293,7 +293,7 @@ INFINI LOOP è un sistema avanzato per la generazione musicale con intelligenza 
 - Modalità debug per diagnostica
 - Utilizzo minimo di risorse
 
-### 2. Versione GUI Leggera (`il1.py`) - Stabile
+### 2. Versione GUI Leggera (`il1.py`) - La più raccomandata!
 
 - Interfaccia grafica semplice con controlli essenziali
 - Stesso motore audio della versione terminale
