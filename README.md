@@ -111,24 +111,25 @@ pip install matplotlib pillow
 pip install pyaudio
 ```
 
-### Step 3: Download MusicGPT Binary
-
-1. Visit the [MusicGPT releases page](https://github.com/gabotechs/MusicGPT/releases)
-2. Download `musicgpt-x86_64-unknown-linux-gnu`
-3. Place it in the same directory as the Python scripts
-5. Make it executable:
-
-```bash
-chmod +x musicgpt-x86_64-unknown-linux-gnu
-```
-
-### Step 4: Download INFINI LOOP
+### Step 3: Download INFINI LOOP
 
 ```bash
 # Clone the repository or download the files
 git clone https://github.com/yourusername/infiniloop.git
 cd infiniloop
 ```
+
+### Step 4: Download MusicGPT Binary
+
+1. Visit the [MusicGPT releases page](https://github.com/gabotechs/MusicGPT/releases)
+2. Download `musicgpt-x86_64-unknown-linux-gnu`
+3. Place it in the same directory as the Python scripts (infinloop)
+5. Make it executable:
+
+```bash
+chmod +x musicgpt-x86_64-unknown-linux-gnu
+```
+
 ## Usage
 
 ### Terminal Version (`ilterm.py`)
@@ -368,23 +369,23 @@ pip install matplotlib pillow
 pip install pyaudio
 ```
 
-### Passo 3: Scarica Binario MusicGPT
-
-1. Visita la [pagina releases di MusicGPT](https://github.com/gabotechs/MusicGPT/releases)
-2. Scarica `musicgpt-x86_64-unknown-linux-gnu`
-3. Posizionalo nella stessa directory degli script Python
-4. Rendilo eseguibile:
-
-```bash
-chmod +x musicgpt-x86_64-unknown-linux-gnu
-```
-
-### Passo 4: Scarica INFINI LOOP
+### Passo 3: Scarica INFINI LOOP
 
 ```bash
 # Clona il repository o scarica i file
 git clone https://github.com/yourusername/infiniloop.git
 cd infiniloop
+```
+
+### Passo A: Scarica Binario MusicGPT
+
+1. Visita la [pagina releases di MusicGPT](https://github.com/gabotechs/MusicGPT/releases)
+2. Scarica `musicgpt-x86_64-unknown-linux-gnu`
+3. Posizionalo nella stessa directory degli script Python (infiniloop)
+4. Rendilo eseguibile:
+
+```bash
+chmod +x musicgpt-x86_64-unknown-linux-gnu
 ```
 ## Utilizzo
 
