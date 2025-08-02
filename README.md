@@ -1,11 +1,6 @@
-# INFINI LOOP - Infinite Local AI Music Generation
+# INFINI LOOP - Infinite AI Music Generation
 
-**INFINI LOOP** is an advanced AI-powered music generation tool that creates seamless, infinite loops in real-time. Its purpose is to automatically generate the desired audio fragment using AI, find the perfect loop point, play it seamlessly while preparing the next track, and then transition smoothly via crossfade—thus creating your personal, truly infinite, uninterrupted musical playlist.
-
-By combining AI music generation, optimized zero-crossing detection, and intelligent playback management, INFINI LOOP enables endless high-quality audio without breaks or user intervention. Ideal for ambient soundscapes, background music, creative flow, and live environments.
-
-> ⚠️ **Terminal version (`ilterm.py`)** and **lightweight GUI version (`il1.py`)** are more stable and support **real crossfade** between different loops.
-> **Advanced GUI version (`il2.py`)** is experimental and **does not perform crossfade**; playback is sequential.
+INFINI LOOP is an advanced AI-powered music generation system that creates seamless, infinite audio loops in real-time. It automatically generates musical fragments using AI, identifies optimal loop points, and plays them continuously while preparing the next segment, creating an uninterrupted musical experience.
 
 Experimental GUI version:
 
@@ -19,418 +14,527 @@ Terminal version:
 
 <img width="791" height="460" alt="immagine" src="https://github.com/user-attachments/assets/02e13d3c-14bd-4ea5-b0b2-7a65f56ddc28" />
 
----
+## Table of Contents
 
-## Versions Available
+- [Features](#features)
+- [Available Versions](#available-versions)
+- [System Requirements](#system-requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Technical Details](#technical-details)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
-### `ilterm.py` - Terminal Version (Stable)
+## Features
 
-* Full command-line and interactive interface
-* Robust audio validation and recovery
-* Crash-resistant process management
-* Fixed optimal settings for stability
-* **Supports real crossfade between audio loops**
-* **Most stable version**
+- **AI Music Generation**: Powered by MusicGPT for high-quality audio synthesis
+- **Intelligent Loop Detection**: Multi-metric analysis including spectral similarity, waveform continuity, beat alignment, and phase coherence
+- **Seamless Playback**: Automatic crossfading between loops (terminal and lightweight GUI versions)
+- **Zero-Crossing Optimization**: Ensures smooth transitions without clicks or pops
+- **Multiple Interfaces**: Terminal, lightweight GUI, and advanced GUI with visualizations
+- **Crash Recovery**: Robust error handling and automatic file validation
+- **Export Functionality**: Save generated loops for later use
 
-### `il1.py` - Lightweight GUI Version (Stable)
+## Available Versions
 
-* Minimal graphical interface with essential controls
-* Same audio engine as terminal version
-* PyAudio playback with crossfade support
-* **As stable as terminal version**
-* **Supports real crossfade between tracks**
-* **No waveform/spectrum visualization**
+### 1. Terminal Version (`ilterm.py`) - Most Stable
 
-### `il2.py` - Advanced GUI Version (Experimental)
+- Command-line interface with interactive mode
+- Real crossfade support between loops
+- Comprehensive audio validation and error recovery
+- Debug mode for troubleshooting
 
-* Graphical interface with waveform and spectrum visualization
-* Configurable generation settings and loop analysis
-* Visual loop metric analysis
-* PyAudio low-latency playback (if available)
-* **Does not support crossfading between tracks**
-* **Experimental - less stable**
+### 2. Lightweight GUI Version (`il1.py`) - Stable
 
----
+- Simple graphical interface with essential controls
+- Same audio engine as terminal version
+- Real crossfade support
+- Clean, minimalist design
+- Low resource consumption
 
-## Features (All Versions)
+### 3. Advanced GUI Version (`il2.py`) - Experimental
 
-* AI-based music generation using [MusicGPT](https://github.com/gabotechs/MusicGPT)
-* Seamless, beat-aware loops with optimized zero-crossing
-* Automatic crossfading (except `il2.py`)
-* Multi-metric loop detection:
-
-  * Spectral similarity
-  * Waveform continuity
-  * Beat alignment
-  * Phase continuity
-    
-* Audio normalization and safe playback via ffplay or PyAudio
-
-> 🧠 This software was developed with the assistance of an AI language model and includes code generated and refined through AI-human collaboration.
-
-> 🛈 The first time a generation is started, the model will be downloaded automatically. The initial generation may take significantly longer than the following ones.
-
----
+- Full graphical interface with audio visualizations
+- Real-time waveform and spectrum analysis
+- Visual loop metrics display
+- Configurable generation parameters
+- **Note**: Does not support crossfading between tracks
+- Higher resource usage
 
 ## System Requirements
 
-* **OS**: Linux (Ubuntu 20.04+ recommended)
-* **Python**: 3.8 or higher
-* **RAM**: 4 GB (GUI) / 2 GB (Terminal)
-* **Storage**: At least 2 GB free
+### Minimum Requirements
 
----
+- **Operating System**: Linux (Ubuntu 20.04+ or equivalent)
+- **Python**: 3.8 or higher
+- **RAM**: 2GB (terminal), 4GB (GUI versions)
+- **Storage**: 2GB free space
+- **Audio**: Working audio subsystem (PulseAudio, ALSA, or OSS)
 
-## Dependencies
+### Recommended Requirements
 
-### Core (All Versions)
+- **Operating System**: Ubuntu 22.04 LTS
+- **Python**: 3.10 or higher
+- **RAM**: 4GB or more
+- **Processor**: Multi-core CPU for better performance
+- **Audio**: PulseAudio with low-latency configuration
+
+## Installation
+
+### Step 1: Install System Dependencies
 
 ```bash
-pip install librosa soundfile scipy numpy pydub
+# For Ubuntu/Debian:
+sudo apt update
+sudo apt install -y ffmpeg pulseaudio-utils alsa-utils python3-pip python3-dev
+
+# For GUI versions, also install:
+sudo apt install -y portaudio19-dev python3-tk
 ```
 
-### GUI Versions (`il1.py` and `il2.py`)
+### Step 2: Install Python Dependencies
 
 ```bash
+# Create virtual environment (recommended)
+python3 -m venv infiniloop-env
+source infiniloop-env/bin/activate
+
+# Install core dependencies
+pip install librosa soundfile scipy numpy pydub
+
+# For GUI versions, also install:
 pip install matplotlib pillow
-# Optional for low-latency playback:
-sudo apt install portaudio19-dev python3-pyaudio
+
+# Optional: For low-latency playback in GUI versions
 pip install pyaudio
 ```
 
-### System Dependencies (All Versions)
+### Step 3: Download MusicGPT Binary
 
-```bash
-# Ubuntu/Debian:
-sudo apt install ffmpeg pulseaudio-utils alsa-utils
-```
-
-### External Binary Required
-
-* Download `musicgpt-x86_64-unknown-linux-gnu` from: [https://github.com/gabotechs/MusicGPT](https://github.com/gabotechs/MusicGPT)
+1. Visit the [MusicGPT releases page](https://github.com/gabotechs/MusicGPT/releases)
+2. Download `musicgpt-x86_64-unknown-linux-gnu`
+3. Place it in the same directory as the Python scripts
+4. Make it executable:
 
 ```bash
 chmod +x musicgpt-x86_64-unknown-linux-gnu
 ```
 
----
-
-# HOW TO USE
-
-## TERMINAL VERSION (`ilterm.py`)
-
-### Basic Command
+### Step 4: Download INFINI LOOP
 
 ```bash
-python ilterm.py --prompt "ambient lofi loop"
+# Clone the repository or download the files
+git clone https://github.com/yourusername/infiniloop.git
+cd infiniloop
 ```
+## Usage
 
-### Interactive Mode
+### Terminal Version (`ilterm.py`)
+
+#### Quick Start
 
 ```bash
+# Generate infinite loop with a prompt
+python ilterm.py --prompt "ambient lofi hip hop beat"
+
+# Interactive mode
 python ilterm.py
+
+# Generate single loop and export
+python ilterm.py --generate-only "jazz piano solo" output.wav
+
+# With custom settings
+python ilterm.py --prompt "electronic dance" --duration 20 --driver pulse
 ```
 
-### One-shot Loop Export
+#### Interactive Commands
 
-```bash
-python ilterm.py --generate-only "jazz groove" output.wav
-```
+When in interactive mode:
 
-### Key Features
+- `start <prompt>` - Start infinite loop with given prompt
+- `stop` - Stop current playback
+- `status` - Show system status
+- `save <filename>` - Save current loop
+- `set duration` - Change generation duration (5-30 seconds)
+- `set driver` - Change audio driver (pulse/alsa/dsp)
+- `debug on/off` - Toggle debug messages
+- `help` - Show all commands
+- `quit` - Exit program
 
-* True crossfade blending
-* Automatic validation of loop integrity
-* Debug mode with detailed logs
-* Safe recovery from crash or corruption
-
----
-
-## LIGHTWEIGHT GUI VERSION (`il1.py`)
-
-### Launch
+### Lightweight GUI Version (`il1.py`)
 
 ```bash
 python il1.py
 ```
 
-### Workflow
+1. Enter a musical prompt (e.g., "calm acoustic guitar")
+2. Select model size (Medium recommended)
+3. Adjust duration if needed (10-15 seconds optimal)
+4. Click "AVVIA" to start generation
+5. Use "SALVA" to export the current loop
+6. Click "ESCI" to quit
 
-1. Enter your prompt (e.g. `lofi calm rap`)
-2. Choose model (Small / Medium / Large)
-
-   * ⚠️ **Avoid Small model**: often produces low-quality results
-   * ✅ **Recommended**: Medium model (balanced quality and speed)
-   * ⚠️ **Not recommended**: High model (slow and sometimes inconsistent)
-3. Set generation duration (5–30s recommended)
-4. Choose audio driver (pulse / alsa / oss)
-5. Click **AVVIA** to generate infinite loop
-6. Crossfade is active between tracks
-7. Click **SALVA** to export current loop
-
-### Notes
-
-* Same backend engine as the terminal version
-* GUI is clean, minimalist, fast
-* Recommended for users who prefer a visual interface with stability
-
----
-
-## ADVANCED GUI VERSION (`il2.py`)
-
-### Launch
+### Advanced GUI Version (`il2.py`)
 
 ```bash
 python il2.py
 ```
 
-### Workflow
+1. Enter your musical prompt
+2. Choose algorithm type:
+   - Advanced: Multi-metric analysis (recommended)
+   - Classic: Spectral similarity only
+3. Select model and duration
+4. Click "AVVIA" to begin
+5. Monitor visualizations for loop analysis
+6. Adjust overlap slider (currently non-functional)
+7. Save loops using "SALVA" button
 
-1. Enter your prompt (e.g. `lofi calm rap`)
-2. Choose algorithm: Advanced or Classic
-3. Choose model
+## Technical Details
 
-   * ⚠️ **Avoid Small model**: often produces low-quality results
-   * ✅ **Recommended**: Medium model
-   * ⚠️ **Not recommended**: High model
-4. Click **AVVIA** to generate infinite loop
-5. Adjust crossfade slider (not yet functional)
-6. Click **SALVA** to export current loop
+### Loop Detection Algorithm
 
-### Visualization
+INFINI LOOP employs sophisticated multi-metric analysis:
 
-* Real-time waveform and spectral plot
-* Highlighted loop zones with loop length analysis
-* Visual feedback useful for creators and testers
+1. **Spectral Similarity**: Compares frequency content at potential loop points
+2. **Waveform Continuity**: Ensures smooth amplitude transitions
+3. **Beat Alignment**: Synchronizes loops with detected rhythm
+4. **Phase Continuity**: Maintains phase coherence for natural sound
+5. **Zero-Crossing Optimization**: Fine-tunes loop points to prevent clicks
 
-> ❗ Playback is sequential, not overlapped.
+### Audio Processing Pipeline
 
-### Limitations
+1. AI generates raw audio using MusicGPT
+2. Loop detection algorithm analyzes the audio
+3. Optimal loop points are identified and refined
+4. Audio is normalized and prepared for playback
+5. Crossfade regions are calculated (terminal and lightweight GUI only)
+6. Continuous playback begins while next segment generates
 
-* Experimental GUI – may crash or freeze on some systems
-* Does not support crossfade blending
-* Heavier resource usage
+### Model Recommendations
 
----
+- **Small Model**: Fast but often low quality - not recommended
+- **Medium Model**: Best balance of quality and speed - recommended
+- **Large Model**: Highest quality but slow and resource-intensive
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue**: "File audio generato con errori dalla AI"
+- **Solution**: Ensure MusicGPT binary is executable and in the correct location
+
+**Issue**: Audio playback stutters or skips
+- **Solution**: Try different audio driver (pulse, alsa, or dsp)
+
+**Issue**: Generation takes too long
+- **Solution**: Use medium model and shorter duration (10-15 seconds)
+
+**Issue**: No audio output
+- **Solution**: Check system audio settings and ensure audio subsystem is running
+
+### Debug Mode
+
+Enable debug mode for detailed logging:
+
+```bash
+# Terminal version
+python ilterm.py --prompt "test" --debug
+
+# In interactive mode
+debug on
+```
+
+### File Validation
+
+If experiencing corrupted audio files:
+
+```bash
+# In interactive mode
+validate both
+```
 
 ## License
 
-Released under CC BY-NC 4.0. Only for non-commercial use.
+This project is released under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0). For commercial use, please contact the authors.
+
+## Credits
+
+- MusicGPT by gabotechs for AI music generation
+- Developed with assistance from AI language models
+- Audio processing powered by librosa and soundfile
+
+## Contributing
+
+Bug reports and feature requests are welcome. Please include:
+
+- Version used (ilterm.py, il1.py, or il2.py)
+- Operating system and Python version
+- Complete error messages
+- Steps to reproduce the issue
 
 ---
 
-## Bug Reporting / Support
+# INFINI LOOP - Generazione Musicale Infinita con AI
 
-For technical issues or bug reports:
+INFINI LOOP è un sistema avanzato per la generazione musicale con intelligenza artificiale che crea loop audio continui e senza interruzioni in tempo reale. Genera automaticamente frammenti musicali usando l'AI, identifica i punti di loop ottimali e li riproduce continuamente mentre prepara il segmento successivo, creando un'esperienza musicale ininterrotta.
 
-* Open a GitHub issue
-* Specify version used (`ilterm.py`, `il1.py`, `il2.py`)
-* Include your OS version, error logs, and reproduction steps
+## Indice
 
----
+- [Caratteristiche](#caratteristiche)
+- [Versioni Disponibili](#versioni-disponibili)
+- [Requisiti di Sistema](#requisiti-di-sistema)
+- [Installazione](#installazione-1)
+- [Utilizzo](#utilizzo)
+- [Dettagli Tecnici](#dettagli-tecnici)
+- [Risoluzione Problemi](#risoluzione-problemi)
+- [Licenza](#licenza)
 
-# INFINI LOOP - Generazione Musicale Locale Infinita con AI
+## Caratteristiche
 
-**INFINI LOOP** è uno strumento avanzato per la generazione musicale continua con intelligenza artificiale. Il suo scopo è generare automaticamente un frammento musicale desiderato, trovare il punto di loop perfetto, suonarlo senza interruzioni mentre viene preparata la prossima traccia, e passare senza soluzione di continuità a quella successiva tramite crossfade. Il risultato è una playlist musicale infinita, continua e fluida, ideale per ambienti rilassanti, lavoro creativo o uso dal vivo.
-
-> ⚠️ La **versione da terminale (`ilterm.py`)** e la **versione GUI leggera (`il1.py`)** sono stabili e supportano il **crossfade reale** tra i loop.
-> La **versione GUI avanzata (`il2.py`)** è sperimentale e **non supporta il crossfade**: la riproduzione è sequenziale.
-
----
+- **Generazione Musicale AI**: Utilizza MusicGPT per sintesi audio di alta qualità
+- **Rilevamento Loop Intelligente**: Analisi multi-metrica inclusi similarità spettrale, continuità della forma d'onda, allineamento dei beat e coerenza di fase
+- **Riproduzione Continua**: Crossfade automatico tra i loop (versioni terminale e GUI leggera)
+- **Ottimizzazione Zero-Crossing**: Garantisce transizioni fluide senza click o pop
+- **Interfacce Multiple**: Terminale, GUI leggera e GUI avanzata con visualizzazioni
+- **Recupero da Crash**: Gestione errori robusta e validazione automatica dei file
+- **Funzione Esportazione**: Salva i loop generati per uso futuro
 
 ## Versioni Disponibili
 
-### `ilterm.py` - Versione Terminale (Stabile)
+### 1. Versione Terminale (`ilterm.py`) - Più Stabile
 
-* Interfaccia completamente testuale o interattiva
-* Validazione audio e recupero automatico
-* Gestione robusta in caso di crash
-* Impostazioni ottimizzate per stabilità
-* **Supporta il crossfade reale**
-* **Versione più stabile in assoluto**
+- Interfaccia a riga di comando con modalità interattiva
+- Supporto crossfade reale tra i loop
+- Validazione audio completa e recupero errori
+- Modalità debug per diagnostica
+- Utilizzo minimo di risorse
 
-### `il1.py` - Versione GUI Leggera (Stabile)
+### 2. Versione GUI Leggera (`il1.py`) - Stabile
 
-* Interfaccia minimale con controlli essenziali
-* Stesso motore audio della versione da terminale
-* Riproduzione tramite PyAudio con crossfade attivo
-* **Stabilità identica alla versione terminale**
-* **Supporto al crossfade reale**
-* **Nessuna visualizzazione grafica del segnale audio**
+- Interfaccia grafica semplice con controlli essenziali
+- Stesso motore audio della versione terminale
+- Supporto crossfade reale
+- Design pulito e minimalista
+- Basso consumo di risorse
 
-### `il2.py` - Versione GUI Avanzata (Sperimentale)
+### 3. Versione GUI Avanzata (`il2.py`) - Sperimentale
 
-* Interfaccia grafica con spettrogramma e waveform
-* Impostazioni configurabili e analisi del loop
-* Analisi visiva multi-metrica
-* Riproduzione tramite PyAudio (se disponibile)
-* **Non supporta il crossfade tra tracce**
-* **Versione sperimentale e meno stabile**
-
----
-
-## Funzionalità Comuni
-
-* Generazione musicale AI tramite [MusicGPT](https://github.com/gabotechs/MusicGPT)
-* Loop perfetti, consapevoli del beat e allineati ai punti di zero-crossing
-* Rilevamento del loop tramite:
-
-  * Similarità spettrale
-  * Continuità della forma d'onda
-  * Allineamento dei beat
-  * Continuità di fase
-* Normalizzazione audio e riproduzione sicura con ffplay o PyAudio
-
-> 🧠 Il software è stato sviluppato con l'assistenza di un modello linguistico AI, con porzioni di codice generate e poi ottimizzate manualmente.
-
-> 🛈 Alla prima generazione, il modello AI verrà scaricato automaticamente. Questa operazione può richiedere più tempo rispetto alle generazioni successive.
-
----
+- Interfaccia grafica completa con visualizzazioni audio
+- Analisi forma d'onda e spettro in tempo reale
+- Display visivo delle metriche del loop
+- Parametri di generazione configurabili
+- **Nota**: Non supporta il crossfading tra le tracce
+- Maggiore utilizzo di risorse
 
 ## Requisiti di Sistema
 
-* **OS**: Linux (consigliato Ubuntu 20.04+)
-* **Python**: 3.8 o superiore
-* **RAM**: 4 GB (GUI) / 2 GB (Terminale)
-* **Spazio su disco**: almeno 2 GB liberi
+### Requisiti Minimi
 
----
+- **Sistema Operativo**: Linux (Ubuntu 20.04+ o equivalente)
+- **Python**: 3.8 o superiore
+- **RAM**: 2GB (terminale), 4GB (versioni GUI)
+- **Spazio Disco**: 2GB liberi
+- **Audio**: Sottosistema audio funzionante (PulseAudio, ALSA o OSS)
 
-## Dipendenze
+### Requisiti Consigliati
 
-### Base (tutte le versioni)
+- **Sistema Operativo**: Ubuntu 22.04 LTS
+- **Python**: 3.10 o superiore
+- **RAM**: 4GB o più
+- **Processore**: CPU multi-core per migliori prestazioni
+- **Audio**: PulseAudio con configurazione a bassa latenza
+
+## Installazione
+
+### Passo 1: Installa Dipendenze di Sistema
 
 ```bash
-pip install librosa soundfile scipy numpy pydub
+# Per Ubuntu/Debian:
+sudo apt update
+sudo apt install -y ffmpeg pulseaudio-utils alsa-utils python3-pip python3-dev
+
+# Per versioni GUI, installa anche:
+sudo apt install -y portaudio19-dev python3-tk
 ```
 
-### GUI (`il1.py` e `il2.py`)
+### Passo 2: Installa Dipendenze Python
 
 ```bash
+# Crea ambiente virtuale (consigliato)
+python3 -m venv infiniloop-env
+source infiniloop-env/bin/activate
+
+# Installa dipendenze principali
+pip install librosa soundfile scipy numpy pydub
+
+# Per versioni GUI, installa anche:
 pip install matplotlib pillow
-sudo apt install portaudio19-dev python3-pyaudio
+
+# Opzionale: Per riproduzione a bassa latenza nelle versioni GUI
 pip install pyaudio
 ```
 
-### Sistema
+### Passo 3: Scarica Binario MusicGPT
 
-```bash
-sudo apt install ffmpeg pulseaudio-utils alsa-utils
-```
-
-### Binario Esterno
-
-Scarica `musicgpt-x86_64-unknown-linux-gnu` da: [https://github.com/gabotechs/MusicGPT](https://github.com/gabotechs/MusicGPT)
+1. Visita la [pagina releases di MusicGPT](https://github.com/gabotechs/MusicGPT/releases)
+2. Scarica `musicgpt-x86_64-unknown-linux-gnu`
+3. Posizionalo nella stessa directory degli script Python
+4. Rendilo eseguibile:
 
 ```bash
 chmod +x musicgpt-x86_64-unknown-linux-gnu
 ```
 
----
-
-# COME SI USA
-
-## VERSIONE TERMINALE (`ilterm.py`)
-
-### Esempio semplice
+### Passo 4: Scarica INFINI LOOP
 
 ```bash
-python ilterm.py --prompt "ambient lofi loop"
+# Clona il repository o scarica i file
+git clone https://github.com/yourusername/infiniloop.git
+cd infiniloop
 ```
+## Utilizzo
 
-### Modalità interattiva
+### Versione Terminale (`ilterm.py`)
+
+#### Avvio Rapido
 
 ```bash
+# Genera loop infinito con un prompt
+python ilterm.py --prompt "ambient lofi hip hop beat"
+
+# Modalità interattiva
 python ilterm.py
+
+# Genera singolo loop ed esporta
+python ilterm.py --generate-only "jazz piano solo" output.wav
+
+# Con impostazioni personalizzate
+python ilterm.py --prompt "electronic dance" --duration 20 --driver pulse
 ```
 
-### Solo generazione (esportazione diretta)
+#### Comandi Interattivi
 
-```bash
-python ilterm.py --generate-only "jazz groove" output.wav
-```
+In modalità interattiva:
 
-### Caratteristiche principali
+- `start <prompt>` - Avvia loop infinito con il prompt dato
+- `stop` - Ferma riproduzione corrente
+- `status` - Mostra stato sistema
+- `save <nomefile>` - Salva loop corrente
+- `set duration` - Cambia durata generazione (5-30 secondi)
+- `set driver` - Cambia driver audio (pulse/alsa/dsp)
+- `debug on/off` - Attiva/disattiva messaggi debug
+- `help` - Mostra tutti i comandi
+- `quit` - Esci dal programma
 
-* Crossfade reale tra le tracce
-* Validazione automatica del loop
-* Modalità debug con log dettagliati
-* Resiliente ai crash
-* Ottima stabilità anche su hardware limitato
-
----
-
-## VERSIONE GUI LEGGERA (`il1.py`)
-
-### Avvio
+### Versione GUI Leggera (`il1.py`)
 
 ```bash
 python il1.py
 ```
 
-### Procedura
+1. Inserisci un prompt musicale (es. "calm acoustic guitar")
+2. Seleziona dimensione modello (Medium consigliato)
+3. Regola durata se necessario (10-15 secondi ottimali)
+4. Clicca "AVVIA" per iniziare generazione
+5. Usa "SALVA" per esportare il loop corrente
+6. Clicca "ESCI" per uscire
 
-1. Inserisci il prompt (es. `lofi calm rap`)
-2. Scegli il modello:
-
-   * ⚠️ **Sconsigliato**: Small (risultati spesso scadenti)
-   * ✅ **Consigliato**: Medium (ottimo bilanciamento qualità/velocità)
-   * ⚠️ **Non raccomandato**: High (lento e poco affidabile)
-3. Imposta la durata (consigliato 5–30s)
-4. Seleziona il driver audio (pulse / alsa / oss)
-5. Clicca **AVVIA** per iniziare
-6. Crossfade attivo tra le tracce
-7. Clicca **SALVA** per esportare
-
----
-
-## VERSIONE GUI AVANZATA (`il2.py`)
-
-### Avvio
+### Versione GUI Avanzata (`il2.py`)
 
 ```bash
 python il2.py
 ```
 
-### Procedura
+1. Inserisci il tuo prompt musicale
+2. Scegli tipo algoritmo:
+   - Avanzato: Analisi multi-metrica (consigliato)
+   - Classico: Solo similarità spettrale
+3. Seleziona modello e durata
+4. Clicca "AVVIA" per iniziare
+5. Monitora le visualizzazioni per analisi loop
+6. Regola slider overlap (attualmente non funzionale)
+7. Salva loop usando pulsante "SALVA"
 
-1. Inserisci il prompt
-2. Seleziona algoritmo: Classico o Avanzato
-3. Scegli il modello:
+## Dettagli Tecnici
 
-   * ⚠️ **Sconsigliato**: Small
-   * ✅ **Consigliato**: Medium
-   * ⚠️ **Non raccomandato**: High
-4. Premi **AVVIA**
-5. Regola lo slider del crossfade (attualmente non funziona)
-6. Premi **SALVA** per esportare il loop
+### Algoritmo Rilevamento Loop
 
-### Visualizzazione
+INFINI LOOP utilizza analisi multi-metrica sofisticata:
 
-* Forma d'onda e spettrogramma in tempo reale
-* Evidenziazione delle zone di loop
-* Metriche visive utili per test e creazione
+1. **Similarità Spettrale**: Confronta contenuto in frequenza ai potenziali punti loop
+2. **Continuità Forma d'Onda**: Assicura transizioni fluide di ampiezza
+3. **Allineamento Beat**: Sincronizza loop con ritmo rilevato
+4. **Continuità Fase**: Mantiene coerenza di fase per suono naturale
+5. **Ottimizzazione Zero-Crossing**: Perfeziona punti loop per prevenire click
 
-> ❗ La riproduzione è sequenziale, non sovrapposta.
+### Pipeline Elaborazione Audio
 
-### Limitazioni
+1. AI genera audio grezzo usando MusicGPT
+2. Algoritmo rilevamento loop analizza l'audio
+3. Punti loop ottimali vengono identificati e raffinati
+4. Audio viene normalizzato e preparato per riproduzione
+5. Regioni crossfade vengono calcolate (solo terminale e GUI leggera)
+6. Riproduzione continua inizia mentre genera segmento successivo
 
-* GUI sperimentale: instabile su alcuni sistemi
-* Non supporta il crossfade
-* Più pesante in termini di risorse
+### Raccomandazioni Modelli
 
----
+- **Modello Small**: Veloce ma spesso bassa qualità - non consigliato
+- **Modello Medium**: Miglior bilanciamento qualità/velocità - consigliato
+- **Modello Large**: Qualità massima ma lento e intensivo di risorse
+
+## Risoluzione Problemi
+
+### Problemi Comuni
+
+**Problema**: "File audio generato con errori dalla AI"
+- **Soluzione**: Assicurati che binario MusicGPT sia eseguibile e nella posizione corretta
+
+**Problema**: Riproduzione audio salta o balbetta
+- **Soluzione**: Prova driver audio diverso (pulse, alsa o dsp)
+
+**Problema**: Generazione richiede troppo tempo
+- **Soluzione**: Usa modello medium e durata più breve (10-15 secondi)
+
+**Problema**: Nessun output audio
+- **Soluzione**: Controlla impostazioni audio sistema e assicurati che sottosistema audio sia in esecuzione
+
+### Modalità Debug
+
+Abilita modalità debug per log dettagliati:
+
+```bash
+# Versione terminale
+python ilterm.py --prompt "test" --debug
+
+# In modalità interattiva
+debug on
+```
+
+### Validazione File
+
+Se riscontri file audio corrotti:
+
+```bash
+# In modalità interattiva
+validate both
+```
 
 ## Licenza
 
-Distribuito con CC BY-NC 4.0. Solo per uso non commerciale.
+Questo progetto è rilasciato sotto licenza Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0). Per uso commerciale, contattare gli autori.
 
----
+## Crediti
 
-## Supporto
+- MusicGPT di gabotechs per generazione musicale AI
+- Sviluppato con assistenza di modelli linguistici AI
+- Elaborazione audio basata su librosa e soundfile
 
-Per segnalazioni o problemi tecnici:
+## Contribuire
 
-* Apri una issue su GitHub
-* Specifica la versione usata (`ilterm.py`, `il1.py`, `il2.py`)
-* Indica sistema operativo, log d’errore ed eventuali passaggi per riprodurre il bug
+Segnalazioni bug e richieste funzionalità sono benvenute. Si prega di includere:
+
+- Versione utilizzata (ilterm.py, il1.py o il2.py)
+- Sistema operativo e versione Python
+- Messaggi di errore completi
+- Passaggi per riprodurre il problema
