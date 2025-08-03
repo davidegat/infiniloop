@@ -14,7 +14,7 @@ Experimental GUI version (**not recomended**):
 
 Lightweight GUI version  (**MOST recomended**):
 
-<img width="696" height="880" alt="immagine" src="https://github.com/user-attachments/assets/e423e138-4214-44e4-9616-4d989ceb9286" />
+<img width="672" height="864" alt="immagine" src="https://github.com/user-attachments/assets/3f99ec86-661b-4a5a-8f0a-f97731340f84" />
 
 
 Terminal version (**recomended**):
