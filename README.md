@@ -38,7 +38,7 @@ Terminal version (**recomended**):
 - **Local AI Music Generation**: Powered by MusicGPT for high-quality audio synthesis (https://github.com/gabotechs/MusicGPT).
 - **Intelligent Loop Detection**: Multi-metric analysis including spectral similarity, waveform continuity, beat alignment, and phase coherence
 - **Seamless Playback**: Automatic crossfading between loops (terminal and lightweight GUI versions)
-- **Zero-Crossing Optimization**: Ensures smooth transitions without clicks or pops
+- **Zero-Crossing Optimization**: Ensures smooth transitions
 - **Multiple Interfaces**: Terminal, lightweight GUI, and advanced GUI with visualizations
 - **Crash Recovery**: Robust error handling and automatic file validation
 - **Export Functionality**: Save generated loops for later use
@@ -190,7 +190,7 @@ INFINI LOOP employs sophisticated multi-metric analysis:
 2. **Waveform Continuity**: Ensures smooth amplitude transitions
 3. **Beat Alignment**: Synchronizes loops with detected rhythm
 4. **Phase Continuity**: Maintains phase coherence for natural sound
-5. **Zero-Crossing Optimization**: Fine-tunes loop points to prevent clicks
+5. **Zero-Crossing Optimization**: Fine-tunes loop points
 
 ### Audio Processing Pipeline
 
@@ -287,7 +287,7 @@ Una volta configurato, il tuo computer diventa una stazione musicale AI locale, 
 - **Generazione Musicale AI in locale**: Utilizza MusicGPT per sintesi audio di alta qualità (https://github.com/gabotechs/MusicGPT)
 - **Rilevamento Loop Intelligente**: Analisi multi-metrica inclusi similarità spettrale, continuità della forma d'onda, allineamento dei beat e coerenza di fase
 - **Riproduzione Continua**: Crossfade automatico tra i loop (versioni terminale e GUI leggera)
-- **Ottimizzazione Zero-Crossing**: Garantisce transizioni fluide senza click o pop
+- **Ottimizzazione Zero-Crossing**: Garantisce transizioni fluide
 - **Interfacce Multiple**: Terminale, GUI leggera e GUI avanzata con visualizzazioni
 - **Recupero da Crash**: Gestione errori robusta e validazione automatica dei file
 - **Funzione Esportazione**: Salva i loop generati per uso futuro
@@ -438,7 +438,7 @@ INFINI LOOP utilizza analisi multi-metrica sofisticata:
 2. **Continuità Forma d'Onda**: Assicura transizioni fluide di ampiezza
 3. **Allineamento Beat**: Sincronizza loop con ritmo rilevato
 4. **Continuità Fase**: Mantiene coerenza di fase per suono naturale
-5. **Ottimizzazione Zero-Crossing**: Perfeziona punti loop per prevenire click
+5. **Ottimizzazione Zero-Crossing**: Perfeziona punti loop
 
 ### Pipeline Elaborazione Audio
 
