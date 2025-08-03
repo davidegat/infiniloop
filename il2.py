@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys
 import os
 import threading
@@ -686,7 +685,7 @@ class InfiniLoopGUI:
         if self.app.is_playing:
             if self.app.is_generating:
                 self.generation_label.config(text=f"🎼 {self.app.generation_status}")
-                self.progress_label.config(text="⏳ Generating...")
+                self.progress_label.config(text="⏳ Wait...")
             else:
                 self.generation_label.config(text="")
                 self.progress_label.config(text="")

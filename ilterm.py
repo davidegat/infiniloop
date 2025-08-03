@@ -246,7 +246,7 @@ class InfiniLoopTerminal:
 
             return self.find_perfect_loop_advanced(y, sr)
         except Exception as e:
-            self.log_message(f"⚠️ Advanced algorithm failed: {e}")
+            self.log_message(f"❌ Advanced algorithm failed: {e}")
             self.log_message("🔄 Using simple fallback algorithm...")
 
             return self.find_perfect_loop_simple(y, sr)
@@ -254,128 +254,169 @@ class InfiniLoopTerminal:
     def find_perfect_loop_advanced(self, y, sr):
         self.log_message("🧠 Advanced multi-metric analysis in progress...")
 
-        if not len(y): raise Exception("Empty audio input")
-        if sr <= 0: raise Exception(f"Invalid sample rate: {sr}")
+        # Input validation
+        if not len(y) or sr <= 0:
+            raise Exception(f"Invalid input: empty audio or sr={sr}")
 
+        # Beat tracking with error handling
         try:
             tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units='samples')
-            tempo = tempo.item() if isinstance(tempo, np.ndarray) else tempo
+            tempo = float(tempo)
         except Exception as e:
             raise Exception(f"Beat tracking error: {e}")
 
-        if not (30 < tempo <= 300):
-            self.log_message(f"⚠️ Suspicious tempo: {tempo} BPM, using simple algorithm")
+        if not 30 < tempo <= 300:
+            self.log_message(f"❌ Suspicious tempo: {tempo} BPM, using simple algorithm")
             raise Exception("Invalid tempo")
 
+        # STFT computation
         try:
             S_mag = np.abs(librosa.stft(y, n_fft=2048, hop_length=512))
-            if not S_mag.size: raise Exception("Empty STFT")
+            if not S_mag.size:
+                raise Exception("Empty STFT")
         except Exception as e:
             raise Exception(f"STFT error: {e}")
 
         beat_len = 60 / tempo
-        best_score, best_start, best_end, best_meas, best_metrics = -np.inf, 0, 0, 0, {}
-        found = 0
+        best = {'score': -np.inf, 'start': 0, 'end': 0, 'measures': 0, 'metrics': {}}
+        found = False
 
+        # Safe metric calculation helper
+        def safe_metric(fn, *args, default=0.5):
+            try:
+                val = fn(*args)
+                return 0.0 if np.isnan(val) else val
+            except:
+                return default
+
+        # Main loop over measures and positions
         for meas in [2, 4, 8]:
             samples = int(meas * 4 * beat_len * sr)
+
+            # Duration validation
             if not (3 * sr <= samples <= len(y) * 0.9):
-                self.log_message(f"⚠️ Duration {samples/sr:.1f}s out of range, skipping {meas} measures")
+                self.log_message(f"❌ Duration {samples/sr:.1f}s out of range, skipping {meas} measures")
                 continue
 
-            for start in range(int(len(y)*0.05), len(y) - samples - int(len(y)*0.05), 2048):
+            # Search window
+            start_range = range(int(len(y) * 0.05),
+                            len(y) - samples - int(len(y) * 0.05),
+                            2048)
+
+            for start in start_range:
                 end = start + samples
-                if end > len(y) or end - start < sr * 0.5: continue
+                if end > len(y) or end - start < sr * 0.5:
+                    continue
 
                 sf, ef = start // 512, end // 512
-                if sf < 3 or ef >= S_mag.shape[1]: continue
+                if sf < 3 or ef >= S_mag.shape[1]:
+                    continue
 
+                # Spectral similarity
                 try:
-                    s1 = np.mean(S_mag[:, sf - 3:sf + 3], axis=1)
-                    s2 = np.mean(S_mag[:, ef - 3:ef + 3], axis=1)
-                    if np.any(np.isnan(s1)) or np.any(np.isnan(s2)): continue
-                    spec = 1 - cosine(s1, s2)
-                    spec = 0.0 if np.isnan(spec) else spec
-                except: spec = 0.0
+                    s1, s2 = (np.mean(S_mag[:, f-3:f+3], axis=1) for f in (sf, ef))
+                    if np.any(np.isnan(s1)) or np.any(np.isnan(s2)):
+                        continue
+                    spec = max(0.0, 1 - cosine(s1, s2))
+                except:
+                    spec = 0.0
 
-                def safe(fn, *args, default=0.5):
-                    try:
-                        val = fn(*args)
-                        return 0.0 if np.isnan(val) else val
-                    except: return default
+                # Calculate all metrics
+                wave = safe_metric(self.calculate_waveform_continuity, y, start, end, sr)
+                beat = safe_metric(self.calculate_beat_alignment, start, end, beats, sr)
+                phase = safe_metric(self.calculate_phase_continuity, S_mag, sf, ef)
 
-                wave = safe(self.calculate_waveform_continuity, y, start, end, sr)
-                beat = safe(self.calculate_beat_alignment, start, end, beats, sr)
-                phase = safe(self.calculate_phase_continuity, S_mag, sf, ef)
-
+                # Composite score
                 score = spec * 0.5 + wave * 0.25 + beat * 0.15 + phase * 0.1
-                if not np.isfinite(score): continue
 
-                if score > best_score:
-                    best_score, best_start, best_end, best_meas = score, start, end, meas
-                    best_metrics = {'Spectral': spec, 'Waveform': wave, 'Beat Align': beat, 'Phase': phase}
-                    found += 1
+                if np.isfinite(score) and score > best['score']:
+                    best.update({
+                        'score': score, 'start': start, 'end': end, 'measures': meas,
+                        'metrics': {'Spectral': spec, 'Waveform': wave, 'Beat Align': beat, 'Phase': phase}
+                    })
+                    found = True
 
-        if not found or best_score < 0.1:
-            raise Exception(f"No valid loop found (score: {best_score:.3f})")
-        if best_start >= best_end or best_end > len(y):
-            raise Exception(f"Invalid loop bounds: {best_start} → {best_end}")
+        # Validation of results
+        if not found or best['score'] < 0.1:
+            raise Exception(f"No valid loop found (score: {best['score']:.3f})")
 
-        dur = (best_end - best_start) / sr
+        if best['start'] >= best['end'] or best['end'] > len(y):
+            raise Exception(f"Invalid loop bounds: {best['start']} → {best['end']}")
+
+        dur = (best['end'] - best['start']) / sr
         if dur < 1.0:
             raise Exception(f"Loop too short: {dur:.1f}s")
 
-        self.log_message(f"✅ Advanced loop found! {best_meas} measures, Score: {best_score:.3f}, Duration: {dur:.1f}s")
+        self.log_message(f"✅ Advanced loop found! {best['measures']} measures, "
+                        f"Score: {best['score']:.3f}, Duration: {dur:.1f}s")
 
         return {
-            'start_sample': best_start,
-            'end_sample': best_end,
-            'score': best_score,
-            'measures': best_meas,
-            'metrics': best_metrics
+            'start_sample': best['start'],
+            'end_sample': best['end'],
+            'score': best['score'],
+            'measures': best['measures'],
+            'metrics': best['metrics']
         }
 
     def process_loop_detection(self, input_file, output_file):
         try:
             self.debug_file_state("PRE_LOOP_DETECTION", input_file)
 
+            # Input validation and loading
             if not self.validate_audio_file(input_file):
                 raise Exception(f"Invalid input file: {input_file}")
 
             y, sr = librosa.load(input_file, sr=None, mono=True)
-            if not len(y): raise Exception("Loaded audio is empty")
-            if sr <= 0: raise Exception(f"Invalid sample rate: {sr}")
-            if np.isnan(y).any() or np.isinf(y).any():
-                raise Exception("Audio contains NaN or infinite values")
-            if len(y) / sr < 2.0:
-                raise Exception(f"Audio too short for loop detection: {len(y)/sr:.1f}s")
 
+            # Audio validation chain
+            validations = [
+                (not len(y), "Loaded audio is empty"),
+                (sr <= 0, f"Invalid sample rate: {sr}"),
+                (np.isnan(y).any() or np.isinf(y).any(), "Audio contains NaN or infinite values"),
+                (len(y) / sr < 2.0, f"Audio too short for loop detection: {len(y)/sr:.1f}s")
+            ]
+
+            for condition, message in validations:
+                if condition:
+                    raise Exception(message)
+
+            # Loop detection and bounds validation
             loop_info = self.find_perfect_loop(y, sr)
             s, e = loop_info['start_sample'], loop_info['end_sample']
-            if s < 0 or e > len(y) or s >= e:
+
+            if not (0 <= s < e <= len(y)):
                 raise Exception(f"Invalid loop bounds: {s} -> {e} (max: {len(y)})")
 
+            # Zero-crossing optimization
             self.log_message("🎯 Zero-crossing optimization...")
-            s, e = self.find_optimal_zero_crossing(y, s), self.find_optimal_zero_crossing(y, e)
-            if s < 0 or e > len(y) or s >= e:
+            s, e = (self.find_optimal_zero_crossing(y, pos) for pos in (s, e))
+
+            if not (0 <= s < e <= len(y)):
                 raise Exception(f"Loop bounds corrupted after zero-crossing: {s} -> {e}")
 
+            # Display metrics
             print("\n📊 Loop metrics:")
             for k, v in loop_info['metrics'].items():
                 print(f"   {k}: {v:.3f}")
 
+            # Extract and validate loop
             y_loop = y[s:e]
             dur = len(y_loop) / sr
+
             if dur < 1.0:
                 raise Exception(f"Loop too short: {dur:.1f}s")
+
             if np.isnan(y_loop).any() or np.isinf(y_loop).any():
                 raise Exception("Extracted loop contains NaN or infinite values")
 
-            f = min(256, len(y_loop) // 100)
-            if f:
-                y_loop[:f] *= np.linspace(0, 1, f)
-                y_loop[-f:] *= np.linspace(1, 0, f)
+            # Apply fade-in/out
+            fade_samples = min(256, len(y_loop) // 100)
+            if fade_samples:
+                fade_in, fade_out = np.linspace(0, 1, fade_samples), np.linspace(1, 0, fade_samples)
+                y_loop[:fade_samples] *= fade_in
+                y_loop[-fade_samples:] *= fade_out
 
+            # Write output file
             if os.path.exists(output_file):
                 os.remove(output_file)
 
@@ -384,26 +425,33 @@ class InfiniLoopTerminal:
             except Exception as err:
                 raise Exception(f"Error writing audio file: {err}")
 
+            # Output validation
             if os.path.getsize(output_file) < 1024:
-                raise Exception(f"Output file too small")
+                raise Exception("Output file too small")
 
             self.debug_file_state("POST_LOOP_DETECTION", output_file)
 
             if not self.validate_audio_file(output_file):
                 try:
                     test_y, test_sr = librosa.load(output_file, sr=None, mono=True)
-                    raise Exception(f"File written but validation failed (dur: {len(test_y)/test_sr:.1f}s, samples: {len(test_y)})")
+                    raise Exception(f"File written but validation failed "
+                                f"(dur: {len(test_y)/test_sr:.1f}s, samples: {len(test_y)})")
                 except Exception as err:
                     raise Exception(f"File written but not readable: {err}")
 
-            self.log_message(f"🧬 Perfect loop obtained! (Maybe...)\n              {loop_info['measures']} measures, {dur:.1f}s, Score: {loop_info['score']:.3f}")
+            self.log_message(f"🧬 Perfect loop obtained! (Maybe...)\n"
+                            f"              {loop_info['measures']} measures, {dur:.1f}s, "
+                            f"Score: {loop_info['score']:.3f}")
 
         except Exception as e:
+            # Cleanup on error
             if os.path.exists(output_file):
                 try:
                     os.remove(output_file)
                     self.log_message(f"🗑️ Removed corrupted file: {os.path.basename(output_file)}")
-                except: pass
+                except:
+                    pass
+
             self.log_message(f"❌ Loop detection error: {e}")
             raise
 
@@ -414,7 +462,7 @@ class InfiniLoopTerminal:
             prompt = self.PROMPT
             model = self.model
             duration = self.duration
-            self.generation_status = f"Generating with prompt: '{prompt}'"
+            self.generation_status = f"Generating '{prompt}'"
             self.log_message("🎼 Generating new sample...")
 
             with self.safe_temp_file() as raw_temp, self.safe_temp_file() as processed_temp:
@@ -504,7 +552,7 @@ class InfiniLoopTerminal:
 
         try:
             if not self.validate_audio_file(filepath):
-                self.log_message(f"⚠️ Invalid file for playback: {filepath}")
+                self.log_message(f"❌ Invalid file for playback: {filepath}")
                 return
 
             env = os.environ.copy()
@@ -523,14 +571,14 @@ class InfiniLoopTerminal:
             self.debug_file_state("END_PLAYBACK", filepath)
 
             if return_code != 0:
-                self.log_message(f"⚠️ ffplay terminated with code {return_code}")
+                self.log_message(f"❌ ffplay terminated with code {return_code}")
 
         except subprocess.TimeoutExpired:
-            self.log_message("⚠️ ffplay timeout - forced termination")
+            self.log_message("❌ ffplay timeout - forced termination")
             self._kill_process_safely(process)
 
         except Exception as e:
-            self.log_message(f"⚠️ ffplay crash detected: {str(e)}")
+            self.log_message(f"❌ ffplay crash detected: {str(e)}")
             self._kill_process_safely(process)
 
         finally:
@@ -542,7 +590,7 @@ class InfiniLoopTerminal:
         try:
             duration = self.get_duration(filepath)
             if duration <= 0:
-                self.log_message(f"⚠️ Invalid audio file: {filepath}")
+                self.log_message(f"❌ Invalid audio file: {filepath}")
                 return
 
             delay = max(0, duration - crossfade_sec)
@@ -560,7 +608,7 @@ class InfiniLoopTerminal:
 
             while self.is_playing and not stop_event.is_set():
                 if not self.validate_audio_file(filepath):
-                    self.log_message(f"⚠️ Corrupted file detected during loop: {filepath}")
+                    self.log_message(f"❌ Corrupted file detected during loop: {filepath}")
                     break
 
                 try:
@@ -585,7 +633,7 @@ class InfiniLoopTerminal:
             self.log_message(f"❌ Error in loop: {str(e)}")
 
     def _log_retry_error(self, count, max_count, exc):
-        self.log_message(f"⚠️ Playback error (attempt {count}/{max_count}): {str(exc)}")
+        self.log_message(f"❌ Playback error (attempt {count}/{max_count}): {str(exc)}")
 
 
     def safe_file_swap(self):
@@ -601,13 +649,13 @@ class InfiniLoopTerminal:
                     self.loop_thread.join(timeout=max_wait)
 
                     if self.loop_thread.is_alive():
-                        self.log_message("⚠️ Timeout waiting: forcing ffplay termination")
+                        self.log_message("❌ Timeout waiting: forcing ffplay termination")
                         self.kill_all_ffplay_processes()
                         self.loop_thread.join(timeout=2.0)
 
 
                 if not self.validate_audio_file(self.NEXT):
-                    raise Exception(f"⚠️ Invalid NEXT file: {self.NEXT}")
+                    raise Exception(f"❌ Invalid NEXT file: {self.NEXT}")
 
 
                 with self.file_lock:
@@ -738,7 +786,7 @@ class InfiniLoopTerminal:
                             os.remove(filepath)
                             self.log_message(f"🗑️ Removed {os.path.basename(filepath)}")
                 except Exception as remove_error:
-                    self.log_message(f"⚠️ File removal error: {remove_error}")
+                    self.log_message(f"❌ File removal error: {remove_error}")
 
     def start_loop(self, prompt):
         self.stop_requested = False
