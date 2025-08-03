@@ -39,7 +39,7 @@ class InfiniLoopTerminal:
         self.loop_thread = None
         self.generation_thread = None
         self.is_generating = False
-        self.generation_status = "Inattivo"
+        self.generation_status = "Idle"
 
         self.file_lock = threading.Lock()
         self.swap_lock = threading.Lock()
@@ -53,7 +53,7 @@ class InfiniLoopTerminal:
         os.system("cls" if os.name == "nt" else "clear")
 
         print("\n🎵 INFINI LOOP TERMINAL - by gat\n")
-        print("✅ Inizializzazione completata!\n")
+        print("✅ Initialization completed!\n")
         self.stop_requested = False
 
     def __del__(self):
@@ -66,7 +66,7 @@ class InfiniLoopTerminal:
 
     def signal_handler(self, signum, frame):
 
-        print("\n🛑 Interruzione rilevata, arresto in corso...")
+        print("\n🛑 Interrupt detected, stopping...")
         self.stop_loop()
 
         self.kill_all_ffplay_processes()
@@ -206,7 +206,7 @@ class InfiniLoopTerminal:
 
 
     def find_perfect_loop_simple(self, y, sr):
-        self.log_message("🧠 Algoritmo di loop detection semplice...")
+        self.log_message("🧠 Simple loop detection algorithm...")
 
         S = librosa.power_to_db(librosa.feature.melspectrogram(y=y, sr=sr, n_fft=2048, hop_length=512), ref=np.max)
         min_f = int(5 * sr / 512)
@@ -222,21 +222,21 @@ class InfiniLoopTerminal:
                     if s > best_score: best_score, best_start, best_end = s, i, j
 
         if best_score < 0.1:
-            raise Exception(f"Nessuna similarità trovata (score: {best_score:.3f})")
+            raise Exception(f"No similarity found (score: {best_score:.3f})")
 
         s_samp, e_samp = best_start * 512, best_end * 512
         if s_samp >= e_samp or e_samp > len(y):
-            raise Exception(f"Bounds non validi: {s_samp} → {e_samp}")
+            raise Exception(f"Invalid bounds: {s_samp} → {e_samp}")
 
         dur = (e_samp - s_samp) / sr
-        self.log_message(f"✅ Loop semplice trovato! Score: {best_score:.3f}, Durata: {dur:.1f}s")
+        self.log_message(f"✅ Simple loop found! Score: {best_score:.3f}, Duration: {dur:.1f}s")
 
         return {
             'start_sample': s_samp,
             'end_sample': e_samp,
             'score': best_score,
             'measures': int(dur / 2),
-            'metrics': {'Spettrale': best_score, 'Waveform': 0.5, 'Beat Align': 0.5, 'Fase': 0.5}
+            'metrics': {'Spectral': best_score, 'Waveform': 0.5, 'Beat Align': 0.5, 'Phase': 0.5}
         }
 
 
@@ -246,32 +246,32 @@ class InfiniLoopTerminal:
 
             return self.find_perfect_loop_advanced(y, sr)
         except Exception as e:
-            self.log_message(f"⚠️ Algoritmo avanzato fallito: {e}")
-            self.log_message("🔄 Uso algoritmo semplice di fallback...")
+            self.log_message(f"⚠️ Advanced algorithm failed: {e}")
+            self.log_message("🔄 Using simple fallback algorithm...")
 
             return self.find_perfect_loop_simple(y, sr)
 
     def find_perfect_loop_advanced(self, y, sr):
-        self.log_message("🧠 Analisi avanzata multi-metrica in corso...")
+        self.log_message("🧠 Advanced multi-metric analysis in progress...")
 
-        if not len(y): raise Exception("Audio input vuoto")
-        if sr <= 0: raise Exception(f"Sample rate non valido: {sr}")
+        if not len(y): raise Exception("Empty audio input")
+        if sr <= 0: raise Exception(f"Invalid sample rate: {sr}")
 
         try:
             tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units='samples')
             tempo = tempo.item() if isinstance(tempo, np.ndarray) else tempo
         except Exception as e:
-            raise Exception(f"Errore beat tracking: {e}")
+            raise Exception(f"Beat tracking error: {e}")
 
         if not (30 < tempo <= 300):
-            self.log_message(f"⚠️ Tempo sospetto: {tempo} BPM, uso algoritmo semplice")
-            raise Exception("Tempo non valido")
+            self.log_message(f"⚠️ Suspicious tempo: {tempo} BPM, using simple algorithm")
+            raise Exception("Invalid tempo")
 
         try:
             S_mag = np.abs(librosa.stft(y, n_fft=2048, hop_length=512))
-            if not S_mag.size: raise Exception("STFT vuoto")
+            if not S_mag.size: raise Exception("Empty STFT")
         except Exception as e:
-            raise Exception(f"Errore STFT: {e}")
+            raise Exception(f"STFT error: {e}")
 
         beat_len = 60 / tempo
         best_score, best_start, best_end, best_meas, best_metrics = -np.inf, 0, 0, 0, {}
@@ -280,7 +280,7 @@ class InfiniLoopTerminal:
         for meas in [2, 4, 8]:
             samples = int(meas * 4 * beat_len * sr)
             if not (3 * sr <= samples <= len(y) * 0.9):
-                self.log_message(f"⚠️ Durata {samples/sr:.1f}s fuori range, skip {meas} misure")
+                self.log_message(f"⚠️ Duration {samples/sr:.1f}s out of range, skipping {meas} measures")
                 continue
 
             for start in range(int(len(y)*0.05), len(y) - samples - int(len(y)*0.05), 2048):
@@ -313,19 +313,19 @@ class InfiniLoopTerminal:
 
                 if score > best_score:
                     best_score, best_start, best_end, best_meas = score, start, end, meas
-                    best_metrics = {'Spettrale': spec, 'Waveform': wave, 'Beat Align': beat, 'Fase': phase}
+                    best_metrics = {'Spectral': spec, 'Waveform': wave, 'Beat Align': beat, 'Phase': phase}
                     found += 1
 
         if not found or best_score < 0.1:
-            raise Exception(f"Nessun loop valido (score: {best_score:.3f})")
+            raise Exception(f"No valid loop found (score: {best_score:.3f})")
         if best_start >= best_end or best_end > len(y):
-            raise Exception(f"Loop bounds invalidi: {best_start} → {best_end}")
+            raise Exception(f"Invalid loop bounds: {best_start} → {best_end}")
 
         dur = (best_end - best_start) / sr
         if dur < 1.0:
-            raise Exception(f"Loop troppo corto: {dur:.1f}s")
+            raise Exception(f"Loop too short: {dur:.1f}s")
 
-        self.log_message(f"✅ Loop avanzato trovato! {best_meas} misure, Score: {best_score:.3f}, Durata: {dur:.1f}s")
+        self.log_message(f"✅ Advanced loop found! {best_meas} measures, Score: {best_score:.3f}, Duration: {dur:.1f}s")
 
         return {
             'start_sample': best_start,
@@ -340,36 +340,36 @@ class InfiniLoopTerminal:
             self.debug_file_state("PRE_LOOP_DETECTION", input_file)
 
             if not self.validate_audio_file(input_file):
-                raise Exception(f"File di input non valido: {input_file}")
+                raise Exception(f"Invalid input file: {input_file}")
 
             y, sr = librosa.load(input_file, sr=None, mono=True)
-            if not len(y): raise Exception("Audio caricato è vuoto")
-            if sr <= 0: raise Exception(f"Sample rate non valido: {sr}")
+            if not len(y): raise Exception("Loaded audio is empty")
+            if sr <= 0: raise Exception(f"Invalid sample rate: {sr}")
             if np.isnan(y).any() or np.isinf(y).any():
-                raise Exception("Audio contiene valori NaN o infiniti")
+                raise Exception("Audio contains NaN or infinite values")
             if len(y) / sr < 2.0:
-                raise Exception(f"Audio troppo corto per loop detection: {len(y)/sr:.1f}s")
+                raise Exception(f"Audio too short for loop detection: {len(y)/sr:.1f}s")
 
             loop_info = self.find_perfect_loop(y, sr)
             s, e = loop_info['start_sample'], loop_info['end_sample']
             if s < 0 or e > len(y) or s >= e:
-                raise Exception(f"Loop bounds non validi: {s} -> {e} (max: {len(y)})")
+                raise Exception(f"Invalid loop bounds: {s} -> {e} (max: {len(y)})")
 
-            self.log_message("🎯 Ottimizzazione zero-crossing...")
+            self.log_message("🎯 Zero-crossing optimization...")
             s, e = self.find_optimal_zero_crossing(y, s), self.find_optimal_zero_crossing(y, e)
             if s < 0 or e > len(y) or s >= e:
-                raise Exception(f"Loop bounds corrotti dopo zero-crossing: {s} -> {e}")
+                raise Exception(f"Loop bounds corrupted after zero-crossing: {s} -> {e}")
 
-            print("\n📊 Metriche loop:")
+            print("\n📊 Loop metrics:")
             for k, v in loop_info['metrics'].items():
                 print(f"   {k}: {v:.3f}")
 
             y_loop = y[s:e]
             dur = len(y_loop) / sr
             if dur < 1.0:
-                raise Exception(f"Loop troppo corto: {dur:.1f}s")
+                raise Exception(f"Loop too short: {dur:.1f}s")
             if np.isnan(y_loop).any() or np.isinf(y_loop).any():
-                raise Exception("Loop estratto contiene valori NaN o infiniti")
+                raise Exception("Extracted loop contains NaN or infinite values")
 
             f = min(256, len(y_loop) // 100)
             if f:
@@ -382,29 +382,29 @@ class InfiniLoopTerminal:
             try:
                 sf.write(output_file, y_loop, sr)
             except Exception as err:
-                raise Exception(f"Errore scrittura file audio: {err}")
+                raise Exception(f"Error writing audio file: {err}")
 
             if os.path.getsize(output_file) < 1024:
-                raise Exception(f"File di output troppo piccolo")
+                raise Exception(f"Output file too small")
 
             self.debug_file_state("POST_LOOP_DETECTION", output_file)
 
             if not self.validate_audio_file(output_file):
                 try:
                     test_y, test_sr = librosa.load(output_file, sr=None, mono=True)
-                    raise Exception(f"File scritto ma validazione fallita (dur: {len(test_y)/test_sr:.1f}s, samples: {len(test_y)})")
+                    raise Exception(f"File written but validation failed (dur: {len(test_y)/test_sr:.1f}s, samples: {len(test_y)})")
                 except Exception as err:
-                    raise Exception(f"File scritto ma non leggibile: {err}")
+                    raise Exception(f"File written but not readable: {err}")
 
-            self.log_message(f"🧬 Ottenuto loop perfetto! (Forse...)\n              {loop_info['measures']} misure, {dur:.1f}s, Score: {loop_info['score']:.3f}")
+            self.log_message(f"🧬 Perfect loop obtained! (Maybe...)\n              {loop_info['measures']} measures, {dur:.1f}s, Score: {loop_info['score']:.3f}")
 
         except Exception as e:
             if os.path.exists(output_file):
                 try:
                     os.remove(output_file)
-                    self.log_message(f"🗑️ Rimosso file corrotto: {os.path.basename(output_file)}")
+                    self.log_message(f"🗑️ Removed corrupted file: {os.path.basename(output_file)}")
                 except: pass
-            self.log_message(f"❌ Errore loop detection: {e}")
+            self.log_message(f"❌ Loop detection error: {e}")
             raise
 
 
@@ -414,8 +414,8 @@ class InfiniLoopTerminal:
             prompt = self.PROMPT
             model = self.model
             duration = self.duration
-            self.generation_status = f"Generando con prompt: '{prompt}'"
-            self.log_message("🎼 Genero un nuovo sample...")
+            self.generation_status = f"Generating with prompt: '{prompt}'"
+            self.log_message("🎼 Generating new sample...")
 
             with self.safe_temp_file() as raw_temp, self.safe_temp_file() as processed_temp:
                 self.debug_file_state("PRE_GENERATION", raw_temp)
@@ -434,32 +434,32 @@ class InfiniLoopTerminal:
                 self.debug_file_state("POST_GENERATION", raw_temp)
 
                 if not self.validate_audio_file(raw_temp):
-                    raise Exception("File audio generato con errori dalla AI.")
+                    raise Exception("Audio file generated with errors from AI.")
 
                 os.system("cls" if os.name == "nt" else "clear")
-                self.log_message(f"🎼 Sample generato ({duration}s)!")
-                self.generation_status = "Analisi loop..."
+                self.log_message(f"🎼 Sample generated ({duration}s)!")
+                self.generation_status = "Loop analysis..."
 
                 self.process_loop_detection(raw_temp, processed_temp)
 
                 if not self.validate_audio_file(processed_temp):
-                    raise Exception("File corrotto dopo il loop detection")
+                    raise Exception("File corrupted after loop detection")
 
                 self.debug_file_state("PRE_FINAL_MOVE", processed_temp)
                 with self.file_lock:
                     shutil.move(processed_temp, outfile)
                 self.debug_file_state("POST_FINAL_MOVE", outfile)
 
-                self.generation_status = "Completato"
+                self.generation_status = "Completed"
 
         except subprocess.CalledProcessError as e:
-            self.log_message(f"❌ Errore generazione: {e}\n{e.stderr.strip()}")
-            self.generation_status = "Errore"
+            self.log_message(f"❌ Generation error: {e}\n{e.stderr.strip()}")
+            self.generation_status = "Error"
             raise
 
         except Exception as e:
-            self.log_message(f"❌ Errore inaspettato: {str(e)}")
-            self.generation_status = "Errore"
+            self.log_message(f"❌ Unexpected error: {str(e)}")
+            self.generation_status = "Error"
             raise
 
         finally:
@@ -489,22 +489,22 @@ class InfiniLoopTerminal:
                 return f"{word1} {word2}"
         except Exception:
             pass
-        return "SENZA TITOLO"
+        return "UNTITLED"
 
     def get_random_artist(self):
 
         try:
             with open("artisti.txt", "r") as f:
                 artists = [line.strip() for line in f if line.strip()]
-            return random.choice(artists).upper() if artists else "ARTISTA SCONOSCIUTO"
+            return random.choice(artists).upper() if artists else "UNKNOWN ARTIST"
         except Exception:
-            return "ARTISTA SCONOSCIUTO"
+            return "UNKNOWN ARTIST"
 
     def play_with_ffplay(self, filepath):
 
         try:
             if not self.validate_audio_file(filepath):
-                self.log_message(f"⚠️ File non valido per riproduzione: {filepath}")
+                self.log_message(f"⚠️ Invalid file for playback: {filepath}")
                 return
 
             env = os.environ.copy()
@@ -523,14 +523,14 @@ class InfiniLoopTerminal:
             self.debug_file_state("END_PLAYBACK", filepath)
 
             if return_code != 0:
-                self.log_message(f"⚠️ ffplay terminato con codice {return_code}")
+                self.log_message(f"⚠️ ffplay terminated with code {return_code}")
 
         except subprocess.TimeoutExpired:
-            self.log_message("⚠️ ffplay timeout - terminazione forzata")
+            self.log_message("⚠️ ffplay timeout - forced termination")
             self._kill_process_safely(process)
 
         except Exception as e:
-            self.log_message(f"⚠️ ffplay crash rilevato: {str(e)}")
+            self.log_message(f"⚠️ ffplay crash detected: {str(e)}")
             self._kill_process_safely(process)
 
         finally:
@@ -542,25 +542,25 @@ class InfiniLoopTerminal:
         try:
             duration = self.get_duration(filepath)
             if duration <= 0:
-                self.log_message(f"⚠️ File audio non valido: {filepath}")
+                self.log_message(f"⚠️ Invalid audio file: {filepath}")
                 return
 
             delay = max(0, duration - crossfade_sec)
             title = self.get_random_title()
             artist = self.get_random_artist()
 
-            print(f"\n🎧 ORA IN RIPRODUZIONE:")
-            print(f"   Titolo:  {title}")
-            print(f"   Artista: {artist}")
-            print(f"   Loop:    {duration:.1f} secondi")
-            print(f"   Genere:  {self.PROMPT}\n")
+            print(f"\n🎧 NOW PLAYING:")
+            print(f"   Title:   {title}")
+            print(f"   Artist:  {artist}")
+            print(f"   Loop:    {duration:.1f} seconds")
+            print(f"   Genre:   {self.PROMPT}\n")
 
             retry_count = 0
             max_retries = 3
 
             while self.is_playing and not stop_event.is_set():
                 if not self.validate_audio_file(filepath):
-                    self.log_message(f"⚠️ File corrotto rilevato durante loop: {filepath}")
+                    self.log_message(f"⚠️ Corrupted file detected during loop: {filepath}")
                     break
 
                 try:
@@ -582,10 +582,10 @@ class InfiniLoopTerminal:
                         break
 
         except Exception as e:
-            self.log_message(f"❌ Errore nel loop: {str(e)}")
+            self.log_message(f"❌ Error in loop: {str(e)}")
 
     def _log_retry_error(self, count, max_count, exc):
-        self.log_message(f"⚠️ Errore riproduzione (tentativo {count}/{max_count}): {str(exc)}")
+        self.log_message(f"⚠️ Playback error (attempt {count}/{max_count}): {str(exc)}")
 
 
     def safe_file_swap(self):
@@ -601,13 +601,13 @@ class InfiniLoopTerminal:
                     self.loop_thread.join(timeout=max_wait)
 
                     if self.loop_thread.is_alive():
-                        self.log_message("⚠️ Timeout attesa: forzo terminazione ffplay")
+                        self.log_message("⚠️ Timeout waiting: forcing ffplay termination")
                         self.kill_all_ffplay_processes()
                         self.loop_thread.join(timeout=2.0)
 
 
                 if not self.validate_audio_file(self.NEXT):
-                    raise Exception(f"⚠️ File NEXT non valido: {self.NEXT}")
+                    raise Exception(f"⚠️ Invalid NEXT file: {self.NEXT}")
 
 
                 with self.file_lock:
@@ -618,7 +618,7 @@ class InfiniLoopTerminal:
                 return True
 
             except Exception as e:
-                self.log_message(f"❌ Errore durante lo swap: {str(e)}")
+                self.log_message(f"❌ Error during swap: {str(e)}")
                 self.stop_event = threading.Event()
                 return False
 
@@ -647,7 +647,7 @@ class InfiniLoopTerminal:
 
 
                 if not self.safe_file_swap():
-                    self.log_message("❌ Swap fallito, rigenerazione...")
+                    self.log_message("❌ Swap failed, regenerating...")
                     continue
 
                 if not self.is_playing:
@@ -667,10 +667,10 @@ class InfiniLoopTerminal:
 
             except Exception as e:
                 consecutive_errors += 1
-                self.log_message(f"❌ Errore nel ciclo ({consecutive_errors}/{max_consecutive_errors}): {str(e)}")
+                self.log_message(f"❌ Error in cycle ({consecutive_errors}/{max_consecutive_errors}): {str(e)}")
 
                 if consecutive_errors >= max_consecutive_errors:
-                    self.log_message("❌ Troppi errori consecutivi, arresto loop")
+                    self.log_message("❌ Too many consecutive errors, stopping loop")
                     self.is_playing = False
                     break
 
@@ -695,18 +695,18 @@ class InfiniLoopTerminal:
                 self.kill_all_musicgpt_processes()
 
 
-                for file_path, file_name in [(self.CURRENT, "primo"), (self.NEXT, "secondo")]:
+                for file_path, file_name in [(self.CURRENT, "first"), (self.NEXT, "second")]:
                     if not self.validate_audio_file(file_path):
-                        self.log_message(f"📁 Generazione sample iniziale ({file_name})...")
+                        self.log_message(f"📁 Generating initial sample ({file_name})...")
                         self.generate_audio_safe(file_path)
                         if not self.is_playing:
                             return
 
 
                         if not self.validate_audio_file(file_path):
-                            raise Exception(f"File {file_path} non generato correttamente")
+                            raise Exception(f"File {file_path} not generated correctly")
 
-                        self.log_message(f"✅ File {os.path.basename(file_path)} generato e validato")
+                        self.log_message(f"✅ File {os.path.basename(file_path)} generated and validated")
 
 
                 self.run_loop()
@@ -716,15 +716,15 @@ class InfiniLoopTerminal:
 
             except Exception as e:
                 retry_count += 1
-                self.log_message(f"❌ Errore nel loop principale (tentativo {retry_count}/{max_retries}): {str(e)}")
+                self.log_message(f"❌ Error in main loop (attempt {retry_count}/{max_retries}): {str(e)}")
 
                 if retry_count >= max_retries:
-                    self.log_message("❌ Troppi errori, arresto applicazione")
+                    self.log_message("❌ Too many errors, stopping application")
                     self.is_playing = False
                     return
 
 
-                self.log_message(f"🔄 Reinizializzazione in corso...")
+                self.log_message(f"🔄 Reinitializing...")
                 self.kill_all_ffplay_processes()
                 self.kill_all_musicgpt_processes()
 
@@ -736,16 +736,16 @@ class InfiniLoopTerminal:
                     for filepath in [self.CURRENT, self.NEXT]:
                         if os.path.exists(filepath):
                             os.remove(filepath)
-                            self.log_message(f"🗑️ Rimosso {os.path.basename(filepath)}")
+                            self.log_message(f"🗑️ Removed {os.path.basename(filepath)}")
                 except Exception as remove_error:
-                    self.log_message(f"⚠️ Errore rimozione file: {remove_error}")
+                    self.log_message(f"⚠️ File removal error: {remove_error}")
 
     def start_loop(self, prompt):
         self.stop_requested = False
 
         self.PROMPT = prompt.strip()
         if not self.PROMPT:
-            print("❌ Errore: Inserisci un prompt!")
+            print("❌ Error: Please enter a prompt!")
             return False
 
         self.is_playing = True
@@ -761,7 +761,7 @@ class InfiniLoopTerminal:
         self.is_playing = False
         if hasattr(self, 'stop_event'):
             self.stop_event.set()
-        self.log_message("⏹️ Loop fermato")
+        self.log_message("⏹️ Loop stopped")
 
 
         self.kill_all_ffplay_processes()
@@ -795,7 +795,7 @@ class InfiniLoopTerminal:
                         subprocess.run(["kill", "-9", pid], check=False, timeout=2)
                     except:
                         pass
-                self.log_message(f"🛑 MusicGPT terminato")
+                self.log_message(f"🛑 MusicGPT terminated")
         except Exception as e:
 
             pass
@@ -807,60 +807,60 @@ class InfiniLoopTerminal:
             current_file = self.CURRENT
 
             if not self.validate_audio_file(current_file):
-                print("❌ Nessun loop valido da salvare!")
+                print("❌ No valid loop to save!")
                 return False
 
             try:
 
                 shutil.copy2(current_file, filename)
-                self.log_message(f"💾 Loop salvato: {filename} (da {os.path.basename(current_file)})")
+                self.log_message(f"💾 Loop saved: {filename} (from {os.path.basename(current_file)})")
                 return True
             except Exception as e:
-                self.log_message(f"❌ Errore salvataggio: {str(e)}")
+                self.log_message(f"❌ Save error: {str(e)}")
                 return False
 
     def print_status(self):
 
-        status = "🟢 IN RIPRODUZIONE" if self.is_playing else "🔴 FERMO"
-        generation = "🎼 SÌ" if self.is_generating else "💤 NO"
+        status = "🟢 PLAYING" if self.is_playing else "🔴 STOPPED"
+        generation = "🎼 YES" if self.is_generating else "💤 NO"
 
-        print(f"\n📊 STATO INFINI LOOP:")
+        print(f"\n📊 INFINI LOOP STATUS:")
         print(f"   Status:       {status}")
         print(f"   Prompt:       '{self.PROMPT}'")
-        print(f"   Durata gen.:  {self.duration}s")
-        print(f"   Driver audio: {self.audio_driver}")
-        print(f"   Generazione:  {generation}")
+        print(f"   Gen. duration: {self.duration}s")
+        print(f"   Audio driver: {self.audio_driver}")
+        print(f"   Generating:   {generation}")
         if self.is_generating:
-            print(f"   Stato gen.:   {self.generation_status}")
+            print(f"   Gen. status:  {self.generation_status}")
 
 
-        print(f"\n📂 STATO FILE:")
+        print(f"\n📂 FILE STATUS:")
         with self.file_lock:
-            print(f"   File corrente: {os.path.basename(self.CURRENT)}")
+            print(f"   Current file: {os.path.basename(self.CURRENT)}")
             if self.validate_audio_file(self.CURRENT):
                 size = os.path.getsize(self.CURRENT)
-                print(f"                  ✅ Valido ({size} bytes)")
+                print(f"                 ✅ Valid ({size} bytes)")
             else:
-                print(f"                  ❌ Non valido o mancante")
+                print(f"                 ❌ Invalid or missing")
 
-            print(f"   File prossimo: {os.path.basename(self.NEXT)}")
+            print(f"   Next file:    {os.path.basename(self.NEXT)}")
             if self.validate_audio_file(self.NEXT):
                 size = os.path.getsize(self.NEXT)
-                print(f"                  ✅ Valido ({size} bytes)")
+                print(f"                 ✅ Valid ({size} bytes)")
             else:
-                print(f"                  ❌ Non valido o mancante")
+                print(f"                 ❌ Invalid or missing")
         print()
 
 def interactive_mode(app):
 
     try:
-        print("   MODALITÀ INTERATTIVA")
-        print("    start <prompt>  - Avvia loop con prompt")
-        print("    stop            - Ferma loop")
-        print("    help            - Mostra tutti i comandi")
-        print("    quit            - Esci")
+        print("   INTERACTIVE MODE")
+        print("    start <prompt>  - Start loop with prompt")
+        print("    stop            - Stop loop")
+        print("    help            - Show all commands")
+        print("    quit            - Exit")
     except Exception as e:
-        print(f"❌ Errore nell'inizializzazione modalità interattiva: {e}")
+        print(f"❌ Error initializing interactive mode: {e}")
         import traceback
         traceback.print_exc()
         return
@@ -873,7 +873,7 @@ def interactive_mode(app):
 
             if cmd[0] == "start":
                 if len(cmd) < 2:
-                    print("❌ Uso: start <prompt>")
+                    print("❌ Usage: start <prompt>")
                     continue
                 prompt = " ".join(cmd[1:])
                 app.start_loop(prompt)
@@ -886,68 +886,68 @@ def interactive_mode(app):
 
             elif cmd[0] == "save":
                 if len(cmd) < 2:
-                    print("❌ Uso: save <filename>")
+                    print("❌ Usage: save <filename>")
                     continue
                 filename = cmd[1]
 
                 if not filename.endswith('.wav'):
                     filename += '.wav'
                 if app.save_current_loop(filename):
-                    print(f"✅ Loop salvato come: {filename}")
+                    print(f"✅ Loop saved as: {filename}")
                 else:
-                    print("❌ Impossibile salvare il loop")
+                    print("❌ Unable to save loop")
 
             elif cmd[0] == "debug":
                 if len(cmd) > 1 and cmd[1] in ["on", "off"]:
                     app.debug_mode = (cmd[1] == "on")
                     print(f"🐛 Debug mode: {'ON' if app.debug_mode else 'OFF'}")
                 else:
-                    print(f"🐛 Debug mode attuale: {'ON' if app.debug_mode else 'OFF'}")
-                    print("💡 Usa 'debug on' o 'debug off' per cambiare")
+                    print(f"🐛 Current debug mode: {'ON' if app.debug_mode else 'OFF'}")
+                    print("💡 Use 'debug on' or 'debug off' to change")
 
             elif cmd[0] == "validate":
                 if len(cmd) < 2:
-                    print("❌ Uso: validate <current|next|both>")
+                    print("❌ Usage: validate <current|next|both>")
                     continue
 
                 target = cmd[1].lower()
                 if target in ["current", "both"]:
                     valid = app.validate_audio_file(app.CURRENT)
-                    print(f"📁 File corrente: {'✅ VALIDO' if valid else '❌ NON VALIDO'}")
+                    print(f"📁 Current file: {'✅ VALID' if valid else '❌ INVALID'}")
 
                 if target in ["next", "both"]:
                     valid = app.validate_audio_file(app.NEXT)
-                    print(f"📁 File prossimo: {'✅ VALIDO' if valid else '❌ NON VALIDO'}")
+                    print(f"📁 Next file: {'✅ VALID' if valid else '❌ INVALID'}")
 
             elif cmd[0] == "set":
                 if len(cmd) < 2:
-                    print("❌ Opzioni disponibili:")
-                    print("    duration  - Durata sample generati")
-                    print("    driver    - Driver audio di sistema")
-                    print("💡 Usa 'set <opzione>' per cambiare")
+                    print("❌ Available options:")
+                    print("    duration  - Generated sample duration")
+                    print("    driver    - System audio driver")
+                    print("💡 Use 'set <option>' to change")
                     continue
 
                 option = cmd[1]
                 if option == "duration":
-                    print("\n⏱️ DURATA GENERAZIONE:")
-                    print("    Range: 5-30 secondi")
-                    print("    Consiglio: 10-15s per loop brevi, 20-30s per brani più lunghi")
+                    print("\n⏱️ GENERATION DURATION:")
+                    print("    Range: 5-30 seconds")
+                    print("    Tip: 10-15s for short loops, 20-30s for longer tracks")
                     try:
-                        duration = int(input("Durata in secondi [5-30]: "))
+                        duration = int(input("Duration in seconds [5-30]: "))
                         if 5 <= duration <= 30:
                             app.duration = duration
-                            print(f"✅ Durata: {app.duration}s")
+                            print(f"✅ Duration: {app.duration}s")
                         else:
-                            print("❌ Durata deve essere tra 5 e 30 secondi")
+                            print("❌ Duration must be between 5 and 30 seconds")
                     except ValueError:
-                        print("❌ Valore non numerico")
+                        print("❌ Non-numeric value")
 
                 elif option == "driver":
-                    print("\n🔊 DRIVER AUDIO DISPONIBILI:")
-                    print("    pulse - PulseAudio (Linux standard, consigliato)")
+                    print("\n🔊 AVAILABLE AUDIO DRIVERS:")
+                    print("    pulse - PulseAudio (Linux standard, recommended)")
                     print("    alsa  - ALSA (Linux low-level)")
-                    print("    dsp   - OSS (sistemi Unix/BSD)")
-                    choice = input("Scegli driver [pulse/alsa/dsp]: ").strip().lower()
+                    print("    dsp   - OSS (Unix/BSD systems)")
+                    choice = input("Choose driver [pulse/alsa/dsp]: ").strip().lower()
                     if choice in ['pulse', 'pulseaudio']:
                         app.audio_driver = 'pulse'
                         print("✅ Driver: PulseAudio")
@@ -958,26 +958,26 @@ def interactive_mode(app):
                         app.audio_driver = 'dsp'
                         print("✅ Driver: OSS")
                     else:
-                        print("❌ Driver non valido")
+                        print("❌ Invalid driver")
                 else:
-                    print(f"❌ Opzione '{option}' non riconosciuta")
-                    print("💡 Opzioni: duration, driver")
+                    print(f"❌ Option '{option}' not recognized")
+                    print("💡 Options: duration, driver")
 
             elif cmd[0] == "help":
-                print("\n🆘 COMANDI DISPONIBILI:")
-                print("   start '<prompt>'    - Avvia loop infinito con prompt")
-                print("   stop                - Ferma riproduzione corrente")
-                print("   status              - Mostra stato dettagliato sistema")
-                print("   save <file.wav>     - Salva loop corrente su file")
-                print("   validate <target>   - Valida file audio (current/next/both - per debug")
-                print("   debug <on|off>      - Attiva/disattiva i messaggi di debug")
-                print("   set <opzione>       - Cambia impostazioni (vedi sotto)")
-                print("   help                - Mostra questo aiuto")
-                print("   quit/exit/q         - Esci dal programma")
-                print("\n⚙️ OPZIONI CONFIGURABILI:")
-                print("   set duration        - Cambia durata generazione (5-30s)")
-                print("   set driver          - Cambia driver audio (pulse/alsa/dsp)")
-                print("\n💡 ESEMPI:")
+                print("\n🆘 AVAILABLE COMMANDS:")
+                print("   start '<prompt>'    - Start infinite loop with prompt")
+                print("   stop                - Stop current playback")
+                print("   status              - Show detailed system status")
+                print("   save <file.wav>     - Save current loop to file")
+                print("   validate <target>   - Validate audio files (current/next/both - for debug)")
+                print("   debug <on|off>      - Enable/disable debug messages")
+                print("   set <option>        - Change settings (see below)")
+                print("   help                - Show this help")
+                print("   quit/exit/q         - Exit program")
+                print("\n⚙️ CONFIGURABLE OPTIONS:")
+                print("   set duration        - Change generation duration (5-30s)")
+                print("   set driver          - Change audio driver (pulse/alsa/dsp)")
+                print("\n💡 EXAMPLES:")
                 print("   start 'ambient chill loop'")
                 print("   start 'jazz piano solo'")
                 print("   save my_loop.wav")
@@ -986,23 +986,23 @@ def interactive_mode(app):
 
             elif cmd[0] in ["quit", "exit", "q"]:
                 app.stop_loop()
-                print("👋 Arrivederci!")
+                print("👋 Goodbye!")
                 break
 
             else:
-                print(f"❌ Comando non riconosciuto: {cmd[0]}")
-                print("💡 Usa 'help' per vedere i comandi disponibili")
+                print(f"❌ Unknown command: {cmd[0]}")
+                print("💡 Use 'help' to see available commands")
 
         except KeyboardInterrupt:
             app.stop_loop()
-            print("\n👋 Arrivederci!")
+            print("\n👋 Goodbye!")
             break
         except EOFError:
             app.stop_loop()
-            print("\n👋 Arrivederci!")
+            print("\n👋 Goodbye!")
             break
         except Exception as e:
-            print(f"❌ Errore imprevisto: {str(e)}")
+            print(f"❌ Unexpected error: {str(e)}")
             import traceback
             traceback.print_exc()
             continue
@@ -1012,58 +1012,58 @@ def main():
         description="INFINI LOOP TERMINAL - Infinite AI Music Generation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Esempi d'uso:
+Usage examples:
   %(prog)s --prompt "ambient loop"
   %(prog)s --duration 20 --prompt "jazz loop"
   %(prog)s --interactive
   %(prog)s --generate-only "rock loop" output.wav
 
-Impostazioni fisse:
-  Algoritmo: Avanzato con fallback (spettrale + waveform + beat + fase)
-  Modello AI: Medium (bilanciato)
-  Crossfade: 1ms (minimo)
+Fixed settings:
+  Algorithm: Advanced with fallback (spectral + waveform + beat + phase)
+  AI Model: Medium (balanced)
+  Crossfade: 1ms (minimum)
 
-CORREZIONI APPLICATE:
-  ✅ Race condition nel file swapping eliminata
-  ✅ Validazione audio completa implementata
-  ✅ File temporanei sicuri con context manager
-  ✅ Swap sincronizzato con fine loop naturale
-  ✅ Debug mode per troubleshooting
+APPLIED FIXES:
+  ✅ Race condition in file swapping eliminated
+  ✅ Complete audio validation implemented
+  ✅ Safe temporary files with context manager
+  ✅ Swap synchronized with natural loop end
+  ✅ Debug mode for troubleshooting
         """
     )
 
 
     parser.add_argument("--prompt", "-p", type=str,
-                       help="Prompt per la generazione")
+                       help="Prompt for generation")
 
     parser.add_argument("--interactive", "-i", action="store_true",
-                       help="Modalità interattiva")
+                       help="Interactive mode")
 
     parser.add_argument("--generate-only", "-g", nargs=2, metavar=("PROMPT", "OUTPUT"),
-                       help="Genera solo un loop e salva (prompt, file_output)")
+                       help="Generate only one loop and save (prompt, output_file)")
 
 
     parser.add_argument("--duration", "-d", type=int, default=15,
-                       help="Durata generazione in secondi (5-30)")
+                       help="Generation duration in seconds (5-30)")
 
     parser.add_argument("--driver", choices=["pulse", "alsa", "dsp"],
-                       default="pulse", help="Driver audio")
+                       default="pulse", help="Audio driver")
 
 
     parser.add_argument("--verbose", "-v", action="store_true",
-                       help="Output dettagliato")
+                       help="Detailed output")
 
     parser.add_argument("--quiet", "-q", action="store_true",
-                       help="Output minimale")
+                       help="Minimal output")
 
     parser.add_argument("--no-debug", action="store_true",
-                       help="Disabilita debug mode")
+                       help="Disable debug mode")
 
     args = parser.parse_args()
 
 
     if args.duration < 5 or args.duration > 30:
-        print("❌ Errore: Durata deve essere tra 5 e 30 secondi")
+        print("❌ Error: Duration must be between 5 and 30 seconds")
         sys.exit(1)
 
 
@@ -1079,10 +1079,10 @@ CORREZIONI APPLICATE:
     app.audio_driver = args.driver
     app.debug_mode = False if args.no_debug else False
 
-    print(f"🧠 Algoritmo:        Avanzato con fallback")
-    print(f"🤖 Modello AI:       Medium")
-    print(f"⏱️ Durata sample:    {app.duration}s")
-    print(f"🔊 Driver audio:     {app.audio_driver}")
+    print(f"🧠 Algorithm:        Advanced with fallback")
+    print(f"🤖 AI Model:         Medium")
+    print(f"⏱️ Sample duration:  {app.duration}s")
+    print(f"🔊 Audio driver:     {app.audio_driver}")
     print(f"🐛 Debug mode:       {'ON' if app.debug_mode else 'OFF'}")
 
     try:
@@ -1090,10 +1090,10 @@ CORREZIONI APPLICATE:
         if args.generate_only:
             prompt, output_file = args.generate_only
             app.PROMPT = prompt
-            print(f"\n🎼 Generazione singola: '{prompt}'")
+            print(f"\n🎼 Single generation: '{prompt}'")
 
             app.generate_audio_safe(output_file)
-            print(f"✅ Loop salvato: {output_file}")
+            print(f"✅ Loop saved: {output_file}")
             return
 
 
@@ -1104,26 +1104,26 @@ CORREZIONI APPLICATE:
 
         elif args.prompt:
             if app.start_loop(args.prompt):
-                print("🎵 Loop avviato! Premi Ctrl+C per fermare")
+                print("🎵 Loop started! Press Ctrl+C to stop")
                 try:
 
                     while app.is_playing:
                         time.sleep(1)
                 except KeyboardInterrupt:
                     app.stop_loop()
-                    print("\n👋 Arrivederci!")
+                    print("\n👋 Goodbye!")
             return
 
 
         else:
-            print("\n💡 Nessun prompt specificato:")
+            print("\n💡 No prompt specified:")
             interactive_mode(app)
 
     except KeyboardInterrupt:
         app.stop_loop()
-        print("\n👋 Arrivederci!")
+        print("\n👋 Goodbye!")
     except Exception as e:
-        print(f"\n❌ Errore: {str(e)}")
+        print(f"\n❌ Error: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":
