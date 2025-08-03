@@ -33,10 +33,10 @@ class InfiniLoopTerminal:
 
         self.CROSSFADE_MS = 2000
         self.CROSSFADE_SEC = self.CROSSFADE_MS / 1000.0
-        self.LOOP_OVERLAP_MS = 200  # Overlap tra loop, in millisecondi
+        self.LOOP_OVERLAP_MS = 12
         self.PROMPT = ""
         self.model = "medium"
-        self.duration = 15
+        self.duration = 8
         if os.path.exists("/proc/asound") and os.access("/dev/snd", os.R_OK | os.X_OK):
             self.audio_driver = "alsa"
         else:
@@ -594,6 +594,8 @@ class InfiniLoopTerminal:
                 self.debug_file_state("PRE_GENERATION", raw_temp)
 
                 result = subprocess.run([
+                    "ionice", "-c", "2", "-n", "7",       # Bassa priorità I/O
+                    "nice", "-n", "10",                  # Bassa priorità CPU
                     "./musicgpt-x86_64-unknown-linux-gnu",
                     prompt,
                     "--model", model,
@@ -639,6 +641,7 @@ class InfiniLoopTerminal:
             self.is_generating = False
 
 
+
     def get_duration(self, filepath):
 
         try:
@@ -674,7 +677,7 @@ class InfiniLoopTerminal:
             return "UNKNOWN ARTIST"
 
     def play_with_ffplay(self, filepath):
-
+        process = None
         try:
             if not self.validate_audio_file(filepath):
                 self.log_message(f"❌ Invalid file for playback, can't tell why: {filepath}")
@@ -687,6 +690,8 @@ class InfiniLoopTerminal:
 
             process = subprocess.Popen(
                 [
+                    "ionice", "-c", "2", "-n", "0",            # I/O alta priorità
+                    "taskset", "-c", "2",                      # Affinità CPU su core 2
                     "ffplay",
                     "-nodisp",
                     "-autoexit",
@@ -702,7 +707,6 @@ class InfiniLoopTerminal:
                 stderr=subprocess.DEVNULL
             )
 
-
             return_code = process.wait()
             self.debug_file_state("END_PLAYBACK", filepath)
 
@@ -711,15 +715,18 @@ class InfiniLoopTerminal:
 
         except subprocess.TimeoutExpired:
             self.log_message("❌ ffplay timeout - forced termination")
-            self._kill_process_safely(process)
+            if process:
+                self._kill_process_safely(process)
 
         except Exception as e:
             self.log_message(f"❌ ffplay crash detected: {str(e)}")
-            self._kill_process_safely(process)
+            if process:
+                self._kill_process_safely(process)
 
         finally:
             if process and process.poll() is None:
                 self._kill_process_safely(process)
+
 
     def loop_current_crossfade_blocking(self, filepath, crossfade_sec_unused, stop_event):
         try:
