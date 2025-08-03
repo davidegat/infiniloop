@@ -17,6 +17,7 @@ import signal
 import tempfile
 import shutil
 import contextlib
+import psutil
 
 class InfiniLoopTerminal:
     def __init__(self):
@@ -32,8 +33,10 @@ class InfiniLoopTerminal:
         self.PROMPT = ""
         self.model = "medium"
         self.duration = 15
-        self.audio_driver = "pulse"
-
+        if os.path.exists("/proc/asound") and os.access("/dev/snd", os.R_OK | os.X_OK):
+            self.audio_driver = "alsa"
+        else:
+            self.audio_driver = "pulse"
         self.is_playing = False
         self.stop_event = threading.Event()
         self.loop_thread = None
@@ -290,11 +293,11 @@ class InfiniLoopTerminal:
                 return default
 
         # Main loop over measures and positions
-        for meas in [2, 4, 8]:
+        for meas in [4, 6, 8]:
             samples = int(meas * 4 * beat_len * sr)
 
             # Duration validation
-            if not (3 * sr <= samples <= len(y) * 0.9):
+            if not (6 * sr <= samples <= len(y) * 0.9):
                 self.log_message(f"❌ Duration {samples/sr:.1f}s out of range, skipping {meas} measures")
                 continue
 
@@ -439,7 +442,7 @@ class InfiniLoopTerminal:
                 except Exception as err:
                     raise Exception(f"File written but not readable: {err}")
 
-            self.log_message(f"🧬 Perfect loop obtained! (Maybe...)\n"
+            self.log_message(f"🧬 Perfect loop obtained! (Allegedly...)\n"
                             f"              {loop_info['measures']} measures, {dur:.1f}s, "
                             f"Score: {loop_info['score']:.3f}")
 
@@ -561,11 +564,22 @@ class InfiniLoopTerminal:
             self.debug_file_state("START_PLAYBACK", filepath)
 
             process = subprocess.Popen(
-                ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", filepath],
+                [
+                    "ffplay",
+                    "-nodisp",
+                    "-autoexit",
+                    "-loglevel", "quiet",
+                    "-infbuf",
+                    "-probesize", "32",
+                    "-analyzeduration", "0",
+                    "-f", "wav",
+                    os.path.abspath(filepath)
+                ],
                 env=env,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
+
 
             return_code = process.wait()
             self.debug_file_state("END_PLAYBACK", filepath)
@@ -672,27 +686,29 @@ class InfiniLoopTerminal:
 
 
     def run_loop(self):
-
-
-        loop_thread = threading.Thread(
+        self.stop_event = threading.Event()
+        self.loop_thread = threading.Thread(
             target=self.loop_current_crossfade_blocking,
             args=(self.CURRENT, self.CROSSFADE_SEC, self.stop_event),
             daemon=True
         )
-        loop_thread.start()
-        self.loop_thread = loop_thread
+        self.loop_thread.start()
+        try:
+            import psutil
+            p = psutil.Process(self.loop_thread.ident)
+            p.nice(-10)
+        except Exception:
+            pass
 
         consecutive_errors = 0
         max_consecutive_errors = 5
 
         while self.is_playing:
             try:
-
                 self.generate_audio_safe(self.NEXT)
 
                 if not self.is_playing:
                     break
-
 
                 if not self.safe_file_swap():
                     self.log_message("❌ Swap failed, regenerating...")
@@ -701,15 +717,19 @@ class InfiniLoopTerminal:
                 if not self.is_playing:
                     break
 
-
                 loop_thread = threading.Thread(
                     target=self.loop_current_crossfade_blocking,
                     args=(self.CURRENT, self.CROSSFADE_SEC, self.stop_event),
                     daemon=True
                 )
                 loop_thread.start()
+                try:
+                    import psutil
+                    p = psutil.Process(loop_thread.ident)
+                    p.nice(-10)
+                except Exception:
+                    pass
                 self.loop_thread = loop_thread
-
 
                 consecutive_errors = 0
 
@@ -722,14 +742,13 @@ class InfiniLoopTerminal:
                     self.is_playing = False
                     break
 
-
                 self.kill_all_ffplay_processes()
-
 
                 if not self.stop_event.wait(2.0):
                     continue
                 else:
                     break
+
 
     def main_loop(self):
 
