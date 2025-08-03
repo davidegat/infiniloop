@@ -102,7 +102,7 @@ sudo apt install -y ffmpeg pulseaudio-utils alsa-utils python3-pip python3-dev p
 ### Step 2: Install Python Dependencies
 
 ```bash
-pip install librosa soundfile scipy numpy pydub matplotlib pillow pyaudio
+pip install librosa soundfile scipy numpy pydub matplotlib pillow pyaudio psutil
 ```
 
 ### Step 3: Download INFINI LOOP
@@ -347,14 +347,15 @@ Come minimo, il tuo sistema deve avere le seguenti caratteristiche per far girar
 ### Passo 1: Installa Dipendenze di Sistema
 
 ```bash
-pip install librosa soundfile scipy numpy pydub matplotlib pillow pyaudio
+sudo apt update
+sudo apt install -y ffmpeg pulseaudio-utils alsa-utils python3-pip python3-dev portaudio19-dev python3-tk
 ```
 
 ### Passo 2: Installa Dipendenze Python
 
 ```bash
 # Installa dipendenze principali
-pip install librosa soundfile scipy numpy pydub matplotlib pillow pyaudio
+pip install librosa soundfile scipy numpy pydub matplotlib pillow pyaudio psutil
 ```
 
 ### Passo 3: Scarica INFINI LOOP
