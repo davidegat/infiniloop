@@ -125,7 +125,7 @@ chmod +x musicgpt-x86_64-unknown-linux-gnu
 ```
 
 ## Usage
-Note: MusicGPT will download the selected model (medium by default) at first startup. The initial generation will be significantly slower than subsequent ones. This applies to every version of INFINI LOOP.
+Note: MusicGPT will download the selected model (medium by default) at first startup. The very first generation will be significantly slower than subsequent ones. This applies to every version of INFINI LOOP.
 
 ### Terminal Version (`ilterm.py`)
 
@@ -376,7 +376,7 @@ cd infiniloop
 chmod +x musicgpt-x86_64-unknown-linux-gnu
 ```
 ## Utilizzo
-Nota: Al primo avvio, MusicGPT scaricherà il modello selezionato (di default medium). La prima generazione sarà significativamente più lenta rispetto alle successive. Questo vale per ogni versione di INFINI LOOP.
+Nota: Al primo avvio, MusicGPT scaricherà il modello selezionato (di default medium). La primissima generazione sarà significativamente più lenta rispetto alle successive. Questo vale per ogni versione di INFINI LOOP.
 
 ### Versione Terminale (`ilterm.py`)
 
