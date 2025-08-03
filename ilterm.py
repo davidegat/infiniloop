@@ -31,8 +31,9 @@ class InfiniLoopTerminal:
         self.CURRENT = self.FILE1
         self.NEXT = self.FILE2
 
-        self.CROSSFADE_MS = 0
+        self.CROSSFADE_MS = 2000
         self.CROSSFADE_SEC = self.CROSSFADE_MS / 1000.0
+        self.LOOP_OVERLAP_MS = 200  # Overlap tra loop, in millisecondi
         self.PROMPT = ""
         self.model = "medium"
         self.duration = 15
@@ -70,7 +71,7 @@ class InfiniLoopTerminal:
                 if os.path.exists(temp_file):
                     os.unlink(temp_file)
             except Exception as e:
-                self.log_message(f"⚠️ Could not clean temp file {temp_file}: {e}")
+                self.log_message(f"⚠️ Could not clean temp file, kinda? {temp_file}: {e}")
         self._temp_files_to_cleanup.clear()
 
 
@@ -326,7 +327,7 @@ class InfiniLoopTerminal:
             return self.find_perfect_loop_advanced(y, sr)
         except Exception as e:
             self.log_message(f"❌ Advanced algorithm failed: {e}")
-            self.log_message("🔄 Using simple fallback algorithm...")
+            self.log_message("🔄 Using fallback algorithm...")
 
             return self.find_perfect_loop_simple(y, sr)
 
@@ -336,17 +337,17 @@ class InfiniLoopTerminal:
 
 
         if not len(y) or sr <= 0:
-            raise Exception(f"Invalid input: empty audio or sr={sr}")
+            raise Exception(f"Invalid input: empty audio from AI?")
 
 
         try:
             tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units='samples')
             tempo = float(tempo)
         except Exception as e:
-            raise Exception(f"Beat tracking error: {e}")
+            raise Exception(f"Beat tracking error, bad AI generation maybe: {e}")
 
         if not 30 < tempo <= 300:
-            raise Exception(f"Invalid tempo: {tempo} BPM")
+            raise Exception(f"Invalid tempo: {tempo} BPM, are you serious?")
 
 
         hop_length = 256
@@ -456,7 +457,7 @@ class InfiniLoopTerminal:
 
 
                     if score > best_score_threshold:
-                        self.log_message(f"🎯 Excellent loop found early (score: {score:.3f})")
+                        self.log_message(f"🎯 Excellent loop found so early! (score: {score:.3f})")
                         break
 
 
@@ -465,13 +466,13 @@ class InfiniLoopTerminal:
 
 
         if best['score'] < 0.15:
-            raise Exception(f"No valid loop found (best score: {best['score']:.3f})")
+            raise Exception(f"No interesting loop found (best score: {best['score']:.3f})")
 
         dur = (best['end'] - best['start']) / sr
         if dur < 1.5:
             raise Exception(f"Loop too short: {dur:.1f}s")
 
-        self.log_message(f"✅ Ultra-advanced loop found! {best['measures']} meas, "
+        self.log_message(f"✅ Ultra-cool loop found! {best['measures']} meas, "
                         f"Score: {best['score']:.3f}, Dur: {dur:.1f}s")
 
         return {
@@ -488,7 +489,7 @@ class InfiniLoopTerminal:
 
 
             if not self.validate_audio_file(input_file):
-                raise Exception(f"Invalid input file: {input_file}")
+                raise Exception(f"Invalid input file, bad AI generation?: {input_file}")
 
             y, sr = librosa.load(input_file, sr=None, mono=True)
 
@@ -496,8 +497,8 @@ class InfiniLoopTerminal:
             validations = [
                 (not len(y), "Loaded audio is empty"),
                 (sr <= 0, f"Invalid sample rate: {sr}"),
-                (np.isnan(y).any() or np.isinf(y).any(), "Audio contains NaN or infinite values"),
-                (len(y) / sr < 2.0, f"Audio too short for loop detection: {len(y)/sr:.1f}s")
+                (np.isnan(y).any() or np.isinf(y).any(), "Audio contains bad values"),
+                (len(y) / sr < 2.0, f"Audio too short for loop detection... running on the low?: {len(y)/sr:.1f}s")
             ]
 
             for condition, message in validations:
@@ -516,7 +517,7 @@ class InfiniLoopTerminal:
             s, e = (self.find_optimal_zero_crossing(y, pos) for pos in (s, e))
 
             if not (0 <= s < e <= len(y)):
-                raise Exception(f"Loop bounds corrupted after zero-crossing: {s} -> {e}")
+                raise Exception(f"Loop bounds corrupted after zero-crossing: {s} -> {e} sorry, I messed up...")
 
 
             print("\n📊 Loop metrics:")
@@ -531,7 +532,7 @@ class InfiniLoopTerminal:
                 raise Exception(f"Loop too short: {dur:.1f}s")
 
             if np.isnan(y_loop).any() or np.isinf(y_loop).any():
-                raise Exception("Extracted loop contains NaN or infinite values")
+                raise Exception("Extracted loop contains trash...maybe my fault...")
 
 
             fade_samples = int(sr * 0.01)
@@ -551,17 +552,17 @@ class InfiniLoopTerminal:
 
 
             if os.path.getsize(output_file) < 1024:
-                raise Exception("Output file too small")
+                raise Exception("Output file too small, enlarge it please.")
 
             self.debug_file_state("POST_LOOP_DETECTION", output_file)
 
             if not self.validate_audio_file(output_file):
                 try:
                     test_y, test_sr = librosa.load(output_file, sr=None, mono=True)
-                    raise Exception(f"File written but validation failed "
+                    raise Exception(f"WTF Error #1 "
                                 f"(dur: {len(test_y)/test_sr:.1f}s, samples: {len(test_y)})")
                 except Exception as err:
-                    raise Exception(f"File written but not readable: {err}")
+                    raise Exception(f"WTF ERROR #2: {err}")
 
             self.log_message(f"🧬 Perfect loop obtained! (Allegedly...)\n"
                             f"              {loop_info['measures']} measures, {dur:.1f}s, "
@@ -572,11 +573,11 @@ class InfiniLoopTerminal:
             if os.path.exists(output_file):
                 try:
                     os.remove(output_file)
-                    self.log_message(f"🗑️ Removed corrupted file: {os.path.basename(output_file)}")
+                    self.log_message(f"🗑️ Removed nasty file: {os.path.basename(output_file)}")
                 except:
                     pass
 
-            self.log_message(f"❌ Loop detection error: {e}")
+            self.log_message(f"❌ Loop detection error (AKA WTF Error #3): {e}")
             raise
 
 
@@ -606,7 +607,7 @@ class InfiniLoopTerminal:
                 self.debug_file_state("POST_GENERATION", raw_temp)
 
                 if not self.validate_audio_file(raw_temp):
-                    raise Exception("Audio file generated with errors from AI.")
+                    raise Exception("Sorry, AI messed up with this file. Can't use it.")
 
                 os.system("cls" if os.name == "nt" else "clear")
                 self.log_message(f"🎼 Sample generated ({duration}s)!")
@@ -615,14 +616,14 @@ class InfiniLoopTerminal:
                 self.process_loop_detection(raw_temp, processed_temp)
 
                 if not self.validate_audio_file(processed_temp):
-                    raise Exception("File corrupted after loop detection")
+                    raise Exception("File corrupted after loop detection. My fault.")
 
                 self.debug_file_state("PRE_FINAL_MOVE", processed_temp)
                 with self.file_lock:
                     shutil.move(processed_temp, outfile)
                 self.debug_file_state("POST_FINAL_MOVE", outfile)
 
-                self.generation_status = "Completed"
+                self.generation_status = "Completed!"
 
         except subprocess.CalledProcessError as e:
             self.log_message(f"❌ Generation error: {e}\n{e.stderr.strip()}")
@@ -630,7 +631,7 @@ class InfiniLoopTerminal:
             raise
 
         except Exception as e:
-            self.log_message(f"❌ Unexpected error: {str(e)}")
+            self.log_message(f"❌ Unexpected WTF error #n: {str(e)}")
             self.generation_status = "Error"
             raise
 
@@ -676,7 +677,7 @@ class InfiniLoopTerminal:
 
         try:
             if not self.validate_audio_file(filepath):
-                self.log_message(f"❌ Invalid file for playback: {filepath}")
+                self.log_message(f"❌ Invalid file for playback, can't tell why: {filepath}")
                 return
 
             env = os.environ.copy()
@@ -720,16 +721,12 @@ class InfiniLoopTerminal:
             if process and process.poll() is None:
                 self._kill_process_safely(process)
 
-    def loop_current_crossfade_blocking(self, filepath, crossfade_sec, stop_event):
+    def loop_current_crossfade_blocking(self, filepath, crossfade_sec_unused, stop_event):
         try:
             duration = self.get_duration(filepath)
             if duration <= 0:
-                self.log_message(f"❌ Invalid audio file: {filepath}")
+                self.log_message(f"❌ Invalid audio file: {filepath}, kinda a WTF error, but anyway...")
                 return
-
-
-            crossfade_sec = min(crossfade_sec, duration / 2)
-            delay = max(0, duration - crossfade_sec)
 
             title = self.get_random_title()
             artist = self.get_random_artist()
@@ -737,7 +734,6 @@ class InfiniLoopTerminal:
             print(f"   Title:   {title}")
             print(f"   Artist:  {artist}")
             print(f"   Loop:    {duration:.1f} seconds")
-            print(f"   Crossfade: {crossfade_sec:.1f} seconds")
             print(f"   Genre:   {self.PROMPT}\n")
 
             retry_count = 0
@@ -749,40 +745,19 @@ class InfiniLoopTerminal:
                     break
 
                 try:
+                    # Calcola overlap in secondi (con limite massimo = durata - 0.1s)
+                    overlap_sec = max(0.0, min(self.LOOP_OVERLAP_MS, duration * 1000 - 100) / 1000.0)
+                    play_delay = max(0.1, duration - overlap_sec)
 
-                    has_next_track = hasattr(self, 'NEXT') and self.NEXT and self.NEXT != filepath
+                    # Avvia la riproduzione del file
+                    thread = threading.Thread(
+                        target=self.play_with_ffplay, args=(filepath,), daemon=True
+                    )
+                    thread.start()
 
-                    if has_next_track and crossfade_sec > 0:
-
-                        crossfade_output = self._create_crossfade_audio(filepath, self.NEXT, crossfade_sec, duration)
-                        if crossfade_output:
-                            thread = threading.Thread(
-                                target=self.play_with_ffplay, args=(crossfade_output,), daemon=True
-                            )
-                            thread.start()
-
-                            if stop_event.wait(duration):
-                                break
-                        else:
-
-                            self._play_single_track_with_fade(filepath, duration, crossfade_sec, stop_event, delay)
-
-                    elif filepath == self.CURRENT and crossfade_sec > 0:
-
-                        self._play_single_track_with_fade(filepath, duration, crossfade_sec, stop_event, delay, fade_type="out")
-
-                    elif filepath == self.NEXT and crossfade_sec > 0:
-
-                        self._play_single_track_with_fade(filepath, duration, crossfade_sec, stop_event, delay, fade_type="in")
-
-                    else:
-
-                        thread = threading.Thread(
-                            target=self.play_with_ffplay, args=(filepath,), daemon=True
-                        )
-                        thread.start()
-                        if stop_event.wait(delay):
-                            break
+                    # Attende la fine del ciclo meno l'overlap
+                    if stop_event.wait(play_delay):
+                        break
 
                     retry_count = 0
 
@@ -793,7 +768,10 @@ class InfiniLoopTerminal:
                         break
 
         except Exception as e:
-            self.log_message(f"❌ Error in loop: {str(e)}")
+            self.log_message(f"❌ Error in loop, whatever it means.")
+
+
+
 
 
     def _create_crossfade_audio(self, current_file, next_file, crossfade_sec, current_duration):
@@ -831,7 +809,7 @@ class InfiniLoopTerminal:
                     self._temp_files_to_cleanup.append(crossfade_output)
                     return crossfade_output
                 else:
-                    self.log_message(f"❌ Crossfade failed: {result.stderr}")
+                    self.log_message(f"❌ Crossfade failed: {result.stderr}, will be a better DJ soon...")
                     os.unlink(crossfade_output)
                     return None
 
@@ -930,7 +908,7 @@ class InfiniLoopTerminal:
                     self.loop_thread.join(timeout=max_wait)
 
                     if self.loop_thread.is_alive():
-                        self.log_message("❌ Timeout waiting: forcing ffplay termination")
+                        self.log_message("❌ Timeout waiting: forcing ffplay termination and nothing more.")
                         self.kill_all_ffplay_processes()
                         self.loop_thread.join(timeout=2.0)
 
@@ -947,7 +925,7 @@ class InfiniLoopTerminal:
                 return True
 
             except Exception as e:
-                self.log_message(f"❌ Error during swap: {str(e)}")
+                self.log_message(f"❌ Error during swap, whatever it means: {str(e)}")
                 self.stop_event = threading.Event()
                 return False
 
@@ -977,7 +955,7 @@ class InfiniLoopTerminal:
                     break
 
                 if not self.safe_file_swap():
-                    self.log_message("❌ Swap failed, regenerating...")
+                    self.log_message("❌ Swap failed, regenerating or something...")
                     continue
 
                 if not self.is_playing:
@@ -1003,7 +981,7 @@ class InfiniLoopTerminal:
                 self.log_message(f"❌ Error in cycle ({consecutive_errors}/{max_consecutive_errors}): {str(e)}")
 
                 if consecutive_errors >= max_consecutive_errors:
-                    self.log_message("❌ Too many consecutive errors, stopping loop")
+                    self.log_message("❌ Too many consecutive errors, I'm done. Stopping loop.")
                     self.is_playing = False
                     break
 
@@ -1051,7 +1029,7 @@ class InfiniLoopTerminal:
                 self.log_message(f"❌ Error in main loop (attempt {retry_count}/{max_retries}): {str(e)}")
 
                 if retry_count >= max_retries:
-                    self.log_message("❌ Too many errors, stopping application")
+                    self.log_message("❌ Too many errors, give me a break. Stopping application")
                     self.is_playing = False
                     return
 
@@ -1070,7 +1048,7 @@ class InfiniLoopTerminal:
                             os.remove(filepath)
                             self.log_message(f"🗑️ Removed {os.path.basename(filepath)}")
                 except Exception as remove_error:
-                    self.log_message(f"❌ File removal error: {remove_error}")
+                    self.log_message(f"❌ File removal error: {remove_error}. Huh.")
 
     def start_loop(self, prompt):
         self.stop_requested = False
@@ -1148,7 +1126,7 @@ class InfiniLoopTerminal:
                 self.log_message(f"💾 Loop saved: {filename} (from {os.path.basename(current_file)})")
                 return True
             except Exception as e:
-                self.log_message(f"❌ Save error: {str(e)}")
+                self.log_message(f"❌ Save error: {str(e)}. Dunno...")
                 return False
 
     def print_status(self):
