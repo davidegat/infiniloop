@@ -241,7 +241,7 @@ debug on
 - Preset support for music generation
 - Visual model integration, music change based on screen activities
 - Advanced GUI crossfade support and general enhancements
- 
+- Fade out/in while mixing tracks
 ## License
 
 This project is released under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0). For commercial use, please contact the authors.
@@ -490,7 +490,8 @@ debug on
 - Supporto preset per generare musica con un click
 - Integrazione con modello AI visuale, con cambio musica in base alle attività rilevate su schermo
 - Supporto crossfade sulla Advanced GUI e miglioramenti generali
-
+- Fade out/in durante il mixaggio delle tracce
+- 
 ## Licenza
 
 Questo progetto è rilasciato sotto licenza Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0). Per uso commerciale, contattare gli autori.
