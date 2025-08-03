@@ -5,7 +5,7 @@ It automatically creates new musical fragments using AI, detects the best loop p
 
 At startup, one of two pre-included .wav files will play, so you can enjoy music immediately while the first AI generation is being prepared.
 
-Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with smooth transitions and automatic loop detection.
+Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with smooth transitions and automatic loop detection. Local, private, personal, always new and better then any YouTube or Spotify playlist.
 
 Experimental GUI version (**not recomended**):
 
@@ -269,7 +269,7 @@ Crea automaticamente nuovi frammenti musicali, rileva i migliori punti di loop e
 
 All’avvio, uno dei due file .wav inclusi verrà riprodotto subito, così potrai ascoltare musica anche mentre l’IA prepara la prima generazione.
 
-Una volta configurato, il tuo computer diventa una stazione musicale AI locale, in grado di produrre nuovi brani con transizioni fluide e rilevamento automatico del loop.
+Una volta configurato, il tuo computer diventa una stazione musicale AI locale, in grado di produrre nuovi brani con transizioni fluide e rilevamento automatico del loop. Locale, privato, personale, sempre nuovo e migliore di ogni playlist di YouTube o Spotify.
 
 ## Indice
 
