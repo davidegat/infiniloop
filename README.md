@@ -1,11 +1,11 @@
 # INFINI LOOP - Infinite Local AI Music Generation
 
 INFINI LOOP is an AI-powered music system designed to generate seamless, infinite audio loops in real-time.
-It automatically creates new musical fragments using AI, detects the best loop points, and plays them continuously while preparing the next one — resulting in a smooth, never-ending stream of music.
+It automatically creates new musical fragments using AI, detects the best loop points, and plays them continuously while preparing the next one — resulting in a smooth, never-ending, always new stream of instrumental music.
 
 At startup, one of two pre-included .wav files will play, so you can enjoy music immediately while the first AI generation is being prepared.
 
-Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with smooth transitions and automatic loop detection. Local, private, personal, always new and better then any YouTube or Spotify playlist.
+Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with smooth transitions and automatic loop detection. Local, private, more personal then any YouTube or Spotify playlist.
 
 Experimental GUI version (**not recomended**):
 
@@ -268,11 +268,11 @@ Bug reports and feature requests are welcome. Please include:
 # INFINI LOOP - Generazione Musicale Infinita con AI locale
 
 INFINI LOOP è un sistema musicale basato su intelligenza artificiale progettato per generare in tempo reale loop audio infiniti e senza interruzioni.
-Crea automaticamente nuovi frammenti musicali, rileva i migliori punti di loop e li riproduce in sequenza continua, mentre prepara il segmento successivo — offrendo un flusso musicale ininterrotto.
+Crea automaticamente nuovi frammenti musicali, rileva i migliori punti di loop e li riproduce in sequenza continua, mentre prepara il segmento successivo — offrendo un flusso musicale ininterrotto e sempre nuovo.
 
 All’avvio, uno dei due file .wav inclusi verrà riprodotto subito, così potrai ascoltare musica anche mentre l’IA prepara la prima generazione.
 
-Una volta configurato, il tuo computer diventa una stazione musicale AI locale, in grado di produrre nuovi brani con transizioni fluide e rilevamento automatico del loop. Locale, privato, personale, sempre nuovo e migliore di ogni playlist di YouTube o Spotify.
+Una volta configurato, il tuo computer diventa una stazione musicale AI locale, in grado di produrre nuovi brani con transizioni fluide e rilevamento automatico del loop. Locale, privato, e piu personale di qualsiasi playlist di YouTube o Spotify.
 
 ## Indice
 
