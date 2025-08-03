@@ -69,7 +69,7 @@ class InfiniLoopGUI:
         style = ttk.Style()
         style.theme_use('clam')
 
-        # Configure general colors
+        # Colori generali
         style.configure(".",
             background=self.colors['bg'],
             foreground=self.colors['text'],
@@ -77,13 +77,13 @@ class InfiniLoopGUI:
             focuscolor='none',
             relief='flat')
 
-        # Frame styles
+        # Frame
         style.configure("Card.TFrame",
             background=self.colors['bg_card'],
             relief='raised',
             borderwidth=2)
 
-        # Label styles
+        # Etichette
         style.configure("Heading.TLabel",
             background=self.colors['bg'],
             foreground=self.colors['accent'],
@@ -94,7 +94,7 @@ class InfiniLoopGUI:
             foreground=self.colors['accent'],
             font=('Segoe UI', 24, 'bold'))
 
-        # Button styles
+        # Bottoni
         style.configure("Accent.TButton",
             background=self.colors['accent'],
             foreground='white',
@@ -120,18 +120,24 @@ class InfiniLoopGUI:
         style.map("Danger.TButton",
             background=[('active', '#ff5c4c')])
 
-        # Notebook style
+        # Notebook
         style.configure("TNotebook",
             background=self.colors['bg'],
             borderwidth=0)
+
+        # Base tab (deselezionata): compatta
         style.configure("TNotebook.Tab",
             background=self.colors['bg_secondary'],
             foreground=self.colors['text_secondary'],
-            padding=[20, 10],
+            padding=[10, 5],  # <-- linguetta più piccola
             font=('Segoe UI', 10))
+
+        # Tab selezionata: linguetta più grande
         style.map("TNotebook.Tab",
             background=[('selected', self.colors['bg_card'])],
-            foreground=[('selected', self.colors['text'])])
+            foreground=[('selected', self.colors['text'])],
+            padding=[('selected', [20, 12])])  # <-- linguetta più grande se selezionata
+
 
     def create_ui(self):
         """Create user interface"""
@@ -252,12 +258,12 @@ class InfiniLoopGUI:
 
         # Enhanced presets for better results
         presets = {
-            "Ambient": "ambient atmospheric ethereal soundscape relaxing seamless loop",
-            "Reggae": "slow calm reggae riddim classic beats seamless loop",
-            "Electronic": "electronic synth dance beat techno edm seamless loop",
-            "Classical": "classical orchestral symphony piano violin seamless loop",
-            "Rock": "rock guitar drums electric bass heavy seamless loop",
-            "Lofi Rap": "lofi calm rap beats seamless loop"
+            "Ambient": "ambient atmospheric ethereal soundscape relaxing seamless nointro loop",
+            "Reggae": "slow calm reggae riddim classic beats seamless nointro loop",
+            "Electronic": "electronic synth dance beat techno edm seamless nointro loop",
+            "Classical": "classical orchestral symphony piano violin seamless nointro loop",
+            "Rock": "rock guitar drums electric bass heavy seamless nointro loop",
+            "Lofi Rap": "lofi calm rap beats seamless nointro loop"
         }
 
         for name, prompt in presets.items():
