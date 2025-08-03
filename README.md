@@ -160,9 +160,10 @@ python il1.py
 
 1. Enter a musical prompt (e.g., "calm acoustic guitar")
 2. Adjust duration if needed (10-15 seconds optimal)
-3. Click "AVVIA" to start generation
-4. Use "SALVA" to export the current loop
-5. Click "ESCI" to quit
+3. Click "START" to start generation
+4. Use "SAVE" to export the current loop
+5. Click "QUIT" to quit
+6. Click "STATUS" to see what's going on
 
 ### Advanced GUI Version (`il2.py`)
 
@@ -408,9 +409,10 @@ python il1.py
 
 1. Inserisci un prompt musicale (es. "calm acoustic guitar")
 2. Regola durata se necessario (10-15 secondi ottimali)
-3. Clicca "AVVIA" per iniziare generazione
-4. Usa "SALVA" per esportare il loop corrente
-5. Clicca "ESCI" per uscire
+3. Clicca "START" per iniziare generazione
+4. Usa "SAVE" per esportare il loop corrente
+5. Clicca "QUIT" per uscire
+6. Clicca "STATUS" per sapere che succede
 
 ### Versione GUI Avanzata (`il2.py`)
 
