@@ -1,10 +1,11 @@
 # INFINI LOOP - Infinite Local AI Music Generation
 
-INFINI LOOP is an advanced AI-powered music generation system that creates seamless, infinite audio loops in real-time. It automatically generates musical fragments using AI, identifies optimal loop points, and plays them continuously while preparing the next segment, creating an uninterrupted musical experience.
+INFINI LOOP is an AI-powered music system designed to generate seamless, infinite audio loops in real-time.
+It automatically creates new musical fragments using AI, detects the best loop points, and plays them continuously while preparing the next one — resulting in a smooth, never-ending stream of music.
 
-Two .wav files are included. One will be played on startup, providing music while the first generation is being prepared.
-Until now, if the software doesn't detect two previously generated .wav files, you'll have to wait in silence until both are ready.
-So, enjoy this AI-generated track in the meantime: yours will arrive shortly!
+At startup, one of two pre-included .wav files will play, so you can enjoy music immediately while the first AI generation is being prepared.
+
+Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with smooth transitions and automatic loop detection.
 
 Experimental GUI version (**not recomended**):
 
@@ -263,11 +264,13 @@ Bug reports and feature requests are welcome. Please include:
 
 # INFINI LOOP - Generazione Musicale Infinita con AI locale
 
-INFINI LOOP è un sistema avanzato per la generazione musicale con intelligenza artificiale che crea loop audio continui e senza interruzioni in tempo reale. Genera automaticamente frammenti musicali usando l'AI, identifica i punti di loop ottimali e li riproduce continuamente mentre prepara il segmento successivo, creando un'esperienza musicale ininterrotta.
+INFINI LOOP è un sistema musicale basato su intelligenza artificiale progettato per generare in tempo reale loop audio infiniti e senza interruzioni.
+Crea automaticamente nuovi frammenti musicali, rileva i migliori punti di loop e li riproduce in sequenza continua, mentre prepara il segmento successivo — offrendo un flusso musicale ininterrotto.
 
-Sono inclusi due file .wav. All'avvio, uno di essi verrà riprodotto per offrirti musica mentre viene generato il primo brano.
-Attualmente, se il software non rileva due file .wav generati in precedenza, dovrai attendere in silenzio finché entrambi non saranno pronti.
-Quindi, nel frattempo, goditi questa traccia generata dall’IA!
+All’avvio, uno dei due file .wav inclusi verrà riprodotto subito, così potrai ascoltare musica anche mentre l’IA prepara la prima generazione.
+
+Una volta configurato, il tuo computer diventa una stazione musicale AI locale, in grado di produrre nuovi brani con transizioni fluide e rilevamento automatico del loop.
+
 ## Indice
 
 - [Caratteristiche](#caratteristiche)
