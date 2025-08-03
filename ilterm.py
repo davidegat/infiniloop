@@ -58,6 +58,20 @@ class InfiniLoopTerminal:
         print("\n🎵 INFINI LOOP TERMINAL - by gat\n")
         print("✅ Initialization completed!\n")
         self.stop_requested = False
+        self._temp_files_to_cleanup = []
+
+    def cleanup_temp_files(self):
+        """Pulisce i file temporanei creati per crossfade/fade"""
+        import os
+        for temp_file in self._temp_files_to_cleanup:
+            try:
+                if os.path.exists(temp_file):
+                    os.unlink(temp_file)
+            except Exception as e:
+                self.log_message(f"⚠️ Could not clean temp file {temp_file}: {e}")
+        self._temp_files_to_cleanup.clear()
+
+
 
     def __del__(self):
 
@@ -136,62 +150,122 @@ class InfiniLoopTerminal:
                 except:
                     pass
 
-    def find_optimal_zero_crossing(self, y, sample, window_size=256):
+    def find_optimal_zero_crossing(self, y, sample, window_size=512):
+        """Versione ottimizzata con ricerca più intelligente"""
+        # Finestra adattiva basata sul sample rate
+        adaptive_window = min(window_size, len(y) // 100)
+        start = max(0, sample - adaptive_window // 2)
+        end = min(len(y), sample + adaptive_window // 2)
 
-        start = max(0, sample - window_size // 2)
-        end = min(len(y), sample + window_size // 2)
+        if end - start < 4:
+            return sample
 
-        best_sample = sample
-        min_amplitude = float('inf')
+        # Pre-calcola i segni per evitare ripetizioni
+        y_segment = y[start:end]
+        signs = np.sign(y_segment)
+        sign_changes = np.where(np.diff(signs) != 0)[0] + start
 
-        for i in range(start, end - 1):
-            if np.sign(y[i]) != np.sign(y[i + 1]):
-                amplitude = abs(y[i]) + abs(y[i + 1])
-                if amplitude < min_amplitude:
-                    min_amplitude = amplitude
-                    best_sample = i
+        if len(sign_changes) == 0:
+            return sample
 
-        return best_sample
+        # Trova il crossing con minima ampiezza combinata
+        amplitudes = np.abs(y[sign_changes]) + np.abs(y[sign_changes + 1])
+        best_idx = np.argmin(amplitudes)
+
+        return sign_changes[best_idx]
 
     def calculate_waveform_continuity(self, y, start, end, sr):
-        t = max(64, min(sr // 40, (end - start) // 20))
-        a = y[max(0, end - t):end]
-        b = y[start:start + t]
-        if not len(a) or not len(b): return 0.0
+        """Versione ottimizzata con metriche multiple"""
+        # Finestra adattiva più intelligente
+        t = max(128, min(sr // 30, (end - start) // 15))
 
-        m = min(len(a), len(b))
-        a, b = a[-m:], b[:m]
-        corr = np.corrcoef(a, b)[0,1] if m > 1 else 0.0
-        c = abs(corr) if not np.isnan(corr) else 0.0
+        # Estrai segmenti con padding per evitare errori
+        a_start = max(0, end - t)
+        b_end = min(len(y), start + t)
 
-        rms = np.sqrt(np.mean((a - b) ** 2))
-        rms_sim = 1 - min(1.0, rms / max(np.sqrt(np.mean(a**2)), np.sqrt(np.mean(b**2)), 1e-8))
+        a = y[a_start:end]
+        b = y[start:b_end]
 
-        if m > 1:
-            d1, d2 = np.diff(a)[-1], np.diff(b)[0]
-            d_cont = 1 - min(1.0, abs(d1 - d2) / max(abs(d1), abs(d2), 1e-8))
+        if len(a) < 32 or len(b) < 32:
+            return 0.0
+
+        # Normalizza lunghezze
+        min_len = min(len(a), len(b))
+        a, b = a[-min_len:], b[:min_len]
+
+        # 1. Correlazione migliorata con pre-processing
+        a_norm = a - np.mean(a)
+        b_norm = b - np.mean(b)
+
+        if np.std(a_norm) > 1e-8 and np.std(b_norm) > 1e-8:
+            corr = np.corrcoef(a_norm, b_norm)[0, 1]
+            corr_score = abs(corr) if not np.isnan(corr) else 0.0
         else:
-            d_cont = 1.0
+            corr_score = 0.0
 
-        return c * 0.4 + rms_sim * 0.4 + d_cont * 0.2
+        # 2. RMS similarity migliorata
+        rms_a, rms_b = np.sqrt(np.mean(a**2)), np.sqrt(np.mean(b**2))
+        max_rms = max(rms_a, rms_b, 1e-8)
+        rms_diff = abs(rms_a - rms_b) / max_rms
+        rms_score = max(0.0, 1.0 - rms_diff)
+
+        # 3. Continuità spettrale (nuova metrica)
+        try:
+            fft_a = np.abs(np.fft.rfft(a))
+            fft_b = np.abs(np.fft.rfft(b))
+            if len(fft_a) > 1 and len(fft_b) > 1:
+                spectral_corr = np.corrcoef(fft_a, fft_b)[0, 1]
+                spectral_score = abs(spectral_corr) if not np.isnan(spectral_corr) else 0.0
+            else:
+                spectral_score = 0.0
+        except:
+            spectral_score = 0.0
+
+        # 4. Continuità derivata migliorata
+        if min_len > 2:
+            da, db = np.diff(a), np.diff(b)
+            d_last, d_first = da[-1], db[0]
+            max_d = max(abs(d_last), abs(d_first), 1e-8)
+            deriv_score = max(0.0, 1.0 - abs(d_last - d_first) / max_d)
+        else:
+            deriv_score = 1.0
+
+        # Combinazione pesata ottimizzata
+        return (corr_score * 0.35 + rms_score * 0.25 +
+                spectral_score * 0.25 + deriv_score * 0.15)
 
 
     def calculate_beat_alignment(self, start_sample, end_sample, beats, sr):
-
+        """Versione ottimizzata con tolleranza adattiva"""
         if len(beats) == 0:
             return 0.5
 
+        # Calcola tolleranza adattiva basata sul tempo
+        if len(beats) > 1:
+            avg_beat_interval = np.mean(np.diff(beats))
+            tolerance = avg_beat_interval * 0.1  # 10% di tolleranza
+        else:
+            tolerance = sr * 0.1  # 100ms default
+
+        # Distanze minime con tolleranza
         d_start = np.min(np.abs(beats - start_sample))
         d_end = np.min(np.abs(beats - end_sample))
 
-        if len(beats) > 1:
-            avg_beat = np.mean(np.diff(beats)) * 0.5
-            align_start = 1 - min(1.0, d_start / avg_beat)
-            align_end = 1 - min(1.0, d_end / avg_beat)
-        else:
-            align_start = align_end = 0.5
+        # Score con funzione sigmoide per transizione più smooth
+        def alignment_score(distance, tolerance):
+            if distance <= tolerance:
+                return 1.0
+            else:
+                # Decay esponenziale oltre la tolleranza
+                return np.exp(-((distance - tolerance) / tolerance))
 
-        return (align_start + align_end) / 2
+        align_start = alignment_score(d_start, tolerance)
+        align_end = alignment_score(d_end, tolerance)
+
+        # Bonus se entrambi i punti sono ben allineati
+        both_aligned_bonus = 0.1 if (align_start > 0.8 and align_end > 0.8) else 0.0
+
+        return min(1.0, (align_start + align_end) / 2 + both_aligned_bonus)
 
 
     def calculate_phase_continuity(self, S, start_frame, end_frame, window=3):
@@ -255,13 +329,14 @@ class InfiniLoopTerminal:
             return self.find_perfect_loop_simple(y, sr)
 
     def find_perfect_loop_advanced(self, y, sr):
-        self.log_message("🧠 Advanced multi-metric analysis in progress...")
+        """Versione ultra-ottimizzata con pre-filtering e caching"""
+        self.log_message("🧠 Ultra-advanced loop detection...")
 
         # Input validation
         if not len(y) or sr <= 0:
             raise Exception(f"Invalid input: empty audio or sr={sr}")
 
-        # Beat tracking with error handling
+        # Beat tracking con retry
         try:
             tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units='samples')
             tempo = float(tempo)
@@ -269,89 +344,133 @@ class InfiniLoopTerminal:
             raise Exception(f"Beat tracking error: {e}")
 
         if not 30 < tempo <= 300:
-            self.log_message(f"❌ Suspicious tempo: {tempo} BPM, using simple algorithm")
-            raise Exception("Invalid tempo")
+            raise Exception(f"Invalid tempo: {tempo} BPM")
 
-        # STFT computation
-        try:
-            S_mag = np.abs(librosa.stft(y, n_fft=2048, hop_length=512))
-            if not S_mag.size:
-                raise Exception("Empty STFT")
-        except Exception as e:
-            raise Exception(f"STFT error: {e}")
+        # STFT computation con parametri ottimizzati
+        hop_length = 256  # Ridotto per più precisione
+        S_complex = librosa.stft(y, n_fft=2048, hop_length=hop_length)
+        S_mag = np.abs(S_complex)
+
+        if not S_mag.size:
+            raise Exception("Empty STFT")
 
         beat_len = 60 / tempo
         best = {'score': -np.inf, 'start': 0, 'end': 0, 'measures': 0, 'metrics': {}}
-        found = False
 
-        # Safe metric calculation helper
-        def safe_metric(fn, *args, default=0.5):
+        # Pre-calcola feature per caching
+        mel_features = librosa.feature.melspectrogram(
+            S=S_mag**2, sr=sr, hop_length=hop_length, n_mels=64
+        )
+        mel_features = librosa.power_to_db(mel_features)
+
+        # Funzione helper ottimizzata
+        def calculate_all_metrics(start, end, sf, ef):
+            metrics = {}
+
+            # 1. Spectral similarity su mel features (più veloce)
             try:
-                val = fn(*args)
-                return 0.0 if np.isnan(val) else val
-            except:
-                return default
+                mel_start = np.mean(mel_features[:, max(0, sf-2):sf+3], axis=1)
+                mel_end = np.mean(mel_features[:, ef-2:min(mel_features.shape[1], ef+3)], axis=1)
 
-        # Main loop over measures and positions
-        for meas in [4, 6, 8]:
+                if np.any(np.isnan(mel_start)) or np.any(np.isnan(mel_end)):
+                    metrics['spectral'] = 0.0
+                else:
+                    metrics['spectral'] = max(0.0, 1 - cosine(mel_start, mel_end))
+            except:
+                metrics['spectral'] = 0.0
+
+            # 2. Waveform continuity (già ottimizzata)
+            try:
+                metrics['waveform'] = self.calculate_waveform_continuity(y, start, end, sr)
+            except:
+                metrics['waveform'] = 0.0
+
+            # 3. Beat alignment (già ottimizzata)
+            try:
+                metrics['beat'] = self.calculate_beat_alignment(start, end, beats, sr)
+            except:
+                metrics['beat'] = 0.5
+
+            # 4. Phase continuity ottimizzata
+            try:
+                if sf >= 3 and ef < S_complex.shape[1] - 3:
+                    phase_start = np.angle(S_complex[:, sf-1:sf+2])
+                    phase_end = np.angle(S_complex[:, ef-1:ef+2])
+
+                    # Usa solo le frequenze più importanti (bassi e medi)
+                    important_freqs = slice(0, S_complex.shape[0] // 2)
+
+                    diff = np.abs(np.mean(phase_start[important_freqs], axis=1) -
+                                np.mean(phase_end[important_freqs], axis=1))
+                    diff = np.minimum(diff, 2 * np.pi - diff)
+                    metrics['phase'] = max(0.0, 1 - np.mean(diff) / np.pi)
+                else:
+                    metrics['phase'] = 0.5
+            except:
+                metrics['phase'] = 0.5
+
+            return metrics
+
+        # Loop ottimizzato con early termination
+        best_score_threshold = 0.8  # Se troviamo un score > 0.8, considera di fermarti
+
+        for meas in [4, 8, 12, 16]:  # Aggiunto 16 misure
             samples = int(meas * 4 * beat_len * sr)
 
-            # Duration validation
-            if not (6 * sr <= samples <= len(y) * 0.9):
-                self.log_message(f"❌ Duration {samples/sr:.1f}s out of range, skipping {meas} measures")
+            if not (3 * sr <= samples <= len(y) * 0.85):
                 continue
 
-            # Search window
-            start_range = range(int(len(y) * 0.05),
-                            len(y) - samples - int(len(y) * 0.05),
-                            2048)
+            # Range di ricerca ottimizzato
+            search_step = max(512, samples // 100)  # Step adattivo
+            start_range = range(
+                int(len(y) * 0.05),
+                len(y) - samples - int(len(y) * 0.05),
+                search_step
+            )
 
             for start in start_range:
                 end = start + samples
-                if end > len(y) or end - start < sr * 0.5:
+                if end > len(y):
                     continue
 
-                sf, ef = start // 512, end // 512
-                if sf < 3 or ef >= S_mag.shape[1]:
+                sf, ef = start // hop_length, end // hop_length
+                if sf < 3 or ef >= S_mag.shape[1] - 3:
                     continue
 
-                # Spectral similarity
-                try:
-                    s1, s2 = (np.mean(S_mag[:, f-3:f+3], axis=1) for f in (sf, ef))
-                    if np.any(np.isnan(s1)) or np.any(np.isnan(s2)):
-                        continue
-                    spec = max(0.0, 1 - cosine(s1, s2))
-                except:
-                    spec = 0.0
+                # Calcola metriche
+                metrics = calculate_all_metrics(start, end, sf, ef)
 
-                # Calculate all metrics
-                wave = safe_metric(self.calculate_waveform_continuity, y, start, end, sr)
-                beat = safe_metric(self.calculate_beat_alignment, start, end, beats, sr)
-                phase = safe_metric(self.calculate_phase_continuity, S_mag, sf, ef)
+                # Score composito con pesi ottimizzati
+                score = (metrics['spectral'] * 0.4 +
+                        metrics['waveform'] * 0.3 +
+                        metrics['beat'] * 0.2 +
+                        metrics['phase'] * 0.1)
 
-                # Composite score
-                score = spec * 0.5 + wave * 0.25 + beat * 0.15 + phase * 0.1
-
-                if np.isfinite(score) and score > best['score']:
+                if score > best['score']:
                     best.update({
-                        'score': score, 'start': start, 'end': end, 'measures': meas,
-                        'metrics': {'Spectral': spec, 'Waveform': wave, 'Beat Align': beat, 'Phase': phase}
+                        'score': score, 'start': start, 'end': end,
+                        'measures': meas, 'metrics': metrics
                     })
-                    found = True
 
-        # Validation of results
-        if not found or best['score'] < 0.1:
-            raise Exception(f"No valid loop found (score: {best['score']:.3f})")
+                    # Early termination se troviamo un ottimo candidato
+                    if score > best_score_threshold:
+                        self.log_message(f"🎯 Excellent loop found early (score: {score:.3f})")
+                        break
 
-        if best['start'] >= best['end'] or best['end'] > len(y):
-            raise Exception(f"Invalid loop bounds: {best['start']} → {best['end']}")
+            # Se abbiamo un buon candidato, non cercare misure più lunghe
+            if best['score'] > best_score_threshold:
+                break
+
+        # Validation
+        if best['score'] < 0.15:  # Soglia leggermente più bassa
+            raise Exception(f"No valid loop found (best score: {best['score']:.3f})")
 
         dur = (best['end'] - best['start']) / sr
-        if dur < 1.0:
+        if dur < 1.5:  # Minimum più ragionevole
             raise Exception(f"Loop too short: {dur:.1f}s")
 
-        self.log_message(f"✅ Advanced loop found! {best['measures']} measures, "
-                        f"Score: {best['score']:.3f}, Duration: {dur:.1f}s")
+        self.log_message(f"✅ Ultra-advanced loop found! {best['measures']} meas, "
+                        f"Score: {best['score']:.3f}, Dur: {dur:.1f}s")
 
         return {
             'start_sample': best['start'],
@@ -600,21 +719,23 @@ class InfiniLoopTerminal:
                 self._kill_process_safely(process)
 
     def loop_current_crossfade_blocking(self, filepath, crossfade_sec, stop_event):
-
         try:
             duration = self.get_duration(filepath)
             if duration <= 0:
                 self.log_message(f"❌ Invalid audio file: {filepath}")
                 return
 
+            # Assicurati che il crossfade non sia più lungo della durata del file
+            crossfade_sec = min(crossfade_sec, duration / 2)
             delay = max(0, duration - crossfade_sec)
+
             title = self.get_random_title()
             artist = self.get_random_artist()
-
             print(f"\n🎧 NOW PLAYING:")
             print(f"   Title:   {title}")
             print(f"   Artist:  {artist}")
             print(f"   Loop:    {duration:.1f} seconds")
+            print(f"   Crossfade: {crossfade_sec:.1f} seconds")
             print(f"   Genre:   {self.PROMPT}\n")
 
             retry_count = 0
@@ -626,25 +747,174 @@ class InfiniLoopTerminal:
                     break
 
                 try:
-                    thread = threading.Thread(
-                        target=self.play_with_ffplay, args=(filepath,), daemon=True
-                    )
-                    thread.start()
+                    # Determina se abbiamo bisogno di crossfade
+                    has_next_track = hasattr(self, 'NEXT') and self.NEXT and self.NEXT != filepath
 
-                    if stop_event.wait(delay):
-                        break
+                    if has_next_track and crossfade_sec > 0:
+                        # Caso 1: Crossfade tra CURRENT e NEXT
+                        crossfade_output = self._create_crossfade_audio(filepath, self.NEXT, crossfade_sec, duration)
+                        if crossfade_output:
+                            thread = threading.Thread(
+                                target=self.play_with_ffplay, args=(crossfade_output,), daemon=True
+                            )
+                            thread.start()
+                            # Aspetta per tutta la durata (incluso crossfade)
+                            if stop_event.wait(duration):
+                                break
+                        else:
+                            # Fallback se crossfade fallisce
+                            self._play_single_track_with_fade(filepath, duration, crossfade_sec, stop_event, delay)
+
+                    elif filepath == self.CURRENT and crossfade_sec > 0:
+                        # Caso 2: Solo fade-out per CURRENT
+                        self._play_single_track_with_fade(filepath, duration, crossfade_sec, stop_event, delay, fade_type="out")
+
+                    elif filepath == self.NEXT and crossfade_sec > 0:
+                        # Caso 3: Solo fade-in per NEXT
+                        self._play_single_track_with_fade(filepath, duration, crossfade_sec, stop_event, delay, fade_type="in")
+
+                    else:
+                        # Caso 4: Nessun fade, riproduzione normale
+                        thread = threading.Thread(
+                            target=self.play_with_ffplay, args=(filepath,), daemon=True
+                        )
+                        thread.start()
+                        if stop_event.wait(delay):
+                            break
 
                     retry_count = 0
 
                 except Exception as e:
                     retry_count += 1
                     self._log_retry_error(retry_count, max_retries, e)
-
                     if retry_count >= max_retries or stop_event.wait(1.0):
                         break
 
         except Exception as e:
             self.log_message(f"❌ Error in loop: {str(e)}")
+
+
+    def _create_crossfade_audio(self, current_file, next_file, crossfade_sec, current_duration):
+        """Crea un file audio con crossfade tra current e next track"""
+        try:
+            # Crea file temporaneo ma NON usare context manager qui
+            import tempfile
+            import os
+            temp_fd, crossfade_output = tempfile.mkstemp(suffix=".wav", prefix="crossfade_")
+            os.close(temp_fd)  # Chiudi il file descriptor ma mantieni il file
+
+            try:
+                # Calcola i tempi
+                fade_start_time = current_duration - crossfade_sec
+
+                # Comando ffmpeg per il crossfade
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-i", current_file,  # Input 0
+                    "-i", next_file,     # Input 1
+                    "-filter_complex",
+                    f"[0]afade=t=out:st={fade_start_time:.3f}:d={crossfade_sec:.3f}[a0];"
+                    f"[1]afade=t=in:st=0:d={crossfade_sec:.3f},adelay={fade_start_time * 1000:.0f}|{fade_start_time * 1000:.0f}[a1];"
+                    f"[a0][a1]amix=inputs=2:duration=first:dropout_transition=0[out]",
+                    "-map", "[out]",
+                    "-t", f"{current_duration:.3f}",  # Durata totale = durata current track
+                    crossfade_output
+                ]
+
+                result = subprocess.run(cmd,
+                                    stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.PIPE,
+                                    text=True)
+
+                if result.returncode == 0:
+                    # Registra il file per la pulizia successiva
+                    self._temp_files_to_cleanup.append(crossfade_output)
+                    return crossfade_output
+                else:
+                    self.log_message(f"❌ Crossfade failed: {result.stderr}")
+                    os.unlink(crossfade_output)  # Elimina se fallito
+                    return None
+
+            except Exception as e:
+                if os.path.exists(crossfade_output):
+                    os.unlink(crossfade_output)
+                raise e
+
+        except Exception as e:
+            self.log_message(f"❌ Error creating crossfade: {str(e)}")
+            return None
+
+
+    def _play_single_track_with_fade(self, filepath, duration, crossfade_sec, stop_event, delay, fade_type="out"):
+        """Riproduce una singola traccia con fade-in o fade-out"""
+        try:
+            fade_duration = min(2.0, crossfade_sec)
+
+            if fade_type == "out":
+                # Fade-out alla fine
+                fade_filter = f"afade=t=out:st={duration - fade_duration:.3f}:d={fade_duration:.3f}"
+            elif fade_type == "in":
+                # Fade-in all'inizio
+                fade_filter = f"afade=t=in:st=0:d={fade_duration:.3f}"
+            else:
+                # Nessun fade, riproduci direttamente
+                thread = threading.Thread(
+                    target=self.play_with_ffplay, args=(filepath,), daemon=True
+                )
+                thread.start()
+                if stop_event.wait(delay):
+                    return
+                return
+
+            # Crea file temporaneo con fade
+            import tempfile
+            import os
+            temp_fd, processed_path = tempfile.mkstemp(suffix=".wav", prefix="fade_")
+            os.close(temp_fd)
+
+            try:
+                result = subprocess.run([
+                    "ffmpeg", "-y",
+                    "-i", filepath,
+                    "-af", fade_filter,
+                    processed_path
+                ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+
+                if result.returncode == 0:
+                    # Registra per cleanup e riproduci
+                    self._temp_files_to_cleanup.append(processed_path)
+                    thread = threading.Thread(
+                        target=self.play_with_ffplay, args=(processed_path,), daemon=True
+                    )
+                    thread.start()
+                    if stop_event.wait(delay):
+                        return
+                else:
+                    self.log_message(f"❌ Fade processing failed: {result.stderr}")
+                    os.unlink(processed_path)
+                    # Fallback: riproduci senza fade
+                    thread = threading.Thread(
+                        target=self.play_with_ffplay, args=(filepath,), daemon=True
+                    )
+                    thread.start()
+                    if stop_event.wait(delay):
+                        return
+
+            except Exception as e:
+                if os.path.exists(processed_path):
+                    os.unlink(processed_path)
+                raise e
+
+        except Exception as e:
+            self.log_message(f"❌ Error in fade processing: {str(e)}")
+            # Fallback: riproduci senza fade
+            thread = threading.Thread(
+                target=self.play_with_ffplay, args=(filepath,), daemon=True
+            )
+            thread.start()
+            if stop_event.wait(delay):
+                return
+
 
     def _log_retry_error(self, count, max_count, exc):
         self.log_message(f"❌ Playback error (attempt {count}/{max_count}): {str(exc)}")
@@ -833,7 +1103,7 @@ class InfiniLoopTerminal:
 
         self.kill_all_ffplay_processes()
         self.kill_all_musicgpt_processes()
-
+        self.cleanup_temp_files()
     def kill_all_ffplay_processes(self):
 
         try:
