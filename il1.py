@@ -686,11 +686,13 @@ class InfiniLoopGUI:
             self.log_queue.put("__UPDATE_NOW_PLAYING__")
 
     def start_loop(self):
-
         prompt = self.prompt_entry.get().strip()
         if prompt == "e.g. ambient chill loop, jazz piano..." or not prompt:
             messagebox.warning("Warning", "Please enter a music prompt!")
             return
+
+        self.app.last_prompt = prompt  # ✅ Salva anche in app
+        self.save_settings()  # ✅ Salva su file
 
         self.is_running = True
         self.start_button.config(state='disabled')
@@ -698,7 +700,6 @@ class InfiniLoopGUI:
         self.prompt_entry.config(state='disabled')
         self.status_indicator.config(text="🟢")
         self.status_label.config(text="🟢 PLAYING")
-
 
         thread = threading.Thread(target=self._run_loop, args=(prompt,), daemon=True)
         thread.start()
@@ -850,8 +851,10 @@ class InfiniLoopGUI:
             "duration": self.app.duration,
             "audio_driver": self.app.audio_driver,
             "debug_mode": self.app.debug_mode,
-            "benchmark_enabled": self.benchmark_var.get()
+            "benchmark_enabled": self.benchmark_var.get(),
+            "last_prompt": getattr(self.app, "last_prompt", self.prompt_entry.get().strip())
         }
+
         with open("infiniloop_settings.json", "w") as f:
             json.dump(settings, f)
 
@@ -865,6 +868,14 @@ class InfiniLoopGUI:
 
             self.app.audio_driver = settings.get("audio_driver", self.app.audio_driver)
             self.driver_var.set(self.app.audio_driver)
+
+            # ✅ Ripristina ultimo prompt usato
+            last_prompt = settings.get("last_prompt", "")
+            if last_prompt:
+                self.prompt_entry.delete(0, 'end')
+                self.prompt_entry.insert(0, last_prompt)
+                self.app.last_prompt = last_prompt
+
 
             self.app.debug_mode = settings.get("debug_mode", self.app.debug_mode)
             self.debug_var.set(self.app.debug_mode)
