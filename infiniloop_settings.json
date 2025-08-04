@@ -1,6 +1,1 @@
-{
-  "duration": 8,
-  "driver": "alsa",
-  "debug": false,
-  "last_prompt": "slow calm reggae riddim classic seamless nointro loopable"
-}
+{"duration": 8, "audio_driver": "alsa", "debug_mode": false, "benchmark_enabled": false}
