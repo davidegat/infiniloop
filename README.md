@@ -8,7 +8,7 @@ At startup, one of two pre-included .wav files will play, so you can enjoy music
 Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with smooth transitions and automatic loop detection. Local, private, more personal than any YouTube or Spotify playlist.
 
 **NEW IN THIS VERSION:**
-- **LUFS Normalization**: Professional audio loudness standardization (-14 LUFS) 
+- **Normalization**: Professional standardization
 - **Enhanced Loop Detection**: Improved multi-metric analysis with beat-focused fallback
 - **Zero-Crossing Optimization**: Precise loop point refinement for seamless transitions
 - **Robust Error Handling**: Advanced file validation and crash recovery
@@ -44,7 +44,6 @@ Terminal version (**recommended**):
 ## Features
 
 - **Local AI Music Generation**: Powered by MusicGPT for high-quality audio synthesis (https://github.com/gabotechs/MusicGPT)
-- **Professional Audio Processing**: LUFS normalization to broadcast standards (-14 LUFS)
 - **Advanced Loop Detection**: Multi-metric analysis with adaptive algorithms
   - Spectral similarity analysis
   - Waveform continuity measurement
@@ -605,7 +604,7 @@ All'avvio, uno dei due file .wav inclusi verrà riprodotto subito, così potrai 
 Una volta configurato, il tuo computer diventa una stazione musicale AI locale, in grado di produrre nuovi brani con transizioni fluide e rilevamento automatico del loop. Locale, privato, e più personale di qualsiasi playlist di YouTube o Spotify.
 
 **NOVITÀ IN QUESTA VERSIONE:**
-- **Normalizzazione LUFS**: Standardizzazione professionale del volume audio (-14 LUFS)
+- **Normalizzazione**: Standardizzazione volume audio
 - **Rilevamento Loop Migliorato**: Analisi multi-metrica avanzata con fallback basato sui ritmi
 - **Ottimizzazione Zero-Crossing**: Raffinamento preciso dei punti di loop per transizioni perfette
 - **Gestione Errori Robusta**: Validazione file avanzata e recupero da crash
@@ -641,7 +640,6 @@ Versione Terminale (**raccomandata**):
 ## Caratteristiche
 
 - **Generazione Musicale AI Locale**: Utilizza MusicGPT per sintesi audio di alta qualità (https://github.com/gabotechs/MusicGPT)
-- **Elaborazione Audio Professionale**: Normalizzazione LUFS a standard broadcast (-14 LUFS)
 - **Rilevamento Loop Avanzato**: Analisi multi-metrica con algoritmi adattivi
   - Analisi similarità spettrale
   - Misurazione continuità forma d'onda
