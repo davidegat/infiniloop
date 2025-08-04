@@ -21,16 +21,14 @@ class InfiniLoopGUI:
         self.root.minsize(500, 700)
         self.root.maxsize(700, 950)
 
-
         self.app = InfiniLoopTerminal()
+        self.app.on_generation_complete = self.on_generation_complete
         self.is_running = False
         self.log_queue = Queue()
-
 
         self.current_loop_file = None
         self.last_title = None
         self.last_artist = None
-
 
         self.original_log = self.app.log_message
         self.app.log_message = self.capture_log
@@ -63,6 +61,11 @@ class InfiniLoopGUI:
 
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def on_generation_complete(self):
+        if hasattr(self, "update_benchmark_table"):
+            self.update_benchmark_table()
+
 
     def setup_styles(self):
 
@@ -162,6 +165,8 @@ class InfiniLoopGUI:
 
 
         self.create_log_tab()
+        self.app.load_benchmark_data()
+        self.create_benchmark_tab()
 
 
         self.create_status_bar(main_container)
@@ -479,6 +484,121 @@ class InfiniLoopGUI:
                              command=self.clear_log)
         clear_btn.pack(pady=5)
 
+
+    def create_benchmark_tab(self):
+        bench_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
+        self.notebook.add(bench_frame, text="📈 Benchmark")
+
+        card = self.create_card(bench_frame, "📊 Benchmark Performance")
+
+        self.benchmark_var = tk.BooleanVar(value=self.app.benchmark_enabled)
+        bench_check = tk.Checkbutton(
+            card,
+            text="Enable benchmark tracking",
+            variable=self.benchmark_var,
+            font=('Segoe UI', 11),
+            bg=self.colors['bg_card'],
+            fg=self.colors['text'],
+            selectcolor=self.colors['bg_secondary'],
+            activebackground=self.colors['bg_card'],
+            command=self.toggle_benchmark
+        )
+        bench_check.pack(anchor='w', pady=(0, 10))
+
+        # ✅ Stile leggibile SOLO per la tabella Benchmark
+        style = ttk.Style()
+        style.configure("Benchmark.Treeview",
+            background="white",
+            foreground="black",
+            fieldbackground="white",
+            rowheight=24,
+            font=('Segoe UI', 10)
+        )
+        style.configure("Benchmark.Treeview.Heading",
+            font=('Segoe UI', 10, 'bold'),
+            foreground='black',
+            background='lightgray'
+        )
+        style.map("Benchmark.Treeview",
+            background=[("selected", "black")],
+            foreground=[("selected", "white")]
+        )
+
+        # 📊 Tabella con medie per durata
+        self.average_tree = ttk.Treeview(
+            card,
+            columns=("dur", "avg"),
+            show="headings",
+            height=8,
+            style="Benchmark.Treeview"
+        )
+        self.average_tree.heading("dur", text="Sample duration")
+        self.average_tree.heading("avg", text="Average generation time")
+        self.average_tree.column("dur", anchor='center', width=180)
+        self.average_tree.column("avg", anchor='center', width=220)
+        self.average_tree.pack(fill='x', expand=False, pady=(0, 10))
+
+        # 🔁 Forza caricamento dati prima dell’aggiornamento tabella
+        self.app.load_benchmark_data()
+        self.update_benchmark_table()
+
+        reset_btn = tk.Button(
+            card,
+            text="🗑️  Reset Benchmark Data",
+            font=('Segoe UI', 10),
+            bg=self.colors['danger'],
+            fg='white',
+            activebackground='#ff5c4c',
+            relief='flat',
+            bd=0,
+            padx=10,
+            pady=8,
+            cursor='hand2',
+            command=self.reset_benchmark_data
+        )
+        reset_btn.pack(pady=10)
+
+
+    def toggle_benchmark(self):
+        self.app.benchmark_enabled = self.benchmark_var.get()
+        self.save_settings()
+
+
+    def update_benchmark_table(self):
+        try:
+            if not hasattr(self, "average_tree"):
+                return  # Tabella non ancora creata
+
+            for row in self.average_tree.get_children():
+                self.average_tree.delete(row)
+
+            data = self.app.benchmark_data
+
+            # 📊 Calcola medie per durata
+            buckets = {}
+            for entry in data:
+                dur = entry["duration_requested"]
+                buckets.setdefault(dur, []).append(entry["generation_time"])
+
+            for dur, times in sorted(buckets.items()):
+                avg_time = sum(times) / len(times)
+                avg_secs = int(round(avg_time))
+                avg_mins = round(avg_time / 60, 1)
+                formatted = f"{avg_secs}s ({avg_mins} min)"
+                self.average_tree.insert("", "end", values=(f"{dur}s", formatted))
+
+        except Exception as e:
+            self.capture_log(f"⚠️ Failed to update benchmark table: {e}")
+
+
+
+
+
+    def reset_benchmark_data(self):
+        self.app.reset_benchmark_data()
+        self.update_benchmark_table()
+
+
     def create_status_bar(self, parent):
 
         status_frame = tk.Frame(parent, bg=self.colors['bg_secondary'], height=40)
@@ -526,6 +646,7 @@ class InfiniLoopGUI:
         content.pack(fill='both', expand=True, padx=15, pady=(5, 15))
 
         return content
+
 
     def bind_hover(self, widget):
 
@@ -660,6 +781,8 @@ class InfiniLoopGUI:
             msg = self.log_queue.get()
             if msg == "__UPDATE_NOW_PLAYING__":
                 update_now_playing = True
+                if hasattr(self, "update_benchmark_table"):
+                    self.update_benchmark_table()
             else:
                 self.log_text.insert('end', msg)
                 self.log_text.see('end')
@@ -723,40 +846,40 @@ class InfiniLoopGUI:
         self.root.after(100, self.update_loop)
 
     def save_settings(self):
-
         settings = {
-            'duration': self.app.duration,
-            'driver': self.app.audio_driver,
-            'debug': self.app.debug_mode,
-            'last_prompt': self.prompt_entry.get()
+            "duration": self.app.duration,
+            "audio_driver": self.app.audio_driver,
+            "debug_mode": self.app.debug_mode,
+            "benchmark_enabled": self.benchmark_var.get()
         }
-        try:
-            with open('infiniloop_settings.json', 'w') as f:
-                json.dump(settings, f, indent=2)
-        except:
-            pass
+        with open("infiniloop_settings.json", "w") as f:
+            json.dump(settings, f)
+
 
     def load_settings(self):
-
         try:
-            with open('infiniloop_settings.json', 'r') as f:
+            with open("infiniloop_settings.json", "r") as f:
                 settings = json.load(f)
-                self.app.duration = settings.get('duration', 15)
-                self.app.audio_driver = settings.get('driver', 'pulse')
-                self.app.debug_mode = settings.get('debug', False)
+            self.app.duration = settings.get("duration", self.app.duration)
+            self.duration_var.set(self.app.duration)
+
+            self.app.audio_driver = settings.get("audio_driver", self.app.audio_driver)
+            self.driver_var.set(self.app.audio_driver)
+
+            self.app.debug_mode = settings.get("debug_mode", self.app.debug_mode)
+            self.debug_var.set(self.app.debug_mode)
+
+            # ✅ Carica stato benchmark
+            self.app.benchmark_enabled = settings.get("benchmark_enabled", True)
+            if hasattr(self, 'benchmark_var'):
+                self.benchmark_var.set(self.app.benchmark_enabled)
+
+            os.environ["SDL_AUDIODRIVER"] = self.app.audio_driver
+
+        except Exception as e:
+            self.capture_log(f"⚠️ Failed to load settings: {e}")
 
 
-                self.duration_var.set(self.app.duration)
-                self.driver_var.set(self.app.audio_driver)
-                self.debug_var.set(self.app.debug_mode)
-
-
-                last_prompt = settings.get('last_prompt', '')
-                if last_prompt and last_prompt != "e.g. ambient chill loop, jazz piano...":
-                    self.prompt_entry.delete(0, 'end')
-                    self.prompt_entry.insert(0, last_prompt)
-        except:
-            pass
 
     def on_closing(self):
 

@@ -25,6 +25,7 @@ from pydub.utils import mediainfo
 from scipy.signal import correlate
 from scipy.spatial.distance import cosine
 
+import json
 
 class InfiniLoopTerminal:
 
@@ -73,6 +74,45 @@ class InfiniLoopTerminal:
         self.stop_requested = False
         self._temp_files_to_cleanup = []
 
+        self.volume_history = []
+        self.max_volume_history = 20  # Cambia a piacere
+
+        self.benchmark_enabled = True  # default: attivo
+        self.benchmark_file = "benchdata.json"
+        self.benchmark_data = []
+        self.load_benchmark_data()
+
+    def load_benchmark_data(self):
+        self.benchmark_file = "benchdata.json"
+        self.benchmark_data = []
+
+        if os.path.exists(self.benchmark_file):
+            try:
+                with open(self.benchmark_file, "r") as f:
+                    self.benchmark_data = json.load(f)
+            except Exception as e:
+                self.log_message(f"⚠️ Failed to load benchmark data: {e}")
+
+    def save_benchmark_data(self):
+        if not hasattr(self, "benchmark_file"):
+            self.benchmark_file = "benchdata.json"
+        if not hasattr(self, "benchmark_data"):
+            self.benchmark_data = []
+
+        try:
+            with open(self.benchmark_file, "w") as f:
+                json.dump(self.benchmark_data, f, indent=2)
+        except Exception as e:
+            self.log_message(f"⚠️ Failed to save benchmark data: {e}")
+
+    def reset_benchmark_data(self):
+        self.benchmark_data = []
+        if hasattr(self, "benchmark_file") and os.path.exists(self.benchmark_file):
+            try:
+                os.remove(self.benchmark_file)
+                self.log_message("🧹 Benchmark data cleared")
+            except Exception as e:
+                self.log_message(f"⚠️ Failed to delete benchmark file: {e}")
 
     def cleanup_temp_files(self):
 
@@ -82,10 +122,12 @@ class InfiniLoopTerminal:
                     os.unlink(temp_file)
             except Exception as e:
                 self.log_message(
-                    f"⚠️ Could not clean temp file, kinda? {temp_file}: {e}"
-                )
-        self._temp_files_to_cleanup.clear()
+                    f"❌ Could not clean temp file, kinda? {temp_file}: {e}"
+                    )
+            self._temp_files_to_cleanup.clear()
 
+    def on_generation_complete(self):
+        pass  # sovrascritto dalla GUI se serve
 
     def __del__(self):
         try:
@@ -317,7 +359,7 @@ class InfiniLoopTerminal:
             )
 
         except Exception as e:
-            self.log_message(f"⚠️ Failed: {e}")
+            self.log_message(f"❌ Failed: {e}")
 
             tempo_value = 120.0
             avg_beat_interval = float(0.5 * sr)
@@ -497,15 +539,15 @@ class InfiniLoopTerminal:
                     best["metrics"]["Beat Align"] = new_beat_score
                 else:
                     self.log_message(
-                        "⚠️ Zero-crossing rejected (would compromise beat alignment)"
+                        "❌ Zero-crossing rejected (would compromise beat alignment)"
                     )
             else:
                 self.log_message(
-                    "⚠️ Zero-crossing optimization produced invalid bounds"
+                    "❌ Zero-crossing optimization produced invalid bounds"
                 )
 
         except Exception as e:
-            self.log_message(f"⚠️ Zero-crossing optimization failed: {e}")
+            self.log_message(f"❌ Zero-crossing optimization failed: {e}")
 
         duration = (best["end"] - best["start"]) / sr
 
@@ -730,7 +772,7 @@ class InfiniLoopTerminal:
                     if initial_duration < MIN_LOOP_DURATION:
                         if attempt < MAX_LOOP_ATTEMPTS:
                             self.log_message(
-                                f"   ⚠️ Too short ({initial_duration:.1f}s < {MIN_LOOP_DURATION}s), retrying...\n"
+                                f"   ❌ Too short ({initial_duration:.1f}s < {MIN_LOOP_DURATION}s), retrying...\n"
                             )
                             continue
                         else:
@@ -745,7 +787,7 @@ class InfiniLoopTerminal:
 
                     if not (0 <= s_opt < e_opt <= len(y)):
                         self.log_message(
-                            "⚠️ Zero-crossing failed, using original positions"
+                            "❌ Zero-crossing failed, using original positions"
                         )
                         s_opt, e_opt = s, e
 
@@ -754,7 +796,7 @@ class InfiniLoopTerminal:
                     if final_duration < MIN_LOOP_DURATION:
                         if attempt < MAX_LOOP_ATTEMPTS:
                             self.log_message(
-                                f"   ⚠️ Too short after optimization, retrying..."
+                                f"   ❌ Too short after optimization, retrying..."
                             )
                             continue
                         else:
@@ -874,19 +916,167 @@ class InfiniLoopTerminal:
         return filename
 
 
+    def normalize_audio_advanced(self, y, sr):
+        try:
+            rms_original = np.sqrt(np.mean(y**2))
+            peak_original = np.max(np.abs(y))
+
+            if rms_original < 1e-8:
+                self.log_message("❌ Nearly silent audio, applying gain")
+                return y * 0.1
+
+            # Adattamento RMS dinamico
+            if self.volume_history:
+                target_rms_final = np.mean(self.volume_history)
+                self.log_message(f"📈 Adaptive RMS target: {target_rms_final:.3f}")
+            else:
+                target_rms_final = 0.10  # valore iniziale
+
+            meter = pyln.Meter(sr)
+            try:
+                loudness = meter.integrated_loudness(y)
+
+                if loudness < -50:
+                    self.log_message(f"❌ Very low loudness ({loudness:.1f}), using RMS")
+                    y_normalized = y * (target_rms_final / rms_original)
+                else:
+                    target_lufs = -16.0
+                    y_normalized = pyln.normalize.loudness(y, loudness, target_lufs)
+                    self.log_message(f"🎚️ LUFS: {loudness:.1f} → {target_lufs}")
+
+            except Exception as lufs_error:
+                self.log_message(f"❌ LUFS failed: {lufs_error}, using RMS")
+                y_normalized = y * (target_rms_final / rms_original)
+
+            # Controllo picco
+            peak_after_lufs = np.max(np.abs(y_normalized))
+            max_allowed_peak = 0.95
+
+            if peak_after_lufs > max_allowed_peak:
+                peak_reduction = max_allowed_peak / peak_after_lufs
+                y_normalized *= peak_reduction
+                self.log_message(f"🎚️ Peak: {peak_after_lufs:.3f} → {max_allowed_peak}")
+
+            # Secondo check RMS
+            rms_final = np.sqrt(np.mean(y_normalized**2))
+            rms_tolerance = 0.03
+
+            if abs(rms_final - target_rms_final) > rms_tolerance:
+                rms_adjustment = target_rms_final / rms_final
+                y_normalized *= rms_adjustment
+                final_peak = np.max(np.abs(y_normalized))
+                if final_peak > max_allowed_peak:
+                    y_normalized *= (max_allowed_peak / final_peak)
+
+                rms_final_adjusted = np.sqrt(np.mean(y_normalized**2))
+                self.log_message(f"🎚️ RMS cons: {rms_final:.3f} → {rms_final_adjusted:.3f}")
+                rms_final = rms_final_adjusted
+
+            # 🧠 Memorizza RMS finale nella storia
+            self.volume_history.append(rms_final)
+            if len(self.volume_history) > self.max_volume_history:
+                self.volume_history.pop(0)
+
+            y_normalized = self.spectral_balance_adjustment(y_normalized, sr)
+            return y_normalized
+
+        except Exception as e:
+            self.log_message(f"❌ Normalization failed: {e}")
+            rms = np.sqrt(np.mean(y**2))
+            if rms > 0:
+                return y * (0.1 / rms)
+            return y
+
+    def spectral_balance_adjustment(self, y, sr):
+
+        try:
+
+            mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=64)
+            mel_db = librosa.power_to_db(mel_spec)
+
+
+            low_energy = np.mean(mel_db[0:16])
+            mid_energy = np.mean(mel_db[16:48])
+            high_energy = np.mean(mel_db[48:64])
+
+
+            target_low = -20.0
+            target_mid = -15.0
+            target_high = -25.0
+
+
+            low_adj = min(0.1, max(-0.1, (target_low - low_energy) * 0.02))
+            mid_adj = min(0.1, max(-0.1, (target_mid - mid_energy) * 0.02))
+            high_adj = min(0.1, max(-0.1, (target_high - high_energy) * 0.02))
+
+
+            if abs(low_adj) > 0.05 or abs(mid_adj) > 0.05 or abs(high_adj) > 0.05:
+                y_balanced = self.apply_gentle_eq(y, sr, low_adj, mid_adj, high_adj)
+                self.log_message(f"🎛️ Spectral balance: L{low_adj:+.2f} M{mid_adj:+.2f} H{high_adj:+.2f}\n")
+                return y_balanced
+
+            return y
+
+        except Exception as e:
+            self.log_message(f"❌ Spectral balance skipped: {e}")
+            return y
+
+    def apply_gentle_eq(self, y, sr, low_gain, mid_gain, high_gain):
+
+        try:
+            from scipy.signal import butter, sosfilt
+
+
+            low_freq = 250
+            high_freq = 4000
+
+
+            sos_low = butter(2, low_freq, btype='low', fs=sr, output='sos')
+            sos_mid = butter(2, [low_freq, high_freq], btype='band', fs=sr, output='sos')
+            sos_high = butter(2, high_freq, btype='high', fs=sr, output='sos')
+
+
+            y_low = sosfilt(sos_low, y)
+            y_mid = sosfilt(sos_mid, y)
+            y_high = sosfilt(sos_high, y)
+
+
+            y_low *= (10 ** (low_gain / 20))
+            y_mid *= (10 ** (mid_gain / 20))
+            y_high *= (10 ** (high_gain / 20))
+
+
+            y_eq = y_low + y_mid + y_high
+
+
+            peak = np.max(np.abs(y_eq))
+            if peak > 0.95:
+                y_eq *= (0.95 / peak)
+
+            return y_eq
+
+        except Exception as e:
+            self.log_message(f"❌ EQ failed: {e}")
+            return y
+
     def generate_audio_safe(self, outfile):
         try:
             self.is_generating = True
 
-            try:
-                safe_prompt = self.sanitize_prompt(self.PROMPT)
-            except ValueError as e:
-                self.log_message(f"❌ Invalid prompt: {e}")
-                raise
+            # Inizializzazione benchmark se non già presente
+            if not hasattr(self, "benchmark_data"):
+                self.benchmark_data = []
+            if not hasattr(self, "benchmark_file"):
+                self.benchmark_file = "benchdata.json"
+            if not hasattr(self, "load_benchmark_data"):
+                self.log_message("❌ Benchmark functions not loaded")
+            else:
+                self.load_benchmark_data()
 
+            prompt = self.PROMPT
             model = self.model
             duration = self.duration
-            self.generation_status = f"Generating '{safe_prompt}'"
+            self.generation_status = f"Generating '{prompt}'"
             self.log_message("🎼 Generating new sample...\n")
 
             with self.safe_temp_file() as raw_temp, self.safe_temp_file() as processed_temp:
@@ -894,67 +1084,44 @@ class InfiniLoopTerminal:
 
                 start_time = time.time()
 
-                result = subprocess.run(
-                    [
-                        "ionice",
-                        "-c",
-                        "2",
-                        "-n",
-                        "7",
-                        "nice",
-                        "-n",
-                        "10",
-                        "./musicgpt-x86_64-unknown-linux-gnu",
-                        safe_prompt,
-                        "--model",
-                        model,
-                        "--secs",
-                        str(duration),
-                        "--output",
-                        raw_temp,
-                        "--no-playback",
-                        "--no-interactive",
-                        "--ui-no-open",
-                    ],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                    timeout=120,
-                )
+                result = subprocess.run([
+                    "ionice", "-c", "2", "-n", "7",
+                    "nice", "-n", "10",
+                    "./musicgpt-x86_64-unknown-linux-gnu",
+                    prompt,
+                    "--model", model,
+                    "--secs", str(duration),
+                    "--output", raw_temp,
+                    "--no-playback",
+                    "--no-interactive",
+                    "--ui-no-open"
+                ], check=True, capture_output=True, text=True)
 
                 elapsed = time.time() - start_time
-                self.log_message(f"⏱️ AI made it in {elapsed:.2f}s!")
+                self.log_message(f"⏱️ AI made it in {elapsed:.2f}s!\n")
+
+                # 🔍 Salvataggio benchmark
+                if self.benchmark_enabled:
+                    self.benchmark_data.append({
+                        "duration_requested": duration,
+                        "generation_time": round(elapsed, 3)
+                    })
+                    self.save_benchmark_data()
+                    self.log_message("📈 Benchmark stats updated...\n")
+
 
                 self.debug_file_state("POST_GENERATION", raw_temp)
 
                 if not self.validate_audio_file(raw_temp):
                     raise Exception("AI generated invalid audio file")
 
-                import pyloudnorm as pyln
-
                 y, sr = librosa.load(raw_temp, sr=None, mono=True)
-                meter = pyln.Meter(sr)
-                loudness = meter.integrated_loudness(y)
-                target_lufs = -14.0
-
-                y = pyln.normalize.loudness(y, loudness, target_lufs)
-
-                peak = np.max(np.abs(y))
-                if peak > 0.999:
-                    y /= peak
-                    self.log_message("🎚️ Peak limited to avoid clipping")
-
-                sf.write(raw_temp, y, sr)
-                self.log_message(
-                    f"🎚️ Normalized from {loudness:.2f} to {target_lufs}\n"
-                )
-
-                del y
+                y_normalized = self.normalize_audio_advanced(y, sr)
+                sf.write(raw_temp, y_normalized, sr)
+                del y, y_normalized
                 gc.collect()
 
-                os.system("cls" if os.name == "nt" else "clear")
                 self.generation_status = "Loop analysis running..."
-
                 self.process_loop_detection(raw_temp, processed_temp)
 
                 if not self.validate_audio_file(processed_temp):
@@ -967,16 +1134,33 @@ class InfiniLoopTerminal:
 
                 self.generation_status = "Completed!"
 
+                # Callback per aggiornare UI dopo generazione
+                if hasattr(self, "on_generation_complete") and callable(self.on_generation_complete):
+                    try:
+                        self.on_generation_complete()
+                    except Exception as e:
+                        self.log_message(f"❌ UI callback failed: {e}")
+
+
         except subprocess.CalledProcessError as e:
             self.log_message(f"❌ Generation error: {e}\n{e.stderr.strip()}")
             self.generation_status = "Error"
             raise
+
         except subprocess.TimeoutExpired:
             self.log_message("❌ Generation timeout (120s)")
             self.generation_status = "Timeout"
             raise
+
+        except Exception as e:
+            self.log_message(f"❌ General generation failure: {e}")
+            self.generation_status = "Error"
+            raise
+
         finally:
             self.is_generating = False
+
+
 
 
     def get_duration(self, filepath):
@@ -1019,9 +1203,7 @@ class InfiniLoopTerminal:
     def loop_current_crossfade_blocking(
         self, filepath, crossfade_sec_unused, stop_event
     ):
-        """
-        Loop infinito di CURRENT, senza gestire il crossfade qui
-        """
+
         try:
             if not self.validate_audio_file(filepath):
                 self.log_message(f"❌ Invalid file for loop: {filepath}")
@@ -1319,9 +1501,7 @@ class InfiniLoopTerminal:
 
 
     def kill_all_ffplay_processes(self, exclude_pid=None):
-        """
-        Termina tutti i processi ffplay TRANNE quello con exclude_pid
-        """
+
         try:
             result = subprocess.run(
                 ["pgrep", "-f", "ffplay"], capture_output=True, text=True
