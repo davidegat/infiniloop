@@ -8,7 +8,7 @@ At startup, one of two pre-included .wav files will play, so you can enjoy music
 Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with smooth transitions and automatic loop detection. Local, private, more personal than any YouTube or Spotify playlist.
 
 **NEW IN THIS VERSION:**
-- 🎚**LUFS Normalization**: Professional audio loudness standardization (-14 LUFS) 
+- **LUFS Normalization**: Professional audio loudness standardization (-14 LUFS) 
 - **Enhanced Loop Detection**: Improved multi-metric analysis with beat-focused fallback
 - **Zero-Crossing Optimization**: Precise loop point refinement for seamless transitions
 - **Robust Error Handling**: Advanced file validation and crash recovery
