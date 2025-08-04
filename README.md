@@ -8,15 +8,15 @@ At startup, one of two pre-included .wav files will play, so you can enjoy music
 Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with smooth transitions and automatic loop detection. Local, private, more personal than any YouTube or Spotify playlist.
 
 **NEW IN THIS VERSION:**
-- 🎚️ **LUFS Normalization**: Professional audio loudness standardization (-14 LUFS) 
-- 🔧 **Enhanced Loop Detection**: Improved multi-metric analysis with beat-focused fallback
-- 🎯 **Zero-Crossing Optimization**: Precise loop point refinement for seamless transitions
-- 🛡️ **Robust Error Handling**: Advanced file validation and crash recovery
-- 🎼 **Smart Generation**: Adaptive retry system with quality validation
-- ⚡ **Performance Optimizations**: Better memory management and process handling
-- 📊 **Debug Mode**: Comprehensive logging for troubleshooting
+- 🎚**LUFS Normalization**: Professional audio loudness standardization (-14 LUFS) 
+- **Enhanced Loop Detection**: Improved multi-metric analysis with beat-focused fallback
+- **Zero-Crossing Optimization**: Precise loop point refinement for seamless transitions
+- **Robust Error Handling**: Advanced file validation and crash recovery
+- **Smart Generation**: Adaptive retry system with quality validation
+- **Performance Optimizations**: Better memory management and process handling
+- **Debug Mode**: Comprehensive logging for troubleshooting
 
-Advanced GUI version (**experimental**):
+Advanced GUI version (**experimental, NOT recomended**):
 
 <img width="1234" height="679" alt="immagine" src="https://github.com/user-attachments/assets/19390959-ba49-476e-8b26-df606c6dad36" />
 
@@ -605,13 +605,13 @@ All'avvio, uno dei due file .wav inclusi verrà riprodotto subito, così potrai 
 Una volta configurato, il tuo computer diventa una stazione musicale AI locale, in grado di produrre nuovi brani con transizioni fluide e rilevamento automatico del loop. Locale, privato, e più personale di qualsiasi playlist di YouTube o Spotify.
 
 **NOVITÀ IN QUESTA VERSIONE:**
-- 🎚️ **Normalizzazione LUFS**: Standardizzazione professionale del volume audio (-14 LUFS)
-- 🔧 **Rilevamento Loop Migliorato**: Analisi multi-metrica avanzata con fallback basato sui ritmi
-- 🎯 **Ottimizzazione Zero-Crossing**: Raffinamento preciso dei punti di loop per transizioni perfette
-- 🛡️ **Gestione Errori Robusta**: Validazione file avanzata e recupero da crash
-- 🎼 **Generazione Intelligente**: Sistema di retry adattivo con validazione qualità
-- ⚡ **Ottimizzazioni Performance**: Migliore gestione memoria e processi
-- 📊 **Modalità Debug**: Logging completo per diagnostica
+- **Normalizzazione LUFS**: Standardizzazione professionale del volume audio (-14 LUFS)
+- **Rilevamento Loop Migliorato**: Analisi multi-metrica avanzata con fallback basato sui ritmi
+- **Ottimizzazione Zero-Crossing**: Raffinamento preciso dei punti di loop per transizioni perfette
+- **Gestione Errori Robusta**: Validazione file avanzata e recupero da crash
+- **Generazione Intelligente**: Sistema di retry adattivo con validazione qualità
+- **Ottimizzazioni Performance**: Migliore gestione memoria e processi
+- **Modalità Debug**: Logging completo per diagnostica
 
 Versione GUI Avanzata (**sperimentale**):
 
