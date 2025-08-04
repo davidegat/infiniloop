@@ -1,6 +1,6 @@
 # INFINI LOOP - Infinite Local AI Music Generation
 
-INFINI LOOP is an AI-powered music system designed to generate seamless, infinite audio loops in real-time.
+INFINI LOOP is an AI-powered music system designed to generate seamless, infinite audio loops.
 It automatically creates new musical fragments using AI, detects the best loop points, and plays them continuously while preparing the next one — resulting in a smooth, never-ending, always new stream of instrumental music.
 
 At startup, one of two pre-included .wav files will play, so you can enjoy music immediately while the first AI generation is being prepared.
@@ -597,7 +597,7 @@ For commercial licensing, please contact the authors.
 
 # INFINI LOOP - Generazione Musicale Infinita con AI Locale
 
-INFINI LOOP è un sistema musicale basato su intelligenza artificiale progettato per generare in tempo reale loop audio infiniti e senza interruzioni.
+INFINI LOOP è un sistema musicale basato su intelligenza artificiale progettato per generare loop audio infiniti e senza interruzioni.
 Crea automaticamente nuovi frammenti musicali, rileva i migliori punti di loop e li riproduce in sequenza continua, mentre prepara il segmento successivo — offrendo un flusso musicale ininterrotto e sempre nuovo.
 
 All'avvio, uno dei due file .wav inclusi verrà riprodotto subito, così potrai ascoltare musica anche mentre l'IA prepara la prima generazione.
