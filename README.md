@@ -19,15 +19,17 @@ Once set up and running, your machine becomes a local AI music station, continuo
 
 Advanced GUI version (**experimental, NOT recomended**):
 
-<img width="1234" height="679" alt="immagine" src="https://github.com/user-attachments/assets/19390959-ba49-476e-8b26-df606c6dad36" />
+Experimental GUI version (**not recommended**):
 
-Lightweight GUI version (**MOST recommended**):
-
-<img width="672" height="864" alt="immagine" src="https://github.com/user-attachments/assets/3f99ec86-661b-4a5a-8f0a-f97731340f84" />
+<img width="500" alt="immagine" src="https://github.com/user-attachments/assets/19390959-ba49-476e-8b26-df606c6dad36" />
 
 Terminal version (**recommended**):
 
-<img width="849" height="608" alt="immagine" src="https://github.com/user-attachments/assets/9a95d2dd-8690-4d00-8735-530511ef9498" />
+<img width="500" alt="immagine" src="https://github.com/user-attachments/assets/9a95d2dd-8690-4d00-8735-530511ef9498" />
+
+Lightweight GUI version (**MOST recommended**):
+
+<img width="500" alt="immagine" src="https://github.com/user-attachments/assets/f2f93ae5-1fe8-47f3-8c55-86761b7bc3a0" />
 
 ## Table of Contents
 
