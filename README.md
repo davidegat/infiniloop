@@ -15,6 +15,7 @@ Once set up and running, your machine becomes a local AI music station, continuo
 - **Smart Generation**: Adaptive retry system with quality validation
 - **Performance Optimizations**: Better memory management and process handling
 - **Debug Mode**: Comprehensive logging for troubleshooting
+- **Benchmark**: To test various sample length generation time
 
 Advanced GUI version (**experimental, NOT recomended**):
 
@@ -610,6 +611,7 @@ Una volta configurato, il tuo computer diventa una stazione musicale AI locale, 
 - **Generazione Intelligente**: Sistema di retry adattivo con validazione qualità
 - **Ottimizzazioni Performance**: Migliore gestione memoria e processi
 - **Modalità Debug**: Logging completo per diagnostica
+- **Benchmark**: Per testare i tempi di generazione dei sample
 
 Versione GUI Avanzata (**sperimentale**):
 
