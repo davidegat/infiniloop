@@ -20,7 +20,7 @@ import soundfile as sf
 from pydub.utils import mediainfo
 from scipy.signal import correlate
 from scipy.spatial.distance import cosine
-
+import pyloudnorm as pyln
 
 class InfiniLoopTerminal:
     def __init__(self):
@@ -31,9 +31,8 @@ class InfiniLoopTerminal:
         self.CURRENT = self.FILE1
         self.NEXT = self.FILE2
 
-        self.CROSSFADE_MS = 2000
+        self.CROSSFADE_MS = 3000
         self.CROSSFADE_SEC = self.CROSSFADE_MS / 1000.0
-        self.LOOP_OVERLAP_MS = 12
         self.PROMPT = ""
         self.model = "medium"
         self.duration = 8
@@ -284,41 +283,219 @@ class InfiniLoopTerminal:
 
         return max(0.0, 1 - np.mean(diff) / np.pi)
 
-
     def find_perfect_loop_simple(self, y, sr):
-        self.log_message("🧠 Simple loop detection algorithm...")
 
-        S = librosa.power_to_db(librosa.feature.melspectrogram(y=y, sr=sr, n_fft=2048, hop_length=512), ref=np.max)
-        min_f = int(5 * sr / 512)
-        max_f = int(min(len(y) / sr * 0.8, 25) * sr / 512)
-        best_score, best_start, best_end = -np.inf, 0, 0
+        self.log_message("🥁 Switching to Beat-focused algorithm...")
 
-        for i in range(0, S.shape[1] - min_f):
-            for j in range(i + min_f, min(i + max_f, S.shape[1])):
-                a, b = S[:, i], S[:, j]
-                na, nb = np.linalg.norm(a), np.linalg.norm(b)
-                if na > 1e-8 and nb > 1e-8:
-                    s = np.dot(a, b) / (na * nb)
-                    if s > best_score: best_score, best_start, best_end = s, i, j
 
-        if best_score < 0.1:
-            raise Exception(f"No similarity found (score: {best_score:.3f})")
+        try:
 
-        s_samp, e_samp = best_start * 512, best_end * 512
-        if s_samp >= e_samp or e_samp > len(y):
-            raise Exception(f"Invalid bounds: {s_samp} → {e_samp}")
+            tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units='samples')
 
-        dur = (e_samp - s_samp) / sr
-        self.log_message(f"✅ Simple loop found! Score: {best_score:.3f}, Duration: {dur:.1f}s")
+            if len(beats) < 2:
+                raise Exception("Not enough beats detected")
+
+
+            beat_intervals = np.diff(beats)
+            avg_beat_interval = float(np.median(beat_intervals))
+            beat_consistency = float(1.0 - (np.std(beat_intervals) / avg_beat_interval))
+
+
+            tempo_value = float(tempo) if not isinstance(tempo, np.ndarray) else float(tempo[0])
+
+            self.log_message(f"🥁 BPM: {tempo_value:.1f}, Cons: {beat_consistency:.3f}")
+            self.log_message(f"🥁 Beats: {len(beats)}, avg int: {avg_beat_interval/sr:.3f}s\n")
+
+        except Exception as e:
+            self.log_message(f"⚠️ Failed: {e}")
+
+            tempo_value = 120.0
+            avg_beat_interval = float(0.5 * sr)
+            beats = np.arange(0, len(y), int(avg_beat_interval))
+            beat_consistency = 0.5
+
+        beat_duration = avg_beat_interval / sr
+        total_duration = len(y) / sr
+
+
+        if len(beats) >= 8:
+
+            preferred_structures = [
+                (4, "1 measure"), (8, "2 measures"), (16, "4 measures"),
+                (12, "3 measures"), (2, "half measure"), (6, "1.5 measures")
+            ]
+        elif len(beats) >= 4:
+
+            preferred_structures = [
+                (2, "half measure"), (3, "3 beats"), (4, "1 measure"),
+                (6, "1.5 measures"), (8, "2 measures")
+            ]
+        else:
+
+            preferred_structures = [
+                (1, "1 beat"), (2, "half measure"), (3, "3 beats"),
+                (4, "1 measure"), (5, "5 beats")
+            ]
+
+        candidates = []
+
+        for num_beats, description in preferred_structures:
+            target_duration_samples = int(num_beats * avg_beat_interval)
+            target_duration_sec = target_duration_samples / sr
+
+
+            if not (1.5 <= target_duration_sec <= min(total_duration * 0.95, 30.0)):
+                continue
+
+            max_start_sample = len(y) - target_duration_samples
+            valid_candidates_for_structure = 0
+
+
+            search_positions = []
+
+
+            for beat_start in beats:
+                if beat_start <= max_start_sample:
+                    search_positions.append(int(beat_start))
+
+
+            if len(search_positions) < 10:
+                step = int(0.25 * sr)
+                for pos in range(0, max_start_sample, step):
+                    if pos not in search_positions:
+                        search_positions.append(pos)
+
+            for start_sample in search_positions:
+                end_sample = start_sample + target_duration_samples
+
+                if end_sample > len(y):
+                    continue
+
+
+                try:
+
+                    beat_score = self.calculate_beat_alignment(start_sample, end_sample, beats, sr)
+
+
+                    waveform_score = self.calculate_waveform_continuity(y, start_sample, end_sample, sr)
+
+
+                    start_beat_distance = float(min(np.abs(beats - start_sample))) if len(beats) > 0 else float('inf')
+                    end_beat_distance = float(min(np.abs(beats - end_sample))) if len(beats) > 0 else float('inf')
+
+                    perfect_alignment_bonus = 0.0
+                    tolerance = avg_beat_interval * 0.1
+
+                    if start_beat_distance < tolerance:
+                        perfect_alignment_bonus += 0.2
+                    if end_beat_distance < tolerance:
+                        perfect_alignment_bonus += 0.2
+
+
+                    structure_bonus = 0.0
+                    if num_beats in [4, 8, 16]:
+                        structure_bonus = 0.15
+                    elif num_beats in [2, 12, 3]:
+                        structure_bonus = 0.1
+                    elif num_beats in [1, 5, 6]:
+                        structure_bonus = 0.05
+
+
+                    consistency_bonus = beat_consistency * 0.1
+
+
+                    rhythm_focused_score = (
+                        beat_score * 0.50 +
+                        waveform_score * 0.35 +
+                        perfect_alignment_bonus * 0.5 +
+                        structure_bonus +
+                        consistency_bonus +
+                        0.1
+                    )
+
+                    candidates.append({
+                        'start': start_sample,
+                        'end': end_sample,
+                        'score': rhythm_focused_score,
+                        'beats': num_beats,
+                        'description': description,
+                        'metrics': {
+                            'Beat Align': beat_score,
+                            'Waveform': waveform_score,
+                            'Perfect Alignment': perfect_alignment_bonus,
+                            'Structure': structure_bonus,
+                            'Consistency': consistency_bonus
+                        }
+                    })
+
+                    valid_candidates_for_structure += 1
+
+                except Exception as e:
+                    continue
+
+            if valid_candidates_for_structure > 0:
+                self.log_message(f"✅ {valid_candidates_for_structure} candidates for {description}")
+
+
+        if not candidates:
+            raise Exception("No candidates found")
+
+
+        candidates.sort(key=lambda x: x['score'], reverse=True)
+        best = candidates[0]
+
+
+        if best['score'] < 0.15:
+            raise Exception(f"Best score too low: {best['score']:.3f}")
+
+
+        self.log_message("🎯 Beat-preserving zero-crossing optimization...\n")
+
+        original_start, original_end = best['start'], best['end']
+
+        try:
+
+            small_window = min(512, int(avg_beat_interval * 0.1))
+
+            optimized_start = self.find_optimal_zero_crossing(y, original_start, window_size=small_window)
+            optimized_end = self.find_optimal_zero_crossing(y, original_end, window_size=small_window)
+
+
+            if 0 <= optimized_start < optimized_end <= len(y):
+
+                new_beat_score = self.calculate_beat_alignment(optimized_start, optimized_end, beats, sr)
+
+
+                if new_beat_score >= best['metrics']['Beat Align'] * 0.8:
+                    best['start'] = optimized_start
+                    best['end'] = optimized_end
+                    best['metrics']['Beat Align'] = new_beat_score
+                else:
+                    self.log_message("⚠️ Zero-crossing rejected (would compromise beat alignment)")
+            else:
+                self.log_message("⚠️ Zero-crossing optimization produced invalid bounds")
+
+        except Exception as e:
+            self.log_message(f"⚠️ Zero-crossing optimization failed: {e}")
+
+
+        duration = (best['end'] - best['start']) / sr
+
+        self.log_message(f"✅ Potential loop found!\n              Checking duration...\n")
+
 
         return {
-            'start_sample': s_samp,
-            'end_sample': e_samp,
-            'score': best_score,
-            'measures': int(dur / 2),
-            'metrics': {'Spectral': best_score, 'Waveform': 0.5, 'Beat Align': 0.5, 'Phase': 0.5}
+            'start_sample': best['start'],
+            'end_sample': best['end'],
+            'score': best['score'],
+            'measures': max(1, best['beats'] // 4),
+            'metrics': {
+                'Spectral': 0.5,
+                'Waveform': best['metrics']['Waveform'],
+                'Beat Align': best['metrics']['Beat Align'],
+                'Phase': 0.5
+            }
         }
-
 
     def find_perfect_loop(self, y, sr):
 
@@ -326,14 +503,13 @@ class InfiniLoopTerminal:
 
             return self.find_perfect_loop_advanced(y, sr)
         except Exception as e:
-            self.log_message(f"❌ Advanced algorithm failed: {e}")
-            self.log_message("🔄 Using fallback algorithm...")
+            self.log_message(f"❌ Failed!\n")
 
             return self.find_perfect_loop_simple(y, sr)
 
     def find_perfect_loop_advanced(self, y, sr):
 
-        self.log_message("🧠 Ultra-advanced loop detection...")
+        self.log_message("🧠 Advanced loop detection:")
 
 
         if not len(y) or sr <= 0:
@@ -457,7 +633,7 @@ class InfiniLoopTerminal:
 
 
                     if score > best_score_threshold:
-                        self.log_message(f"🎯 Excellent loop found so early! (score: {score:.3f})")
+                        self.log_message(f"🎯 Score: {score:.3f}, Excellent!")
                         break
 
 
@@ -466,14 +642,13 @@ class InfiniLoopTerminal:
 
 
         if best['score'] < 0.15:
-            raise Exception(f"No interesting loop found (best score: {best['score']:.3f})")
+            raise Exception(f"No interesting loop.")
 
         dur = (best['end'] - best['start']) / sr
         if dur < 1.5:
-            raise Exception(f"Loop too short: {dur:.1f}s")
+            raise Exception(f"Loop too short: {dur:.1f}s\n   Discarding sample...\n")
 
-        self.log_message(f"✅ Ultra-cool loop found! {best['measures']} meas, "
-                        f"Score: {best['score']:.3f}, Dur: {dur:.1f}s")
+        self.log_message(f"✅ Perfect loop found?\n")
 
         return {
             'start_sample': best['start'],
@@ -484,21 +659,29 @@ class InfiniLoopTerminal:
         }
 
     def process_loop_detection(self, input_file, output_file):
+
+        MIN_LOOP_DURATION = 2.6
+        MAX_LOOP_ATTEMPTS = 1
+
         try:
             self.debug_file_state("PRE_LOOP_DETECTION", input_file)
 
-
             if not self.validate_audio_file(input_file):
-                raise Exception(f"Invalid input file, bad AI generation?: {input_file}")
+                raise Exception(f"Invalid input file: {input_file}")
 
             y, sr = librosa.load(input_file, sr=None, mono=True)
 
+
+            target_rms = 0.1
+            current_rms = np.sqrt(np.mean(y ** 2))
+            if current_rms > 0:
+                y = y * (target_rms / current_rms)
 
             validations = [
                 (not len(y), "Loaded audio is empty"),
                 (sr <= 0, f"Invalid sample rate: {sr}"),
                 (np.isnan(y).any() or np.isinf(y).any(), "Audio contains bad values"),
-                (len(y) / sr < 2.0, f"Audio too short for loop detection... running on the low?: {len(y)/sr:.1f}s")
+                (len(y) / sr < 2.0, f"Audio too short for loop detection: {len(y)/sr:.1f}s")
             ]
 
             for condition, message in validations:
@@ -506,78 +689,98 @@ class InfiniLoopTerminal:
                     raise Exception(message)
 
 
-            loop_info = self.find_perfect_loop(y, sr)
-            s, e = loop_info['start_sample'], loop_info['end_sample']
-
-            if not (0 <= s < e <= len(y)):
-                raise Exception(f"Invalid loop bounds: {s} -> {e} (max: {len(y)})")
-
-
-            self.log_message("🎯 Zero-crossing optimization...")
-            s, e = (self.find_optimal_zero_crossing(y, pos) for pos in (s, e))
-
-            if not (0 <= s < e <= len(y)):
-                raise Exception(f"Loop bounds corrupted after zero-crossing: {s} -> {e} sorry, I messed up...")
-
-
-            print("\n📊 Loop metrics:")
-            for k, v in loop_info['metrics'].items():
-                print(f"   {k}: {v:.3f}")
-
-
-            y_loop = y[s:e]
-            dur = len(y_loop) / sr
-
-            if dur < 1.0:
-                raise Exception(f"Loop too short: {dur:.1f}s")
-
-            if np.isnan(y_loop).any() or np.isinf(y_loop).any():
-                raise Exception("Extracted loop contains trash...maybe my fault...")
-
-
-            fade_samples = int(sr * 0.01)
-            if fade_samples:
-                fade_in, fade_out = np.linspace(0, 1, fade_samples), np.linspace(1, 0, fade_samples)
-                y_loop[:fade_samples] *= fade_in
-                y_loop[-fade_samples:] *= fade_out
-
-
-            if os.path.exists(output_file):
-                os.remove(output_file)
-
-            try:
-                sf.write(output_file, y_loop, sr)
-            except Exception as err:
-                raise Exception(f"Error writing audio file: {err}")
-
-
-            if os.path.getsize(output_file) < 1024:
-                raise Exception("Output file too small, enlarge it please.")
-
-            self.debug_file_state("POST_LOOP_DETECTION", output_file)
-
-            if not self.validate_audio_file(output_file):
+            for attempt in range(1, MAX_LOOP_ATTEMPTS + 1):
                 try:
-                    test_y, test_sr = librosa.load(output_file, sr=None, mono=True)
-                    raise Exception(f"WTF Error #1 "
-                                f"(dur: {len(test_y)/test_sr:.1f}s, samples: {len(test_y)})")
-                except Exception as err:
-                    raise Exception(f"WTF ERROR #2: {err}")
 
-            self.log_message(f"🧬 Perfect loop obtained! (Allegedly...)\n"
-                            f"              {loop_info['measures']} measures, {dur:.1f}s, "
-                            f"Score: {loop_info['score']:.3f}")
+                    loop_info = self.find_perfect_loop(y, sr)
+                    s, e = loop_info['start_sample'], loop_info['end_sample']
+
+                    if not (0 <= s < e <= len(y)):
+                        raise Exception(f"Invalid loop bounds: {s} -> {e} (max: {len(y)})")
+
+
+                    initial_duration = (e - s) / sr
+
+                    if initial_duration < MIN_LOOP_DURATION:
+                        if attempt < MAX_LOOP_ATTEMPTS:
+                            self.log_message(f"   ⚠️ Too short ({initial_duration:.1f}s < {MIN_LOOP_DURATION}s), retrying...\n")
+                            continue
+                        else:
+                            raise Exception(f"{initial_duration:.1f} seconds is too short\n")
+
+                    self.log_message("🎯 Zero-crossing optimization...")
+                    s_opt, e_opt = (self.find_optimal_zero_crossing(y, pos) for pos in (s, e))
+
+                    if not (0 <= s_opt < e_opt <= len(y)):
+
+                        self.log_message("⚠️ Zero-crossing failed, using original positions")
+                        s_opt, e_opt = s, e
+
+
+                    final_duration = (e_opt - s_opt) / sr
+
+                    if final_duration < MIN_LOOP_DURATION:
+                        if attempt < MAX_LOOP_ATTEMPTS:
+                            self.log_message(f"   ⚠️ Too short after optimization, retrying...")
+                            continue
+                        else:
+                            raise Exception(f"All attempts failed!")
+
+                    print("\n📊 Loop metrics:")
+                    for k, v in loop_info['metrics'].items():
+                        print(f"   {k}: {v:.3f}")
+
+                    y_loop = y[s_opt:e_opt]
+
+                    if np.isnan(y_loop).any() or np.isinf(y_loop).any():
+                        raise Exception("Loop contains invalid values")
+
+
+                    fade_samples = int(sr * 0.01)
+                    if fade_samples:
+                        fade_in, fade_out = np.linspace(0, 1, fade_samples), np.linspace(1, 0, fade_samples)
+                        y_loop[:fade_samples] *= fade_in
+                        y_loop[-fade_samples:] *= fade_out
+
+                    if os.path.exists(output_file):
+                        os.remove(output_file)
+
+                    try:
+                        sf.write(output_file, y_loop, sr)
+                    except Exception as err:
+                        raise Exception(f"Error writing audio file: {err}")
+
+                    if os.path.getsize(output_file) < 1024:
+                        raise Exception("Output too small")
+
+                    self.debug_file_state("POST_LOOP_DETECTION", output_file)
+
+                    if not self.validate_audio_file(output_file):
+                        raise Exception("Output validation failed")
+
+                    self.log_message(f"🧬 Loop ready! {final_duration:.1f}s\n")
+
+
+                    return
+
+                except Exception as attempt_error:
+                    if attempt < MAX_LOOP_ATTEMPTS:
+                        self.log_message(f"   ❌ Attempt {attempt} failed: {attempt_error}")
+                        continue
+                    else:
+
+                        raise attempt_error
+
+
+            raise Exception(f"Failed to find loop after {MAX_LOOP_ATTEMPTS} attempts")
 
         except Exception as e:
-
             if os.path.exists(output_file):
                 try:
                     os.remove(output_file)
-                    self.log_message(f"🗑️ Removed nasty file: {os.path.basename(output_file)}")
                 except:
                     pass
 
-            self.log_message(f"❌ Loop detection error (AKA WTF Error #3): {e}")
             raise
 
 
@@ -588,14 +791,16 @@ class InfiniLoopTerminal:
             model = self.model
             duration = self.duration
             self.generation_status = f"Generating '{prompt}'"
-            self.log_message("🎼 Generating new sample...")
+            self.log_message("🎼 Generating new sample...\n")
 
             with self.safe_temp_file() as raw_temp, self.safe_temp_file() as processed_temp:
                 self.debug_file_state("PRE_GENERATION", raw_temp)
 
+                start_time = time.time()
+
                 result = subprocess.run([
-                    "ionice", "-c", "2", "-n", "7",       # Bassa priorità I/O
-                    "nice", "-n", "10",                  # Bassa priorità CPU
+                    "ionice", "-c", "2", "-n", "7",
+                    "nice", "-n", "10",
                     "./musicgpt-x86_64-unknown-linux-gnu",
                     prompt,
                     "--model", model,
@@ -606,19 +811,38 @@ class InfiniLoopTerminal:
                     "--ui-no-open"
                 ], check=True, capture_output=True, text=True)
 
+                elapsed = time.time() - start_time
+                self.log_message(f"⏱️ AI made it in {elapsed:.2f}s!")
+
                 self.debug_file_state("POST_GENERATION", raw_temp)
 
                 if not self.validate_audio_file(raw_temp):
-                    raise Exception("Sorry, AI messed up with this file. Can't use it.")
+                    raise Exception("AI generated invalid audio file")
+
+                # 🔊 Normalizzazione LUFS (volume percepito)
+                import pyloudnorm as pyln
+                y, sr = librosa.load(raw_temp, sr=None, mono=True)
+                meter = pyln.Meter(sr)
+                loudness = meter.integrated_loudness(y)
+                target_lufs = -14.0  # standard Spotify/YouTube
+
+                y = pyln.normalize.loudness(y, loudness, target_lufs)
+
+                peak = np.max(np.abs(y))
+                if peak > 0.999:
+                    y /= peak  # evitato clipping
+                    self.log_message("🎚️ Peak limited to avoid clipping")
+
+                sf.write(raw_temp, y, sr)
+                self.log_message(f"🎚️ Normalized from {loudness:.2f} to {target_lufs}\n")
 
                 os.system("cls" if os.name == "nt" else "clear")
-                self.log_message(f"🎼 Sample generated ({duration}s)!")
-                self.generation_status = "Loop analysis..."
+                self.generation_status = "Loop analysis running..."
 
                 self.process_loop_detection(raw_temp, processed_temp)
 
                 if not self.validate_audio_file(processed_temp):
-                    raise Exception("File corrupted after loop detection. My fault.")
+                    raise Exception("Processed file validation failed")
 
                 self.debug_file_state("PRE_FINAL_MOVE", processed_temp)
                 with self.file_lock:
@@ -632,13 +856,9 @@ class InfiniLoopTerminal:
             self.generation_status = "Error"
             raise
 
-        except Exception as e:
-            self.log_message(f"❌ Unexpected WTF error #n: {str(e)}")
-            self.generation_status = "Error"
-            raise
-
         finally:
             self.is_generating = False
+
 
 
 
@@ -682,16 +902,13 @@ class InfiniLoopTerminal:
             if not self.validate_audio_file(filepath):
                 self.log_message(f"❌ Invalid file for playback, can't tell why: {filepath}")
                 return
-
             env = os.environ.copy()
             env["SDL_AUDIODRIVER"] = self.audio_driver
-
             self.debug_file_state("START_PLAYBACK", filepath)
-
             process = subprocess.Popen(
                 [
-                    "ionice", "-c", "2", "-n", "0",            # I/O alta priorità
-                    "taskset", "-c", "2",                      # Affinità CPU su core 2
+                    "ionice", "-c", "2", "-n", "0",
+                    "taskset", "-c", "2",
                     "ffplay",
                     "-nodisp",
                     "-autoexit",
@@ -699,6 +916,7 @@ class InfiniLoopTerminal:
                     "-infbuf",
                     "-probesize", "32",
                     "-analyzeduration", "0",
+                    "-loop", "0",  # Loop infinito nativo di ffplay
                     "-f", "wav",
                     os.path.abspath(filepath)
                 ],
@@ -706,33 +924,35 @@ class InfiniLoopTerminal:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
-
             return_code = process.wait()
             self.debug_file_state("END_PLAYBACK", filepath)
-
             if return_code != 0:
                 self.log_message(f"❌ ffplay terminated with code {return_code}")
-
         except subprocess.TimeoutExpired:
             self.log_message("❌ ffplay timeout - forced termination")
             if process:
                 self._kill_process_safely(process)
-
         except Exception as e:
             self.log_message(f"❌ ffplay crash detected: {str(e)}")
             if process:
                 self._kill_process_safely(process)
-
         finally:
             if process and process.poll() is None:
                 self._kill_process_safely(process)
 
 
     def loop_current_crossfade_blocking(self, filepath, crossfade_sec_unused, stop_event):
+        """
+        Loop infinito di CURRENT, senza gestire il crossfade qui
+        """
         try:
+            if not self.validate_audio_file(filepath):
+                self.log_message(f"❌ Invalid file for loop: {filepath}")
+                return
+
             duration = self.get_duration(filepath)
             if duration <= 0:
-                self.log_message(f"❌ Invalid audio file: {filepath}, kinda a WTF error, but anyway...")
+                self.log_message(f"❌ Invalid duration: {filepath}")
                 return
 
             title = self.get_random_title()
@@ -743,198 +963,110 @@ class InfiniLoopTerminal:
             print(f"   Loop:    {duration:.1f} seconds")
             print(f"   Genre:   {self.PROMPT}\n")
 
-            retry_count = 0
-            max_retries = 3
+            env = os.environ.copy()
+            env["SDL_AUDIODRIVER"] = self.audio_driver
 
-            while self.is_playing and not stop_event.is_set():
-                if not self.validate_audio_file(filepath):
-                    self.log_message(f"❌ Corrupted file detected during loop: {filepath}")
-                    break
+            self.debug_file_state("START_PLAYBACK", filepath)
 
-                try:
-                    # Calcola overlap in secondi (con limite massimo = durata - 0.1s)
-                    overlap_sec = max(0.0, min(self.LOOP_OVERLAP_MS, duration * 1000 - 100) / 1000.0)
-                    play_delay = max(0.1, duration - overlap_sec)
+            # Avvia il processo con loop infinito
+            current_process = subprocess.Popen([
+                "ionice", "-c", "2", "-n", "0",
+                "taskset", "-c", "2",
+                "ffplay",
+                "-nodisp",
+                "-autoexit",
+                "-loglevel", "quiet",
+                "-infbuf",
+                "-probesize", "32",
+                "-analyzeduration", "0",
+                "-loop", "0",
+                "-f", "wav",
+                os.path.abspath(filepath)
+            ], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-                    # Avvia la riproduzione del file
-                    thread = threading.Thread(
-                        target=self.play_with_ffplay, args=(filepath,), daemon=True
-                    )
-                    thread.start()
+            # Attendi fino a stop_event senza fare crossfade
+            while not stop_event.is_set() and current_process.poll() is None:
+                stop_event.wait(0.1)
 
-                    # Attende la fine del ciclo meno l'overlap
-                    if stop_event.wait(play_delay):
-                        break
+            # Termina il processo quando richiesto
+            if current_process.poll() is None:
+                self._kill_process_safely(current_process)
 
-                    retry_count = 0
-
-                except Exception as e:
-                    retry_count += 1
-                    self._log_retry_error(retry_count, max_retries, e)
-                    if retry_count >= max_retries or stop_event.wait(1.0):
-                        break
+            self.debug_file_state("END_PLAYBACK", filepath)
 
         except Exception as e:
-            self.log_message(f"❌ Error in loop, whatever it means.")
+            self.log_message(f"❌ Error in playback: {str(e)}")
+            if 'current_process' in locals() and current_process.poll() is None:
+                self._kill_process_safely(current_process)
 
 
-
-
-
-    def _create_crossfade_audio(self, current_file, next_file, crossfade_sec, current_duration):
-
+    def _kill_process_safely(self, process):
+        """Terminazione sicura del processo con timeout"""
         try:
+            # Prima prova SIGTERM
+            process.terminate()
+            process.wait(timeout=2.0)
+        except subprocess.TimeoutExpired:
+            # Poi forza con SIGKILL
+            process.kill()
+            process.wait(timeout=1.0)
+        except Exception:
+            pass
 
-            temp_fd, crossfade_output = tempfile.mkstemp(suffix=".wav", prefix="crossfade_")
-            os.close(temp_fd)
-
-            try:
-
-                fade_start_time = current_duration - crossfade_sec
-
-
-                cmd = [
-                    "ffmpeg", "-y",
-                    "-i", current_file,
-                    "-i", next_file,
-                    "-filter_complex",
-                    f"[0]afade=t=out:st={fade_start_time:.3f}:d={crossfade_sec:.3f}[a0];"
-                    f"[1]afade=t=in:st=0:d={crossfade_sec:.3f},adelay={fade_start_time * 1000:.0f}|{fade_start_time * 1000:.0f}[a1];"
-                    f"[a0][a1]amix=inputs=2:duration=first:dropout_transition=0[out]",
-                    "-map", "[out]",
-                    "-t", f"{current_duration:.3f}",
-                    crossfade_output
-                ]
-
-                result = subprocess.run(cmd,
-                                    stdout=subprocess.DEVNULL,
-                                    stderr=subprocess.PIPE,
-                                    text=True)
-
-                if result.returncode == 0:
-
-                    self._temp_files_to_cleanup.append(crossfade_output)
-                    return crossfade_output
-                else:
-                    self.log_message(f"❌ Crossfade failed: {result.stderr}, will be a better DJ soon...")
-                    os.unlink(crossfade_output)
-                    return None
-
-            except Exception as e:
-                if os.path.exists(crossfade_output):
-                    os.unlink(crossfade_output)
-                raise e
-
-        except Exception as e:
-            self.log_message(f"❌ Error creating crossfade: {str(e)}")
-            return None
-
-
-    def _play_single_track_with_fade(self, filepath, duration, crossfade_sec, stop_event, delay, fade_type="out"):
-
-        try:
-            fade_duration = min(2.0, crossfade_sec)
-
-            if fade_type == "out":
-
-                fade_filter = f"afade=t=out:st={duration - fade_duration:.3f}:d={fade_duration:.3f}"
-            elif fade_type == "in":
-
-                fade_filter = f"afade=t=in:st=0:d={fade_duration:.3f}"
-            else:
-
-                thread = threading.Thread(
-                    target=self.play_with_ffplay, args=(filepath,), daemon=True
-                )
-                thread.start()
-                if stop_event.wait(delay):
-                    return
-                return
-
-            temp_fd, processed_path = tempfile.mkstemp(suffix=".wav", prefix="fade_")
-            os.close(temp_fd)
-
-            try:
-                result = subprocess.run([
-                    "ffmpeg", "-y",
-                    "-i", filepath,
-                    "-af", fade_filter,
-                    processed_path
-                ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
-
-                if result.returncode == 0:
-
-                    self._temp_files_to_cleanup.append(processed_path)
-                    thread = threading.Thread(
-                        target=self.play_with_ffplay, args=(processed_path,), daemon=True
-                    )
-                    thread.start()
-                    if stop_event.wait(delay):
-                        return
-                else:
-                    self.log_message(f"❌ Fade processing failed: {result.stderr}")
-                    os.unlink(processed_path)
-
-                    thread = threading.Thread(
-                        target=self.play_with_ffplay, args=(filepath,), daemon=True
-                    )
-                    thread.start()
-                    if stop_event.wait(delay):
-                        return
-
-            except Exception as e:
-                if os.path.exists(processed_path):
-                    os.unlink(processed_path)
-                raise e
-
-        except Exception as e:
-            self.log_message(f"❌ Error in fade processing: {str(e)}")
-
-            thread = threading.Thread(
-                target=self.play_with_ffplay, args=(filepath,), daemon=True
-            )
-            thread.start()
-            if stop_event.wait(delay):
-                return
-
-
-    def _log_retry_error(self, count, max_count, exc):
-        self.log_message(f"❌ Playback error (attempt {count}/{max_count}): {str(exc)}")
 
 
     def safe_file_swap(self):
-
         with self.swap_lock:
             try:
-
-                self.stop_event.set()
-
-
-                if self.loop_thread and self.loop_thread.is_alive():
-                    max_wait = min(self.get_duration(self.CURRENT) + 3.0, 10.0)
-                    self.loop_thread.join(timeout=max_wait)
-
-                    if self.loop_thread.is_alive():
-                        self.log_message("❌ Timeout waiting: forcing ffplay termination and nothing more.")
-                        self.kill_all_ffplay_processes()
-                        self.loop_thread.join(timeout=2.0)
-
-
                 if not self.validate_audio_file(self.NEXT):
                     raise Exception(f"❌ Invalid NEXT file: {self.NEXT}")
 
+                # Applica fade-in una tantum direttamente al file NEXT
+
+                env = os.environ.copy()
+                env["SDL_AUDIODRIVER"] = self.audio_driver
+
+                self.log_message("🎵 Mixing loops...\n")
+
+                # Avvia NEXT in background PRIMA di fermare CURRENT
+                next_process = subprocess.Popen([
+                    "ionice", "-c", "2", "-n", "0",
+                    "taskset", "-c", "3",
+                    "ffplay",
+                    "-nodisp",
+                    "-autoexit",
+                    "-loglevel", "quiet",
+                    "-infbuf",
+                    "-probesize", "32",
+                    "-analyzeduration", "0",
+                    "-loop", "0",
+                    "-f", "wav",
+                    os.path.abspath(self.NEXT)
+                ], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+                next_pid = next_process.pid
+
+                time.sleep(self.CROSSFADE_SEC)
+
+                self.stop_event.set()
+
+                if self.loop_thread and self.loop_thread.is_alive():
+                    self.loop_thread.join(timeout=2.0)
+
+                self.kill_all_ffplay_processes(exclude_pid=next_pid)
 
                 with self.file_lock:
                     self.CURRENT, self.NEXT = self.NEXT, self.CURRENT
 
-
                 self.stop_event = threading.Event()
+
                 return True
 
             except Exception as e:
-                self.log_message(f"❌ Error during swap, whatever it means: {str(e)}")
+                self.log_message(f"❌ Error during swap: {str(e)}")
                 self.stop_event = threading.Event()
                 return False
+
 
 
     def run_loop(self):
@@ -945,14 +1077,9 @@ class InfiniLoopTerminal:
             daemon=True
         )
         self.loop_thread.start()
-        try:
-            p = psutil.Process(self.loop_thread.ident)
-            p.nice(-10)
-        except Exception:
-            pass
 
         consecutive_errors = 0
-        max_consecutive_errors = 5
+        max_consecutive_errors = 2
 
         while self.is_playing:
             try:
@@ -962,42 +1089,21 @@ class InfiniLoopTerminal:
                     break
 
                 if not self.safe_file_swap():
-                    self.log_message("❌ Swap failed, regenerating or something...")
+                    self.log_message("❌ Swap failed, regenerating...")
                     continue
 
                 if not self.is_playing:
                     break
 
-                loop_thread = threading.Thread(
-                    target=self.loop_current_crossfade_blocking,
-                    args=(self.CURRENT, self.CROSSFADE_SEC, self.stop_event),
-                    daemon=True
-                )
-                loop_thread.start()
-                try:
-                    p = psutil.Process(loop_thread.ident)
-                    p.nice(-10)
-                except Exception:
-                    pass
-                self.loop_thread = loop_thread
+                # NON avviamo un nuovo thread qui perché safe_file_swap
+                # ha già avviato il processo ffplay per il nuovo CURRENT
+                # Aspettiamo solo che sia necessario il prossimo swap
 
                 consecutive_errors = 0
 
             except Exception as e:
                 consecutive_errors += 1
-                self.log_message(f"❌ Error in cycle ({consecutive_errors}/{max_consecutive_errors}): {str(e)}")
-
-                if consecutive_errors >= max_consecutive_errors:
-                    self.log_message("❌ Too many consecutive errors, I'm done. Stopping loop.")
-                    self.is_playing = False
-                    break
-
-                self.kill_all_ffplay_processes()
-
-                if not self.stop_event.wait(2.0):
-                    continue
-                else:
-                    break
+                self.log_message(f"❌ Error! {str(e)}")
 
 
     def main_loop(self):
@@ -1084,20 +1190,26 @@ class InfiniLoopTerminal:
         self.kill_all_ffplay_processes()
         self.kill_all_musicgpt_processes()
         self.cleanup_temp_files()
-    def kill_all_ffplay_processes(self):
 
+    def kill_all_ffplay_processes(self, exclude_pid=None):
+        """
+        Termina tutti i processi ffplay TRANNE quello con exclude_pid
+        """
         try:
-
             result = subprocess.run(["pgrep", "-f", "ffplay"], capture_output=True, text=True)
             if result.stdout.strip():
                 pids = result.stdout.strip().split('\n')
                 for pid in pids:
                     try:
+                        pid_int = int(pid)
+                        # Salta il PID da escludere
+                        if exclude_pid and pid_int == exclude_pid:
+                            continue
+
                         subprocess.run(["kill", "-9", pid], check=False, timeout=2)
                     except:
                         pass
         except Exception as e:
-
             pass
 
     def kill_all_musicgpt_processes(self):
@@ -1324,7 +1436,7 @@ def interactive_mode(app):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="INFINI LOOP TERMINAL - Infinite AI Music Generation",
+        description="InfiniLoop TERMINAL - Local AI Infinite Music Generator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage examples:
@@ -1438,7 +1550,6 @@ APPLIED FIXES:
         app.stop_loop()
         print("\n👋 Goodbye!")
     except Exception as e:
-        print(f"\n❌ Error: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":
