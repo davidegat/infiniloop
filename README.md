@@ -50,7 +50,7 @@ Terminal version (**recommended**):
   - Beat alignment and rhythm preservation
   - Phase coherence optimization
   - Zero-crossing refinement
-- **Seamless Playback**: Native infinite looping with crossfade transitions
+- **Seamless Playback**: Native infinite looping with transitions
 - **Intelligent Generation**: Retry system with quality validation and error recovery
 - **Multiple Interfaces**: Terminal, lightweight GUI, and advanced GUI with visualizations
 - **Process Management**: CPU/IO priority optimization and safe termination
@@ -62,7 +62,7 @@ Terminal version (**recommended**):
 ### 1. Terminal Version (`ilterm.py`) - Most Stable ⭐
 
 - Command-line interface with full interactive mode
-- Real crossfade support between loops  
+- Real transition support between loops  
 - Advanced audio validation and error recovery
 - Debug mode with detailed logging
 - Generation-only mode for single loops
@@ -83,7 +83,7 @@ Terminal version (**recommended**):
 
 - Clean graphical interface with essential controls
 - Same robust audio engine as terminal version
-- Real crossfade support with visual feedback
+- Real transition support with visual feedback
 - Preset system for quick generation
 - Real-time status monitoring
 - Settings persistence
@@ -300,8 +300,7 @@ python il2.py
 3. **Loop Analysis**: Advanced multi-metric algorithm detects optimal loop points
 4. **Audio Normalization**: LUFS standardization to -14 dB (broadcast standard)
 5. **Zero-Crossing Optimization**: Fine-tune loop points for seamless transitions
-6. **Crossfade Preparation**: Calculate fade regions for smooth playback
-7. **Continuous Playback**: Native infinite looping with background generation
+6. **Continuous Playback**: Native infinite looping with background generation
 
 ### Loop Detection Algorithm
 
@@ -646,7 +645,7 @@ Versione Terminale (**raccomandata**):
   - Allineamento ritmi e preservazione beat
   - Ottimizzazione coerenza di fase
   - Raffinamento zero-crossing
-- **Riproduzione Continua**: Loop infinito nativo con transizioni crossfade
+- **Riproduzione Continua**: Loop infinito nativo con transizioni
 - **Generazione Intelligente**: Sistema retry con validazione qualità e recupero errori
 - **Interfacce Multiple**: Terminale, GUI leggera e GUI avanzata con visualizzazioni
 - **Gestione Processi**: Ottimizzazione priorità CPU/IO e terminazione sicura
@@ -658,7 +657,7 @@ Versione Terminale (**raccomandata**):
 ### 1. Versione Terminale (`ilterm.py`) - Più Stabile ⭐
 
 - Interfaccia a riga di comando con modalità interattiva completa
-- Supporto crossfade reale tra i loop
+- Supporto transizione reale tra i loop
 - Validazione audio avanzata e recupero errori
 - Modalità debug con logging dettagliato
 - Modalità generazione singola per loop individuali
@@ -679,7 +678,7 @@ Versione Terminale (**raccomandata**):
 
 - Interfaccia grafica pulita con controlli essenziali
 - Stesso motore audio robusto della versione terminale
-- Supporto crossfade reale con feedback visivo
+- Supporto transizione reale con feedback visivo
 - Sistema preset per generazione rapida
 - Monitoraggio status in tempo reale
 - Persistenza impostazioni
@@ -909,8 +908,7 @@ python il2.py
 3. **Analisi Loop**: Algoritmo multi-metrico avanzato rileva punti loop ottimali
 4. **Normalizzazione Audio**: Standardizzazione LUFS a -14 dB (standard broadcast)
 5. **Ottimizzazione Zero-Crossing**: Affina punti loop per transizioni perfette
-6. **Preparazione Crossfade**: Calcola regioni fade per riproduzione fluida
-7. **Riproduzione Continua**: Loop infinito nativo con generazione in background
+6. **Riproduzione Continua**: Loop infinito nativo con generazione in background
 
 ### Algoritmo Rilevamento Loop
 
