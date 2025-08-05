@@ -120,7 +120,7 @@ class InfiniLoopTerminal:
             self._temp_files_to_cleanup.clear()
 
     def on_generation_complete(self):
-        pass  # sovrascritto dalla GUI se serve
+        pass
 
     def __del__(self):
         try:
@@ -218,14 +218,36 @@ class InfiniLoopTerminal:
 
 
     def find_optimal_zero_crossing(self, y, sample, window_size=512):
-        win = min(window_size, len(y) // 100)
-        s, e = max(0, sample - win // 2), min(len(y), sample + win // 2)
-        if e - s < 4: return sample
+
+        sr = 22050
+        max_deviation_ms = 2
+        max_deviation_samples = int(max_deviation_ms * sr / 1000)
+
+
+        win = min(max_deviation_samples, len(y) // 200, window_size // 4)
+        s, e = max(0, sample - win), min(len(y), sample + win)
+
+        if e - s < 4:
+            return sample
+
         seg = y[s:e]
         zeroes = np.where(np.diff(np.sign(seg)) != 0)[0] + s
-        if not len(zeroes): return sample
+        if not len(zeroes):
+            return sample
+
+
+        distances = np.abs(zeroes - sample)
         amps = np.abs(y[zeroes]) + np.abs(y[zeroes + 1])
-        return zeroes[np.argmin(amps)]
+
+
+        distance_scores = 1.0 / (distances + 1)
+        amplitude_scores = 1.0 / (amps + 1e-8)
+
+
+        combined_scores = distance_scores * 0.7 + amplitude_scores * 0.3
+
+        best_idx = np.argmax(combined_scores)
+        return zeroes[best_idx]
 
 
     def calculate_waveform_continuity(self, y, start, end, sr):
@@ -256,12 +278,83 @@ class InfiniLoopTerminal:
 
 
     def calculate_beat_alignment(self, start, end, beats, sr):
-        if not len(beats): return 0.5
-        tol = np.mean(np.diff(beats)) * 0.1 if len(beats) > 1 else sr * 0.1
-        dist = lambda x: np.min(np.abs(beats - x))
-        score = lambda d: 1.0 if d <= tol else np.exp(-((d - tol) / tol))
-        a_s, a_e = score(dist(start)), score(dist(end))
-        return min(1.0, (a_s + a_e) / 2 + (0.1 if a_s > 0.8 and a_e > 0.8 else 0.0))
+
+        if not len(beats):
+            return 0.5
+
+
+        if len(beats) > 1:
+            beat_intervals = np.diff(beats)
+
+            median_interval = np.median(beat_intervals)
+
+            interval_std = np.std(beat_intervals)
+            consistency = 1.0 - min(interval_std / median_interval, 1.0)
+
+
+            base_tolerance = median_interval * (0.08 + 0.12 * (1 - consistency))
+            tol = max(base_tolerance, sr * 0.005)
+        else:
+            tol = sr * 0.02
+
+
+        def distance_to_nearest_beat(pos):
+            return np.min(np.abs(beats - pos))
+
+        def alignment_score(distance, tolerance):
+            if distance <= tolerance:
+
+                return 1.0 - (distance / tolerance) * 0.2
+            else:
+
+                excess = distance - tolerance
+                return max(0.0, np.exp(-excess / (tolerance * 0.5)))
+
+
+        start_dist = distance_to_nearest_beat(start)
+        end_dist = distance_to_nearest_beat(end)
+
+        start_score = alignment_score(start_dist, tol)
+        end_score = alignment_score(end_dist, tol)
+
+
+        base_score = (start_score + end_score) / 2
+
+
+        perfect_alignment_bonus = 0.0
+        if start_score > 0.9 and end_score > 0.9:
+            perfect_alignment_bonus = 0.1
+        elif start_score > 0.8 and end_score > 0.8:
+            perfect_alignment_bonus = 0.05
+
+
+        duration_samples = end - start
+        if len(beats) > 2:
+            expected_beats_in_loop = duration_samples / median_interval
+
+            beat_count_error = abs(expected_beats_in_loop - round(expected_beats_in_loop))
+            if beat_count_error < 0.1:
+                perfect_alignment_bonus += 0.05
+
+
+        structure_penalty = 0.0
+        if len(beats) > 3:
+            avg_beat_interval = np.mean(beat_intervals)
+            loop_duration_beats = duration_samples / avg_beat_interval
+
+
+            ideal_lengths = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32]
+            closest_ideal = min(ideal_lengths, key=lambda x: abs(x - loop_duration_beats))
+            length_error = abs(loop_duration_beats - closest_ideal)
+
+            if length_error < 0.2:
+                perfect_alignment_bonus += 0.03
+            elif length_error > 1.0:
+                structure_penalty = 0.1
+
+        final_score = base_score + perfect_alignment_bonus - structure_penalty
+
+        return min(1.0, max(0.0, final_score))
 
 
     def find_perfect_loop_simple(self, y, sr):
@@ -360,7 +453,7 @@ class InfiniLoopTerminal:
 
 
     def find_perfect_loop_advanced(self, y, sr):
-        self.log_message("🧠 Advanced loop detection:")
+        self.log_message("🧠 Initial loop detection:")
         if not len(y) or sr <= 0:
             raise Exception("Invalid input: empty audio from AI?")
 
@@ -658,12 +751,12 @@ class InfiniLoopTerminal:
                 self.log_message("❌ Nearly silent audio, applying gain")
                 return y * 0.1
 
-            # Adattamento RMS dinamico
+
             if self.volume_history:
                 target_rms_final = np.mean(self.volume_history)
                 self.log_message(f"📈 Adaptive RMS target: {target_rms_final:.3f}")
             else:
-                target_rms_final = 0.10  # valore iniziale
+                target_rms_final = 0.10
 
             meter = pyln.Meter(sr)
             try:
@@ -681,7 +774,6 @@ class InfiniLoopTerminal:
                 self.log_message(f"❌ LUFS failed: {lufs_error}, using RMS")
                 y_normalized = y * (target_rms_final / rms_original)
 
-            # Controllo picco
             peak_after_lufs = np.max(np.abs(y_normalized))
             max_allowed_peak = 0.95
 
@@ -690,7 +782,7 @@ class InfiniLoopTerminal:
                 y_normalized *= peak_reduction
                 self.log_message(f"🎚️ Peak: {peak_after_lufs:.3f} → {max_allowed_peak}")
 
-            # Secondo check RMS
+
             rms_final = np.sqrt(np.mean(y_normalized**2))
             rms_tolerance = 0.03
 
@@ -705,7 +797,7 @@ class InfiniLoopTerminal:
                 self.log_message(f"🎚️ RMS cons: {rms_final:.3f} → {rms_final_adjusted:.3f}")
                 rms_final = rms_final_adjusted
 
-            # 🧠 Memorizza RMS finale nella storia
+
             self.volume_history.append(rms_final)
             if len(self.volume_history) > self.max_volume_history:
                 self.volume_history.pop(0)
