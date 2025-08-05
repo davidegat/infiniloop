@@ -2,7 +2,6 @@ import argparse
 import contextlib
 import gc
 import os
-import queue
 import random
 import re
 import shutil
@@ -33,54 +32,48 @@ class InfiniLoopTerminal:
         self.base_dir = os.path.abspath(".")
         self.FILE1 = os.path.join(self.base_dir, "music1.wav")
         self.FILE2 = os.path.join(self.base_dir, "music2.wav")
-        self.CURRENT = self.FILE1
-        self.NEXT = self.FILE2
+        self.CURRENT, self.NEXT = self.FILE1, self.FILE2
 
         self.CROSSFADE_MS = 1500
-        self.CROSSFADE_SEC = self.CROSSFADE_MS / 1000.0
-        self.PROMPT = ""
-        self.model = "medium"
-        self.duration = 8
-        if os.path.exists("/proc/asound") and os.access("/dev/snd", os.R_OK | os.X_OK):
-            self.audio_driver = "alsa"
-        else:
-            self.audio_driver = "pulse"
-        self.is_playing = False
-        self.stop_event = threading.Event()
-        self.loop_thread = None
-        self.generation_thread = None
-        self.is_generating = False
+        self.CROSSFADE_SEC = self.CROSSFADE_MS / 1000
+        self.PROMPT, self.model, self.duration = "", "medium", 8
+
+        self.audio_driver = "alsa" if os.path.exists("/proc/asound") and os.access("/dev/snd", os.R_OK | os.X_OK) else "pulse"
+
+        self.is_playing = self.is_generating = self.stop_requested = False
         self.generation_status = "Idle"
+
+        self.stop_event = threading.Event()
+        self.loop_thread = self.generation_thread = None
 
         self.file_lock = threading.Lock()
         self.swap_lock = threading.Lock()
         self.next_file_lock = threading.Lock()
+        self.buffer_lock = threading.Lock()
 
         self.temp_dir = tempfile.mkdtemp(prefix="ilterm_")
 
         self.debug_mode = False
-        self.thread_pool = ThreadPoolExecutor(
-            max_workers=4, thread_name_prefix="infiniloop"
-        )
+        self.thread_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="infiniloop")
+
         self.next_audio_buffer = None
         self.next_audio_sr = None
-        self.buffer_lock = threading.Lock()
 
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGTERM, self.signal_handler)
         os.system("cls" if os.name == "nt" else "clear")
 
         print("\n🎵 INFINI LOOP TERMINAL - by gat\n")
-        self.stop_requested = False
+
         self._temp_files_to_cleanup = []
-
         self.volume_history = []
-        self.max_volume_history = 20  # Cambia a piacere
+        self.max_volume_history = 20
 
-        self.benchmark_enabled = True  # default: attivo
+        self.benchmark_enabled = True
         self.benchmark_file = "benchdata.json"
         self.benchmark_data = []
         self.load_benchmark_data()
+
 
     def load_benchmark_data(self):
         self.benchmark_file = "benchdata.json"
@@ -225,367 +218,151 @@ class InfiniLoopTerminal:
 
 
     def find_optimal_zero_crossing(self, y, sample, window_size=512):
-
-        adaptive_window = min(window_size, len(y) // 100)
-        start = max(0, sample - adaptive_window // 2)
-        end = min(len(y), sample + adaptive_window // 2)
-
-        if end - start < 4:
-            return sample
-
-        y_segment = y[start:end]
-        signs = np.sign(y_segment)
-        sign_changes = np.where(np.diff(signs) != 0)[0] + start
-
-        if len(sign_changes) == 0:
-            return sample
-
-        amplitudes = np.abs(y[sign_changes]) + np.abs(y[sign_changes + 1])
-        best_idx = np.argmin(amplitudes)
-
-        return sign_changes[best_idx]
+        win = min(window_size, len(y) // 100)
+        s, e = max(0, sample - win // 2), min(len(y), sample + win // 2)
+        if e - s < 4: return sample
+        seg = y[s:e]
+        zeroes = np.where(np.diff(np.sign(seg)) != 0)[0] + s
+        if not len(zeroes): return sample
+        amps = np.abs(y[zeroes]) + np.abs(y[zeroes + 1])
+        return zeroes[np.argmin(amps)]
 
 
     def calculate_waveform_continuity(self, y, start, end, sr):
-
         t = max(128, min(sr // 30, (end - start) // 15))
+        a, b = y[max(0, end - t):end], y[start:min(len(y), start + t)]
+        if len(a) < 32 or len(b) < 32: return 0.0
 
-        a_start = max(0, end - t)
-        b_end = min(len(y), start + t)
+        a, b = a[-min(len(a), len(b)):], b[:min(len(a), len(b))]
+        a, b = a - np.mean(a), b - np.mean(b)
 
-        a = y[a_start:end]
-        b = y[start:b_end]
-
-        if len(a) < 32 or len(b) < 32:
-            return 0.0
-
-        min_len = min(len(a), len(b))
-        a, b = a[-min_len:], b[:min_len]
-
-        a_norm = a - np.mean(a)
-        b_norm = b - np.mean(b)
-
-        if np.std(a_norm) > 1e-8 and np.std(b_norm) > 1e-8:
-            corr = np.corrcoef(a_norm, b_norm)[0, 1]
-            corr_score = abs(corr) if not np.isnan(corr) else 0.0
-        else:
-            corr_score = 0.0
-
-        rms_a, rms_b = np.sqrt(np.mean(a**2)), np.sqrt(np.mean(b**2))
-        max_rms = max(rms_a, rms_b, 1e-8)
-        rms_diff = abs(rms_a - rms_b) / max_rms
+        corr_score = abs(np.corrcoef(a, b)[0, 1]) if np.std(a) > 1e-8 and np.std(b) > 1e-8 else 0.0
+        rms_diff = abs(np.sqrt(np.mean(a**2)) - np.sqrt(np.mean(b**2))) / max(np.sqrt(np.mean(a**2)), np.sqrt(np.mean(b**2)), 1e-8)
         rms_score = max(0.0, 1.0 - rms_diff)
 
         try:
-            fft_a = np.abs(np.fft.rfft(a))
-            fft_b = np.abs(np.fft.rfft(b))
-            if len(fft_a) > 1 and len(fft_b) > 1:
-                spectral_corr = np.corrcoef(fft_a, fft_b)[0, 1]
-                spectral_score = (
-                    abs(spectral_corr) if not np.isnan(spectral_corr) else 0.0
-                )
-            else:
-                spectral_score = 0.0
+            fft_a, fft_b = np.abs(np.fft.rfft(a)), np.abs(np.fft.rfft(b))
+            spectral_score = abs(np.corrcoef(fft_a, fft_b)[0, 1]) if len(fft_a) > 1 and len(fft_b) > 1 else 0.0
         except:
             spectral_score = 0.0
 
-        if min_len > 2:
+        if len(a) > 2:
             da, db = np.diff(a), np.diff(b)
-            d_last, d_first = da[-1], db[0]
-            max_d = max(abs(d_last), abs(d_first), 1e-8)
-            deriv_score = max(0.0, 1.0 - abs(d_last - d_first) / max_d)
+            deriv_score = max(0.0, 1.0 - abs(da[-1] - db[0]) / max(abs(da[-1]), abs(db[0]), 1e-8))
         else:
             deriv_score = 1.0
 
-        return (
-            corr_score * 0.35
-            + rms_score * 0.25
-            + spectral_score * 0.25
-            + deriv_score * 0.15
-        )
+        return corr_score * 0.35 + rms_score * 0.25 + spectral_score * 0.25 + deriv_score * 0.15
 
 
-    def calculate_beat_alignment(self, start_sample, end_sample, beats, sr):
-
-        if len(beats) == 0:
-            return 0.5
-
-        if len(beats) > 1:
-            avg_beat_interval = np.mean(np.diff(beats))
-            tolerance = avg_beat_interval * 0.1
-        else:
-            tolerance = sr * 0.1
-
-        d_start = np.min(np.abs(beats - start_sample))
-        d_end = np.min(np.abs(beats - end_sample))
-
-        def alignment_score(distance, tolerance):
-            if distance <= tolerance:
-                return 1.0
-            else:
-
-                return np.exp(-((distance - tolerance) / tolerance))
-
-        align_start = alignment_score(d_start, tolerance)
-        align_end = alignment_score(d_end, tolerance)
-
-        both_aligned_bonus = 0.1 if (align_start > 0.8 and align_end > 0.8) else 0.0
-
-        return min(1.0, (align_start + align_end) / 2 + both_aligned_bonus)
+    def calculate_beat_alignment(self, start, end, beats, sr):
+        if not len(beats): return 0.5
+        tol = np.mean(np.diff(beats)) * 0.1 if len(beats) > 1 else sr * 0.1
+        dist = lambda x: np.min(np.abs(beats - x))
+        score = lambda d: 1.0 if d <= tol else np.exp(-((d - tol) / tol))
+        a_s, a_e = score(dist(start)), score(dist(end))
+        return min(1.0, (a_s + a_e) / 2 + (0.1 if a_s > 0.8 and a_e > 0.8 else 0.0))
 
 
     def find_perfect_loop_simple(self, y, sr):
-
         self.log_message("🥁 Switching to Beat-focused algorithm...")
-
         try:
-
             tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units="samples")
-
             if len(beats) < 2:
                 raise Exception("Not enough beats detected")
-
-            beat_intervals = np.diff(beats)
-            avg_beat_interval = float(np.median(beat_intervals))
-            beat_consistency = float(1.0 - (np.std(beat_intervals) / avg_beat_interval))
-
-            tempo_value = (
-                float(tempo) if not isinstance(tempo, np.ndarray) else float(tempo[0])
-            )
-
-            self.log_message(f"🥁 BPM: {tempo_value:.1f}, Cons: {beat_consistency:.3f}")
-            self.log_message(
-                f"🥁 Beats: {len(beats)}, avg int: {avg_beat_interval/sr:.3f}s\n"
-            )
-
+            avg = float(np.median(np.diff(beats)))
+            cons = float(1.0 - (np.std(np.diff(beats)) / avg))
+            bpm = float(tempo) if not isinstance(tempo, np.ndarray) else float(tempo[0])
+            self.log_message(f"🥁 BPM: {bpm:.1f}, Cons: {cons:.3f}")
+            self.log_message(f"🥁 Beats: {len(beats)}, avg int: {avg/sr:.3f}s\n")
         except Exception as e:
             self.log_message(f"❌ Failed: {e}")
+            bpm, avg, beats, cons = 120.0, float(0.5 * sr), np.arange(0, len(y), int(0.5 * sr)), 0.5
 
-            tempo_value = 120.0
-            avg_beat_interval = float(0.5 * sr)
-            beats = np.arange(0, len(y), int(avg_beat_interval))
-            beat_consistency = 0.5
-
-        beat_duration = avg_beat_interval / sr
-        total_duration = len(y) / sr
-
-        if len(beats) >= 8:
-
-            preferred_structures = [
-                (4, "1 measure"),
-                (8, "2 measures"),
-                (16, "4 measures"),
-                (12, "3 measures"),
-                (2, "half measure"),
-                (6, "1.5 measures"),
-            ]
-        elif len(beats) >= 4:
-
-            preferred_structures = [
-                (2, "half measure"),
-                (3, "3 beats"),
-                (4, "1 measure"),
-                (6, "1.5 measures"),
-                (8, "2 measures"),
-            ]
-        else:
-
-            preferred_structures = [
-                (1, "1 beat"),
-                (2, "half measure"),
-                (3, "3 beats"),
-                (4, "1 measure"),
-                (5, "5 beats"),
-            ]
+        beat_dur, total_dur = avg / sr, len(y) / sr
+        def structures():
+            if len(beats) >= 8:
+                return [(4,"1 measure"), (8,"2 measures"), (16,"4 measures"), (12,"3 measures"), (2,"half measure"), (6,"1.5 measures")]
+            elif len(beats) >= 4:
+                return [(2,"half measure"), (3,"3 beats"), (4,"1 measure"), (6,"1.5 measures"), (8,"2 measures")]
+            return [(1,"1 beat"), (2,"half measure"), (3,"3 beats"), (4,"1 measure"), (5,"5 beats")]
 
         candidates = []
-
-        for num_beats, description in preferred_structures:
-            target_duration_samples = int(num_beats * avg_beat_interval)
-            target_duration_sec = target_duration_samples / sr
-
-            if not (1.5 <= target_duration_sec <= min(total_duration * 0.95, 30.0)):
-                continue
-
-            max_start_sample = len(y) - target_duration_samples
-            valid_candidates_for_structure = 0
-
-            search_positions = []
-
-            for beat_start in beats:
-                if beat_start <= max_start_sample:
-                    search_positions.append(int(beat_start))
-
-            if len(search_positions) < 10:
+        for nb, desc in structures():
+            dur_samp = int(nb * avg)
+            dur_sec = dur_samp / sr
+            if not (1.5 <= dur_sec <= min(total_dur * 0.95, 30.0)): continue
+            max_start = len(y) - dur_samp
+            search_pos = [int(b) for b in beats if b <= max_start]
+            if len(search_pos) < 10:
                 step = int(0.25 * sr)
-                for pos in range(0, max_start_sample, step):
-                    if pos not in search_positions:
-                        search_positions.append(pos)
+                search_pos += [p for p in range(0, max_start, step) if p not in search_pos]
 
-            for start_sample in search_positions:
-                end_sample = start_sample + target_duration_samples
-
-                if end_sample > len(y):
-                    continue
-
+            for s in search_pos:
+                e = s + dur_samp
+                if e > len(y): continue
                 try:
+                    b_score = self.calculate_beat_alignment(s, e, beats, sr)
+                    w_score = self.calculate_waveform_continuity(y, s, e, sr)
+                    tol = avg * 0.1
+                    start_dist, end_dist = min(np.abs(beats - s)), min(np.abs(beats - e))
+                    align_bonus = 0.2 * (start_dist < tol) + 0.2 * (end_dist < tol)
+                    struct_bonus = 0.15 if nb in [4,8,16] else 0.1 if nb in [2,12,3] else 0.05
+                    cons_bonus = cons * 0.1
+                    score = b_score*0.5 + w_score*0.35 + align_bonus*0.5 + struct_bonus + cons_bonus + 0.1
+                    candidates.append({
+                        "start": s, "end": e, "score": score, "beats": nb, "description": desc,
+                        "metrics": {"Beat Align": b_score, "Waveform": w_score,
+                                    "Perfect Alignment": align_bonus, "Structure": struct_bonus, "Consistency": cons_bonus}
+                    })
+                except: continue
 
-                    beat_score = self.calculate_beat_alignment(
-                        start_sample, end_sample, beats, sr
-                    )
+        if not candidates: raise Exception("No candidates found")
+        best = sorted(candidates, key=lambda x: x["score"], reverse=True)[0]
+        if best["score"] < 0.15: raise Exception(f"Best score too low: {best['score']:.3f}")
+        self.log_message("🎯 Beat-preserving zero-crossing...\n")
 
-                    waveform_score = self.calculate_waveform_continuity(
-                        y, start_sample, end_sample, sr
-                    )
-
-                    start_beat_distance = (
-                        float(min(np.abs(beats - start_sample)))
-                        if len(beats) > 0
-                        else float("inf")
-                    )
-                    end_beat_distance = (
-                        float(min(np.abs(beats - end_sample)))
-                        if len(beats) > 0
-                        else float("inf")
-                    )
-
-                    perfect_alignment_bonus = 0.0
-                    tolerance = avg_beat_interval * 0.1
-
-                    if start_beat_distance < tolerance:
-                        perfect_alignment_bonus += 0.2
-                    if end_beat_distance < tolerance:
-                        perfect_alignment_bonus += 0.2
-
-                    structure_bonus = 0.0
-                    if num_beats in [4, 8, 16]:
-                        structure_bonus = 0.15
-                    elif num_beats in [2, 12, 3]:
-                        structure_bonus = 0.1
-                    elif num_beats in [1, 5, 6]:
-                        structure_bonus = 0.05
-
-                    consistency_bonus = beat_consistency * 0.1
-
-                    rhythm_focused_score = (
-                        beat_score * 0.50
-                        + waveform_score * 0.35
-                        + perfect_alignment_bonus * 0.5
-                        + structure_bonus
-                        + consistency_bonus
-                        + 0.1
-                    )
-
-                    candidates.append(
-                        {
-                            "start": start_sample,
-                            "end": end_sample,
-                            "score": rhythm_focused_score,
-                            "beats": num_beats,
-                            "description": description,
-                            "metrics": {
-                                "Beat Align": beat_score,
-                                "Waveform": waveform_score,
-                                "Perfect Alignment": perfect_alignment_bonus,
-                                "Structure": structure_bonus,
-                                "Consistency": consistency_bonus,
-                            },
-                        }
-                    )
-
-                    valid_candidates_for_structure += 1
-
-                except Exception as e:
-                    continue
-
-            if valid_candidates_for_structure > 0:
-                self.log_message(
-                    f"✅ {valid_candidates_for_structure} candidates for {description}"
-                )
-
-        if not candidates:
-            raise Exception("No candidates found")
-
-        candidates.sort(key=lambda x: x["score"], reverse=True)
-        best = candidates[0]
-
-        if best["score"] < 0.15:
-            raise Exception(f"Best score too low: {best['score']:.3f}")
-
-        self.log_message("🎯 Beat-preserving zero-crossing optimization...\n")
-
-        original_start, original_end = best["start"], best["end"]
-
+        s, e = best["start"], best["end"]
         try:
-
-            small_window = min(512, int(avg_beat_interval * 0.1))
-
-            optimized_start = self.find_optimal_zero_crossing(
-                y, original_start, window_size=small_window
-            )
-            optimized_end = self.find_optimal_zero_crossing(
-                y, original_end, window_size=small_window
-            )
-
-            if 0 <= optimized_start < optimized_end <= len(y):
-
-                new_beat_score = self.calculate_beat_alignment(
-                    optimized_start, optimized_end, beats, sr
-                )
-
-                if new_beat_score >= best["metrics"]["Beat Align"] * 0.8:
-                    best["start"] = optimized_start
-                    best["end"] = optimized_end
-                    best["metrics"]["Beat Align"] = new_beat_score
+            small_win = min(512, int(avg * 0.1))
+            s_opt = self.find_optimal_zero_crossing(y, s, window_size=small_win)
+            e_opt = self.find_optimal_zero_crossing(y, e, window_size=small_win)
+            if 0 <= s_opt < e_opt <= len(y):
+                new_b_score = self.calculate_beat_alignment(s_opt, e_opt, beats, sr)
+                if new_b_score >= best["metrics"]["Beat Align"] * 0.8:
+                    best.update({"start": s_opt, "end": e_opt})
+                    best["metrics"]["Beat Align"] = new_b_score
                 else:
-                    self.log_message(
-                        "❌ Zero-crossing rejected (would compromise beat alignment)"
-                    )
+                    self.log_message("❌ Zero-crossing rejected (would compromise beat alignment)")
             else:
-                self.log_message(
-                    "❌ Zero-crossing optimization produced invalid bounds"
-                )
-
+                self.log_message("❌ Zero-crossing optimization produced invalid bounds")
         except Exception as e:
             self.log_message(f"❌ Zero-crossing optimization failed: {e}")
 
-        duration = (best["end"] - best["start"]) / sr
-
-        self.log_message(
-            f"✅ Potential loop found!\n              Checking duration...\n"
-        )
-
+        dur = (best["end"] - best["start"]) / sr
+        self.log_message("✅ Potential loop found!\n              Checking duration...\n")
         return {
             "start_sample": best["start"],
             "end_sample": best["end"],
             "score": best["score"],
             "measures": max(1, best["beats"] // 4),
-            "metrics": {
-                "Spectral": 0.5,
-                "Waveform": best["metrics"]["Waveform"],
-                "Beat Align": best["metrics"]["Beat Align"],
-                "Phase": 0.5,
-            },
+            "metrics": {"Spectral": 0.5, "Waveform": best["metrics"]["Waveform"],
+                        "Beat Align": best["metrics"]["Beat Align"], "Phase": 0.5},
         }
 
 
     def find_perfect_loop(self, y, sr):
-
         try:
-
             return self.find_perfect_loop_advanced(y, sr)
         except Exception as e:
             self.log_message(f"❌ Failed!\n")
-
             return self.find_perfect_loop_simple(y, sr)
 
 
     def find_perfect_loop_advanced(self, y, sr):
-
         self.log_message("🧠 Advanced loop detection:")
-
         if not len(y) or sr <= 0:
-            raise Exception(f"Invalid input: empty audio from AI?")
+            raise Exception("Invalid input: empty audio from AI?")
 
         try:
             tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units="samples")
@@ -594,129 +371,85 @@ class InfiniLoopTerminal:
             raise Exception(f"Beat tracking error, bad AI generation maybe: {e}")
 
         if not 30 < tempo <= 300:
-            raise Exception(f"Invalid tempo: {tempo} BPM, are you serious?")
+            raise Exception(f"Invalid tempo: {tempo:.1f} BPM, are you serious?")
 
-        hop_length = 256
-        S_complex = librosa.stft(y, n_fft=2048, hop_length=hop_length)
-        S_mag = np.abs(S_complex)
-
-        if not S_mag.size:
+        hop, n_fft = 256, 2048
+        S = librosa.stft(y, n_fft=n_fft, hop_length=hop)
+        if not S.size:
             raise Exception("Empty STFT")
 
-        beat_len = 60 / tempo
+        mag, beat_len = np.abs(S), 60 / tempo
+        mel = librosa.feature.melspectrogram(S=mag**2, sr=sr, hop_length=hop, n_mels=64)
+        mel = librosa.power_to_db(mel)
+
+        def score_metrics(start, end, sf, ef):
+            def try_block(f, default):
+                try: return f()
+                except: return default
+
+            m_start = np.mean(mel[:, max(0, sf - 2):sf + 3], axis=1)
+            m_end = np.mean(mel[:, ef - 2:min(mel.shape[1], ef + 3)], axis=1)
+            spectral = 0.0 if np.any(np.isnan(m_start)) or np.any(np.isnan(m_end)) \
+                    else max(0.0, 1 - cosine(m_start, m_end))
+
+            waveform = try_block(lambda: self.calculate_waveform_continuity(y, start, end, sr), 0.0)
+            beat = try_block(lambda: self.calculate_beat_alignment(start, end, beats, sr), 0.5)
+
+            def phase_score():
+                if sf < 3 or ef >= S.shape[1] - 3:
+                    return 0.5
+                ps = np.angle(S[:, sf - 1:sf + 2])
+                pe = np.angle(S[:, ef - 1:ef + 2])
+                freq = slice(0, S.shape[0] // 2)
+                diff = np.abs(np.mean(ps[freq], axis=1) - np.mean(pe[freq], axis=1))
+                diff = np.minimum(diff, 2 * np.pi - diff)
+                return max(0.0, 1 - np.mean(diff) / np.pi)
+
+            return {
+                "spectral": spectral,
+                "waveform": waveform,
+                "beat": beat,
+                "phase": try_block(phase_score, 0.5),
+            }
+
         best = {"score": -np.inf, "start": 0, "end": 0, "measures": 0, "metrics": {}}
-
-        mel_features = librosa.feature.melspectrogram(
-            S=S_mag**2, sr=sr, hop_length=hop_length, n_mels=64
-        )
-        mel_features = librosa.power_to_db(mel_features)
-
-        def calculate_all_metrics(start, end, sf, ef):
-            metrics = {}
-
-            try:
-                mel_start = np.mean(mel_features[:, max(0, sf - 2) : sf + 3], axis=1)
-                mel_end = np.mean(
-                    mel_features[:, ef - 2 : min(mel_features.shape[1], ef + 3)], axis=1
-                )
-
-                if np.any(np.isnan(mel_start)) or np.any(np.isnan(mel_end)):
-                    metrics["spectral"] = 0.0
-                else:
-                    metrics["spectral"] = max(0.0, 1 - cosine(mel_start, mel_end))
-            except:
-                metrics["spectral"] = 0.0
-
-            try:
-                metrics["waveform"] = self.calculate_waveform_continuity(
-                    y, start, end, sr
-                )
-            except:
-                metrics["waveform"] = 0.0
-
-            try:
-                metrics["beat"] = self.calculate_beat_alignment(start, end, beats, sr)
-            except:
-                metrics["beat"] = 0.5
-
-            try:
-                if sf >= 3 and ef < S_complex.shape[1] - 3:
-                    phase_start = np.angle(S_complex[:, sf - 1 : sf + 2])
-                    phase_end = np.angle(S_complex[:, ef - 1 : ef + 2])
-
-                    important_freqs = slice(0, S_complex.shape[0] // 2)
-
-                    diff = np.abs(
-                        np.mean(phase_start[important_freqs], axis=1)
-                        - np.mean(phase_end[important_freqs], axis=1)
-                    )
-                    diff = np.minimum(diff, 2 * np.pi - diff)
-                    metrics["phase"] = max(0.0, 1 - np.mean(diff) / np.pi)
-                else:
-                    metrics["phase"] = 0.5
-            except:
-                metrics["phase"] = 0.5
-
-            return metrics
-
-        best_score_threshold = 0.8
+        score_weights = dict(spectral=0.4, waveform=0.3, beat=0.2, phase=0.1)
+        threshold = 0.8
 
         for meas in [4, 8, 12, 16]:
-            samples = int(meas * 4 * beat_len * sr)
+            samp = int(meas * 4 * beat_len * sr)
+            if not (3 * sr <= samp <= len(y) * 0.85): continue
 
-            if not (3 * sr <= samples <= len(y) * 0.85):
-                continue
+            step = max(512, samp // 100)
+            starts = range(int(len(y) * 0.05), len(y) - samp - int(len(y) * 0.05), step)
 
-            search_step = max(512, samples // 100)
-            start_range = range(
-                int(len(y) * 0.05), len(y) - samples - int(len(y) * 0.05), search_step
-            )
+            for start in starts:
+                end = start + samp
+                if end > len(y): continue
 
-            for start in start_range:
-                end = start + samples
-                if end > len(y):
-                    continue
+                sf, ef = start // hop, end // hop
+                if sf < 3 or ef >= mag.shape[1] - 3: continue
 
-                sf, ef = start // hop_length, end // hop_length
-                if sf < 3 or ef >= S_mag.shape[1] - 3:
-                    continue
-
-                metrics = calculate_all_metrics(start, end, sf, ef)
-
-                score = (
-                    metrics["spectral"] * 0.4
-                    + metrics["waveform"] * 0.3
-                    + metrics["beat"] * 0.2
-                    + metrics["phase"] * 0.1
-                )
+                metrics = score_metrics(start, end, sf, ef)
+                score = sum(metrics[k] * w for k, w in score_weights.items())
 
                 if score > best["score"]:
-                    best.update(
-                        {
-                            "score": score,
-                            "start": start,
-                            "end": end,
-                            "measures": meas,
-                            "metrics": metrics,
-                        }
-                    )
-
-                    if score > best_score_threshold:
+                    best.update(dict(score=score, start=start, end=end,
+                                    measures=meas, metrics=metrics))
+                    if score > threshold:
                         self.log_message(f"🎯 Score: {score:.3f}, Excellent!")
                         break
-
-            if best["score"] > best_score_threshold:
+            if best["score"] > threshold:
                 break
 
         if best["score"] < 0.15:
-            raise Exception(f"No interesting loop.")
+            raise Exception("No interesting loop.")
 
         dur = (best["end"] - best["start"]) / sr
         if dur < 1.5:
             raise Exception(f"Loop too short: {dur:.1f}s\n   Discarding sample...\n")
 
-        self.log_message(f"✅ Perfect loop found?\n")
-
+        self.log_message("✅ Perfect loop found?\n")
         return {
             "start_sample": best["start"],
             "end_sample": best["end"],
@@ -1059,108 +792,105 @@ class InfiniLoopTerminal:
             self.log_message(f"❌ EQ failed: {e}")
             return y
 
+
     def generate_audio_safe(self, outfile):
         try:
             self.is_generating = True
+            self._prepare_benchmark()
 
-            # Inizializzazione benchmark se non già presente
-            if not hasattr(self, "benchmark_data"):
-                self.benchmark_data = []
-            if not hasattr(self, "benchmark_file"):
-                self.benchmark_file = "benchdata.json"
-            if not hasattr(self, "load_benchmark_data"):
-                self.log_message("❌ Benchmark functions not loaded")
-            else:
-                self.load_benchmark_data()
-
-            prompt = self.PROMPT
-            model = self.model
-            duration = self.duration
-            self.generation_status = f"Generating '{prompt}'"
+            p, m, d = self.PROMPT, self.model, self.duration
+            self.generation_status = f"Generating '{p}'"
             self.log_message("🎼 Generating new sample...\n")
 
-            with self.safe_temp_file() as raw_temp, self.safe_temp_file() as processed_temp:
-                self.debug_file_state("PRE_GENERATION", raw_temp)
+            with self.safe_temp_file() as raw, self.safe_temp_file() as proc:
+                self.debug_file_state("PRE_GENERATION", raw)
 
-                start_time = time.time()
+                t = self._run_ai_generation(p, m, d, raw)
+                self.log_message(f"⏱️ AI made it in {t:.2f}s!\n")
 
-                result = subprocess.run([
-                    "ionice", "-c", "2", "-n", "7",
-                    "nice", "-n", "10",
-                    "./musicgpt-x86_64-unknown-linux-gnu",
-                    prompt,
-                    "--model", model,
-                    "--secs", str(duration),
-                    "--output", raw_temp,
-                    "--no-playback",
-                    "--no-interactive",
-                    "--ui-no-open"
-                ], check=True, capture_output=True, text=True)
-
-                elapsed = time.time() - start_time
-                self.log_message(f"⏱️ AI made it in {elapsed:.2f}s!\n")
-
-                # 🔍 Salvataggio benchmark
                 if self.benchmark_enabled:
-                    self.benchmark_data.append({
-                        "duration_requested": duration,
-                        "generation_time": round(elapsed, 3)
-                    })
-                    self.save_benchmark_data()
-                    self.log_message("📈 Benchmark stats updated...\n")
+                    self._save_benchmark(d, t)
 
-
-                self.debug_file_state("POST_GENERATION", raw_temp)
-
-                if not self.validate_audio_file(raw_temp):
-                    raise Exception("AI generated invalid audio file")
-
-                y, sr = librosa.load(raw_temp, sr=None, mono=True)
-                y_normalized = self.normalize_audio_advanced(y, sr)
-                sf.write(raw_temp, y_normalized, sr)
-                del y, y_normalized
-                gc.collect()
+                self.debug_file_state("POST_GENERATION", raw)
+                self._normalize_audio(raw)
 
                 self.generation_status = "Loop analysis running..."
-                self.process_loop_detection(raw_temp, processed_temp)
+                self.process_loop_detection(raw, proc)
 
-                if not self.validate_audio_file(processed_temp):
-                    raise Exception("Processed file validation failed")
-
-                self.debug_file_state("PRE_FINAL_MOVE", processed_temp)
-                with self.file_lock:
-                    shutil.move(processed_temp, outfile)
-                self.debug_file_state("POST_FINAL_MOVE", outfile)
-
+                self._finalize_audio(outfile, proc)
                 self.generation_status = "Completed!"
-
-                # Callback per aggiornare UI dopo generazione
-                if hasattr(self, "on_generation_complete") and callable(self.on_generation_complete):
-                    try:
-                        self.on_generation_complete()
-                    except Exception as e:
-                        self.log_message(f"❌ UI callback failed: {e}")
-
+                self._trigger_ui_cb()
 
         except subprocess.CalledProcessError as e:
-            self.log_message(f"❌ Generation error: {e}\n{e.stderr.strip()}")
-            self.generation_status = "Error"
-            raise
-
+            self._handle_subprocess_err(e)
         except subprocess.TimeoutExpired:
-            self.log_message("❌ Generation timeout (120s)")
-            self.generation_status = "Timeout"
-            raise
-
+            self._handle_timeout()
         except Exception as e:
             self.log_message(f"❌ General generation failure: {e}")
             self.generation_status = "Error"
             raise
-
         finally:
             self.is_generating = False
 
+    def _prepare_benchmark(self):
+        if not hasattr(self, "benchmark_data"):
+            self.benchmark_data = []
+        if not hasattr(self, "benchmark_file"):
+            self.benchmark_file = "benchdata.json"
+        self.load_benchmark_data()
 
+    def _run_ai_generation(self, prompt, model, dur, out):
+        t0 = time.time()
+        subprocess.run([
+            "ionice", "-c", "2", "-n", "7", "nice", "-n", "10",
+            "./musicgpt-x86_64-unknown-linux-gnu", prompt,
+            "--model", model, "--secs", str(dur),
+            "--output", out,
+            "--no-playback", "--no-interactive", "--ui-no-open"
+        ], check=True, capture_output=True, text=True)
+        return time.time() - t0
+
+    def _save_benchmark(self, dur, elapsed):
+        self.benchmark_data.append({
+            "duration_requested": dur,
+            "generation_time": round(elapsed, 3)
+        })
+        self.save_benchmark_data()
+        self.log_message("📈 Benchmark stats updated...\n")
+
+    def _normalize_audio(self, path):
+        if not self.validate_audio_file(path):
+            raise Exception("AI generated invalid audio file")
+        y, sr = librosa.load(path, sr=None, mono=True)
+        y = self.normalize_audio_advanced(y, sr)
+        sf.write(path, y, sr)
+        del y
+        gc.collect()
+
+    def _finalize_audio(self, final, temp):
+        if not self.validate_audio_file(temp):
+            raise Exception("Processed file validation failed")
+        self.debug_file_state("PRE_FINAL_MOVE", temp)
+        with self.file_lock:
+            shutil.move(temp, final)
+        self.debug_file_state("POST_FINAL_MOVE", final)
+
+    def _trigger_ui_cb(self):
+        if callable(getattr(self, "on_generation_complete", None)):
+            try:
+                self.on_generation_complete()
+            except Exception as e:
+                self.log_message(f"❌ UI callback failed: {e}")
+
+    def _handle_subprocess_err(self, e):
+        self.log_message(f"❌ Generation error: {e}\n{e.stderr.strip()}")
+        self.generation_status = "Error"
+        raise
+
+    def _handle_timeout(self):
+        self.log_message("❌ Generation timeout (120s)")
+        self.generation_status = "Timeout"
+        raise
 
 
     def get_duration(self, filepath):
@@ -1726,6 +1456,250 @@ def interactive_mode(app):
                 print("\n⚙️ CONFIGURABLE OPTIONS:")
                 print("   set duration        - Change generation duration (5-30s)")
                 print("   set driver          - Change audio driver (pulse/alsa/dsp)")
+                print("\n💡 EXAMPLES:")
+                print("   start 'ambient chill loop'")
+                print("   start 'jazz piano solo'")
+                print("   save my_loop.wav")
+                print("   validate both")
+                print("   debug on")
+
+            elif cmd[0] in ["quit", "exit", "q"]:
+                app.stop_loop()
+                print("👋 Goodbye!")
+                break
+
+            else:
+                print(f"❌ Unknown command: {cmd[0]}")
+                print("💡 Use 'help' to see available commands")
+
+        except KeyboardInterrupt:
+            app.stop_loop()
+            print("\n👋 Goodbye!")
+            break
+        except EOFError:
+            app.stop_loop()
+            print("\n👋 Goodbye!")
+            break
+        except Exception as e:
+            print(f"❌ Unexpected error: {str(e)}")
+            traceback.print_exc()
+            continue
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="InfiniLoop TERMINAL - Local AI Infinite Music Generator",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage examples:
+  %(prog)s --prompt "ambient loop"
+  %(prog)s --duration 20 --prompt "jazz loop"
+  %(prog)s --interactive
+  %(prog)s --generate-only "rock loop" output.wav
+
+Fixed settings:
+  Algorithm: Advanced with fallback (spectral + waveform + beat + phase)
+  AI Model: Medium (balanced)
+  Crossfade: 1ms (minimum)
+
+APPLIED FIXES:
+  ✅ Race condition in file swapping eliminated
+  ✅ Complete audio validation implemented
+  ✅ Safe temporary files with context manager
+  ✅ Swap synchronized with natural loop end
+  ✅ Debug mode for troubleshooting
+        """,
+    )
+
+    parser.add_argument("--prompt", "-p", type=str, help="Prompt for generation")
+
+    parser.add_argument(
+        "--interactive", "-i", action="store_true", help="Interactive mode"
+    )
+
+    parser.add_argument(
+        "--generate-only",
+        "-g",
+        nargs=2,
+        metavar=("PROMPT", "OUTPUT"),
+        help="Generate only one loop and save (prompt, output_file)",
+    )
+
+    parser.add_argument(
+        "--duration",
+        "-d",
+        type=int,
+        default=15,
+        help="Generation duration in seconds (5-30)",
+    )
+
+    parser.add_argument(
+        "--driver",
+        choices=["pulse", "alsa", "dsp"],
+        default="pulse",
+        help="Audio driver",
+    )
+
+    parser.add_argument("--verbose", "-v", action="store_true", help="Detailed output")
+
+    parser.add_argument("--quiet", "-q", action="store_true", help="Minimal output")
+
+    parser.add_argument("--no-debug", action="store_true", help="Disable debug mode")
+
+    args = parser.parse_args()
+
+    if args.duration < 5 or args.duration > 30:
+        print("❌ Error: Duration must be between 5 and 30 seconds")
+        sys.exit(1)
+
+    os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
+    os.environ["SDL_AUDIODRIVER"] = args.driver
+    os.environ["ALSA_CARD"] = "default"
+
+    app = InfiniLoopTerminal()
+
+    app.duration = args.duration
+    app.audio_driver = args.driver
+    app.debug_mode = False if args.no_debug else False
+
+    print(f"🧠 Algorithm:        Advanced with fallback")
+    print(f"🤖 AI Model:         Medium")
+    print(f"⏱️ Sample duration:  {app.duration}s")
+    print(f"🔊 Audio driver:     {app.audio_driver}")
+    print(f"🐛 Debug mode:       {'ON' if app.debug_mode else 'OFF'}")
+
+    try:
+
+        if args.generate_only:
+            prompt, output_file = args.generate_only
+            app.PROMPT = prompt
+            print(f"\n🎼 Single generation: '{prompt}'")
+
+            app.generate_audio_safe(output_file)
+            print(f"✅ Loop saved: {output_file}")
+            return
+
+        elif args.interactive:
+            interactive_mode(app)
+            return
+
+        elif args.prompt:
+            if app.start_loop(args.prompt):
+                print("🎵 Loop started! Press Ctrl+C to stop")
+                try:
+
+                    while app.is_playing:
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    app.stop_loop()
+                    print("\n👋 Goodbye!")
+            return
+
+        else:
+            print("\n💡 No prompt specified:")
+            interactive_mode(app)
+
+    except KeyboardInterrupt:
+        app.stop_loop()
+        print("\n👋 Goodbye!")
+    except Exception as e:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
+    app = InfiniLoopTerminal()
+
+    while True:
+        try:
+            cmd = input("\n🎛️ > ").strip().split()
+            if not cmd:
+                continue
+
+            if cmd[0] == "start":
+                if len(cmd) < 2:
+                    print("❌ Usage: start <prompt>")
+                    continue
+                prompt = " ".join(cmd[1:])
+                app.start_loop(prompt)
+
+            elif cmd[0] == "stop":
+                app.stop_loop()
+
+            elif cmd[0] == "status":
+                app.print_status()
+
+            elif cmd[0] == "save":
+                if len(cmd) < 2:
+                    print("❌ Usage: save <filename>")
+                    continue
+                filename = cmd[1]
+                if not filename.endswith(".wav"):
+                    filename += ".wav"
+                app.save_loop(filename)
+
+            elif cmd[0] == "validate":
+                if len(cmd) < 2:
+                    print("❌ Usage: validate <current|next|both>")
+                    continue
+                app.validate_audio(cmd[1])
+
+            elif cmd[0] == "debug":
+                if len(cmd) < 2:
+                    print("❌ Usage: debug <on|off>")
+                    continue
+                state = cmd[1].lower()
+                app.debug_mode = (state == "on")
+                print(f"🐞 Debug mode: {'ON' if app.debug_mode else 'OFF'}")
+
+            elif cmd[0] == "set":
+                if len(cmd) < 2:
+                    print("❌ Usage: set <option>")
+                    continue
+                option = cmd[1].lower()
+
+                if option == "duration":
+                    val = input("Enter duration (seconds): ").strip()
+                    if val.isdigit():
+                        app.duration = int(val)
+                        print(f"✅ Duration set to {app.duration}s")
+                    else:
+                        print("❌ Invalid duration")
+
+                elif option == "driver":
+                    choice = input("Choose driver [pulse/alsa/dsp]: ").strip().lower()
+                    if choice in ["pulse", "pulseaudio"]:
+                        app.audio_driver = "pulse"
+                        print("✅ Driver: PulseAudio")
+                    elif choice in ["alsa"]:
+                        app.audio_driver = "alsa"
+                        print("✅ Driver: ALSA")
+                    elif choice in ["dsp", "oss"]:
+                        app.audio_driver = "dsp"
+                        print("✅ Driver: OSS")
+                    else:
+                        print("❌ Invalid driver")
+
+                else:
+                    print(f"❌ Option '{option}' not recognized")
+                    print("💡 Options: duration, driver")
+
+            elif cmd[0] == "help":
+                print("\n🆘 AVAILABLE COMMANDS:")
+                print("   start '<prompt>'    - Start infinite loop with prompt")
+                print("   stop                - Stop current playback")
+                print("   status              - Show detailed system status")
+                print("   save <file.wav>     - Save current loop to file")
+                print("   validate <target>   - Validate audio files (current/next/both - for debug)")
+                print("   debug <on|off>      - Enable/disable debug messages")
+                print("   set <option>        - Change settings (see below)")
+                print("   help                - Show this help")
+                print("   quit/exit/q         - Exit program")
+
+                print("\n⚙️ CONFIGURABLE OPTIONS:")
+                print("   set duration        - Change generation duration (5-30s)")
+                print("   set driver          - Change audio driver (pulse/alsa/dsp)")
+
                 print("\n💡 EXAMPLES:")
                 print("   start 'ambient chill loop'")
                 print("   start 'jazz piano solo'")
