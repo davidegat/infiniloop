@@ -5,31 +5,19 @@ It automatically creates new musical fragments using AI, detects the best loop p
 
 At startup, one of two pre-included .wav files will play, so you can enjoy music immediately while the first AI generation is being prepared.
 
-Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with smooth transitions and automatic loop detection. Local, private, more personal than any YouTube or Spotify playlist.
+Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with transitions. Local, private, more personal than any YouTube or Spotify playlist.
 
-**NEW IN THIS VERSION:**
-- **Normalization**: Professional standardization
-- **Enhanced Loop Detection**: Improved multi-metric analysis with beat-focused fallback
-- **Zero-Crossing Optimization**: Precise loop point refinement for seamless transitions
-- **Robust Error Handling**: Advanced file validation and crash recovery
-- **Smart Generation**: Adaptive retry system with quality validation
-- **Performance Optimizations**: Better memory management and process handling
-- **Debug Mode**: Comprehensive logging for troubleshooting
-- **Benchmark**: To test various sample length generation time
-
-Advanced GUI version (**experimental, NOT recomended**):
-
-Experimental GUI version (**not recommended**):
+Advanced GUI version (**Experimental - NOT recommended**):
 
 <img width="500" alt="immagine" src="https://github.com/user-attachments/assets/19390959-ba49-476e-8b26-df606c6dad36" />
 
-Terminal version (**recommended**):
+Terminal version (**recommended for advanced users**):
 
 <img width="500" alt="immagine" src="https://github.com/user-attachments/assets/9a95d2dd-8690-4d00-8735-530511ef9498" />
 
 Lightweight GUI version (**MOST recommended**):
 
-<img width="500" alt="immagine" src="https://github.com/user-attachments/assets/f2f93ae5-1fe8-47f3-8c55-86761b7bc3a0" />
+<img width="695" height="881" alt="immagine" src="https://github.com/user-attachments/assets/1bcbf69c-a16e-47ec-afe1-2749a3fc2228" />
 
 ## Table of Contents
 
@@ -53,16 +41,33 @@ Lightweight GUI version (**MOST recommended**):
   - Beat alignment and rhythm preservation
   - Phase coherence optimization
   - Zero-crossing refinement
-- **Seamless Playback**: Native infinite looping with transitions
+- **Seamless Playback**: Native infinite looping with crossfade transitions
 - **Intelligent Generation**: Retry system with quality validation and error recovery
 - **Multiple Interfaces**: Terminal, lightweight GUI, and advanced GUI with visualizations
+- **Benchmark System**: Performance monitoring and generation time statistics
+- **Smart Loop Management**: Configurable minimum duration before loop switching
+- **Preset System**: Quick generation with pre-configured musical styles
 - **Process Management**: CPU/IO priority optimization and safe termination
 - **Export Functionality**: Save generated loops for later use
+- **Settings Persistence**: Automatic save/restore of user preferences
 - **Debug Mode**: Comprehensive logging and file state tracking
 
 ## Available Versions
 
-### 1. Terminal Version (`ilterm.py`) - Most Stable ⭐
+### 1. Lightweight GUI Version (`il1.py`) - Most Recommended ⭐
+
+- Clean graphical interface with tabbed organization
+- Same robust audio engine as terminal version
+- Real crossfade transition support with visual feedback
+- **Preset System** for quick generation
+- **Statistics Tab**: Benchmark data and generation time tracking
+- **Settings Tab**: Configure generation duration, minimum song duration, audio driver
+- **Loop Information**: Display random titles, artists, duration, and genre
+- Real-time status monitoring with timing information
+- Settings persistence across sessions
+- Save current loop functionality
+
+### 2. Terminal Version (`ilterm.py`) - Most Stable ⭐
 
 - Command-line interface with full interactive mode
 - Real transition support between loops  
@@ -71,27 +76,17 @@ Lightweight GUI version (**MOST recommended**):
 - Generation-only mode for single loops
 - Complete settings configuration
 - Lowest resource consumption
+- **Benchmark system** for tracking generation performance
 
 **Interactive Commands:**
 - `start '<prompt>'` - Start infinite loop
 - `stop` - Stop playback
-- `status` - Detailed system status
+- `status` - Detailed system status with timing information
 - `save <file.wav>` - Export current loop
-- `set duration/driver` - Change settings
+- `set duration/minduration/driver` - Change settings including minimum song duration
 - `debug on/off` - Toggle debug mode
 - `validate current/next/both` - Check file integrity
 - `help` - Show all commands
-
-### 2. Lightweight GUI Version (`il1.py`) - Most Recommended ⭐
-
-- Clean graphical interface with essential controls
-- Same robust audio engine as terminal version
-- Real transition support with visual feedback
-- Preset system for quick generation
-- Real-time status monitoring
-- Settings persistence
-- Loop information display (title, artist, duration)
-- Save/load configuration
 
 ### 3. Advanced GUI Version (`il2.py`) - Experimental
 
@@ -99,7 +94,7 @@ Lightweight GUI version (**MOST recommended**):
 - Real-time waveform and spectrum analysis
 - Visual loop metrics display
 - Configurable generation parameters
-- **Note**: Does not support crossfading between tracks
+- **Note**: Does not support transition between tracks
 - Higher resource usage due to visualizations
 
 ## System Requirements
@@ -195,9 +190,47 @@ echo "alternate-sample-rate = 48000" >> ~/.pulse/daemon.conf
 pulseaudio --kill && pulseaudio --start
 ```
 
-## Usage
+## Usage note
 
-**Note**: MusicGPT will download the selected model (medium by default) on first startup. The very first generation will be significantly slower than subsequent ones. This applies to all versions of INFINI LOOP.
+MusicGPT will download the selected model (medium by default) on first startup. The very first generation will be significantly slower than subsequent ones. This applies to all versions of INFINI LOOP.
+
+It is suggested to run a musicgpt test, which will download the model, before running INFINILOOP:
+
+'''bash
+./musicgpt-x86_64-unknown-linux-gnu "Create a relaxing LoFi song" --model medium
+'''
+
+This will produce a test sample, and download the required model.
+
+### Lightweight GUI Version (`il1.py`) - Recommended
+
+```bash
+python il1.py
+```
+
+**Usage Steps:**
+1. **Enter Prompt**: Type your musical description (e.g., "calm acoustic guitar")
+2. **Choose Preset**: Click preset buttons for quick setups
+3. **Configure Settings**: 
+   - **Generation Duration**: 5-30 seconds (10-15s optimal for short loops)
+   - **Minimum Song Duration**: 10-300 seconds (how long each loop plays before switching)
+   - **Audio Driver**: pulse/alsa/dsp
+4. **Start Generation**: Click "▶️ START LOOP" 
+5. **Monitor Progress**: Watch status bar, loop information, and timing
+6. **View Statistics**: Check generation time benchmarks in Statistics tab
+7. **Save Loops**: Use "💾 Save Current Loop" to export
+8. **Debug**: Enable debug mode in Settings for troubleshooting
+
+**Loop Information Display:**
+- **Title**: Random title from word combinations
+- **Artist**: Random artist name from word combinations
+- **Duration**: Actual loop length and elapsed playback time
+- **Genre**: Current generation prompt
+
+**Real-time Timing Information:**
+- Shows elapsed time since current loop started
+- Displays remaining time until minimum duration is satisfied
+- Indicates when loop is ready to switch to next generation
 
 ### Terminal Version (`ilterm.py`)
 
@@ -210,7 +243,7 @@ python ilterm.py
 # Direct generation with prompt
 python ilterm.py --prompt "electronic dance loop"
 
-# Custom settings
+# Custom settings with minimum duration
 python ilterm.py --prompt "ambient chill" --duration 20 --driver pulse
 
 # Generate single loop and exit
@@ -227,14 +260,19 @@ When in interactive mode, use these commands:
 ```bash
 🎛️ > start 'ambient electronic loop'     # Start infinite loop
 🎛️ > stop                                # Stop playback
-🎛️ > status                              # Show detailed status
+🎛️ > status                              # Show detailed status with timing info
 🎛️ > save my_favorite_loop.wav          # Export current loop
 🎛️ > set duration                        # Change generation length (5-30s)
+🎛️ > set minduration                     # Change minimum song duration (10-300s)
 🎛️ > set driver                          # Change audio driver
 🎛️ > debug on                            # Enable debug logging
 🎛️ > validate both                       # Check file integrity
 🎛️ > help                                # Show all commands
 🎛️ > quit                                # Exit program
+🎛️ > set minduration                     # Configure minimum song duration
+# Range: 10-300 seconds (5 minutes max)
+# Current loop will play at least this long before switching
+# Tip: 30-60s for variety, 120s+ for longer listening sessions
 ```
 
 #### Command Line Options
@@ -254,30 +292,7 @@ Options:
   -h, --help               Show help message
 ```
 
-### Lightweight GUI Version (`il1.py`)
-
-```bash
-python il1.py
-```
-
-**Usage Steps:**
-1. **Enter Prompt**: Type your musical description (e.g., "calm acoustic guitar")
-2. **Choose Preset**: Click preset buttons for quick setups
-3. **Adjust Duration**: Use settings tab to change generation length (10-15s optimal)
-4. **Start Generation**: Click "▶️ START LOOP" 
-5. **Monitor Progress**: Watch status bar and log tab
-6. **Save Loops**: Use "💾 Save Current Loop" to export
-7. **Settings**: Configure duration, audio driver, debug mode
-
-**Available Presets:**
-- **Ambient**: Ethereal soundscapes
-- **Reggae**: Classic reggae rhythms  
-- **Electronic**: Synth and dance beats
-- **Classical**: Orchestral arrangements
-- **Rock**: Guitar-driven loops
-- **Lofi Rap**: Melodic hip-hop beats
-
-### Advanced GUI Version (`il2.py`)
+### Advanced GUI Version (`il2.py`) - EXPERIMENTAL
 
 ```bash
 python il2.py
@@ -301,9 +316,10 @@ python il2.py
 1. **AI Generation**: MusicGPT creates raw audio using text prompts
 2. **Quality Validation**: Multi-stage file integrity checking
 3. **Loop Analysis**: Advanced multi-metric algorithm detects optimal loop points
-4. **Audio Normalization**: LUFS standardization to -14 dB (broadcast standard)
+4. **Peak Normalization**: Simple amplitude-based standardization to 0.7 peak level
 5. **Zero-Crossing Optimization**: Fine-tune loop points for seamless transitions
-6. **Continuous Playback**: Native infinite looping with background generation
+6. **Continuous Playback**: Native infinite looping with background generation and crossfade
+7. **Minimum Duration Control**: Configurable timing before allowing loop switches
 
 ### Loop Detection Algorithm
 
@@ -322,21 +338,50 @@ INFINI LOOP uses a sophisticated two-stage approach:
 3. **Beat Grid Alignment**: Snap to detected beat positions
 4. **Rhythm Preservation**: Maintain musical coherence
 
-### Audio Normalization
+### Audio Normalization (Simplified)
 
-Professional LUFS (Loudness Units relative to Full Scale) normalization:
-- **Target**: -14 LUFS (Spotify/YouTube standard)
-- **Peak Limiting**: Prevent clipping above -0.1 dBFS
-- **Dynamic Range**: Preserve musical dynamics
-- **Consistency**: Uniform loudness across all generated loops
+**Peak-based normalization system:**
+- **Target Peak**: 0.7 amplitude (70% of maximum)
+- **Simple Scaling**: Linear gain adjustment based on current peak
+- **Clipping Prevention**: Additional limiting to 0.95 if needed
+- **Fallback**: RMS-based normalization for very quiet signals
+- **Consistency**: Uniform loudness across generated loops
+
+*Note: Previous LUFS normalization has been replaced with this simpler peak-based approach for better reliability.*
+
+### Benchmark System
+
+**Performance Tracking:**
+- Records generation time for each sample duration
+- Groups data by requested duration (5s, 10s, 15s, etc.)
+- Calculates average generation times
+- Displays statistics in GUI Statistics tab
+- Stores data in `benchdata.json` file
+- Provides insights for optimal duration selection
+
+### Smart Loop Management
+
+**Configurable Minimum Duration:**
+- Default: 30 seconds minimum playback time
+- Range: 10-300 seconds (5 minutes maximum)
+- Prevents rapid switching between loops
+- Allows appreciation of each generated piece
+- Real-time timing display shows progress
+
+**Loop Information System:**
+- Random title generation from word combinations
+- AI artist name selection
+- Real-time duration and timing display
+- Genre information from current prompt
 
 ### Process Management
 
 - **CPU Priority**: Background generation with `nice` and `ionice`
 - **CPU Affinity**: Core assignment for optimal performance
-- **Memory Management**: Temporary file cleanup and leak prevention  
+- **Memory Management**: Improved temporary file cleanup and leak prevention  
 - **Safe Termination**: Graceful process shutdown with timeout handling
 - **Error Recovery**: Automatic retry with exponential backoff
+- **Buffer Management**: Smart audio buffer handling with proper cleanup
 
 ### Model Recommendations
 
@@ -365,10 +410,12 @@ Professional LUFS (Loudness Units relative to Full Scale) normalization:
   - Close other applications
   - Ensure 16+ GB RAM available
   - Check CPU isn't throttling due to heat
+  - Check benchmark statistics to find optimal duration
 
 **Issue**: "No interesting loop" or low quality output
 - **Cause**: AI generated audio not suitable for looping
 - **Solutions**:
+  - Use preset buttons in GUI for proven prompts
   - Add keywords: "seamless", "loopable", "nointro"
   - Try different prompts: avoid "song", "verse", "chorus"
   - Use medium model instead of small
@@ -382,7 +429,7 @@ Professional LUFS (Loudness Units relative to Full Scale) normalization:
   # Test audio system
   speaker-test -t wav -c 2
   
-  # Try different audio drivers
+  # Try different audio drivers in GUI Settings or terminal
   python ilterm.py --driver alsa    # or pulse, dsp
   
   # Check PulseAudio
@@ -410,6 +457,20 @@ Professional LUFS (Loudness Units relative to Full Scale) normalization:
   pulseaudio --kill && pulseaudio --start
   ```
 
+#### GUI-Specific Issues
+
+**Issue**: Settings not saved between sessions
+- **Cause**: Permission issues or missing configuration directory
+- **Solution**: Check that `infiniloop_settings.json` can be created in the application directory
+
+**Issue**: Random titles showing as "UNTITLED"
+- **Cause**: Missing optional enhancement files
+- **Solution**: Create `nomi.txt`, `nomi2.txt`, and `artisti.txt` files as described in installation
+
+**Issue**: Statistics tab empty
+- **Cause**: Benchmark data not yet collected or disabled
+- **Solution**: Enable benchmark in Settings and generate a few loops to populate data
+
 ### Debug Mode
 
 Enable comprehensive logging for troubleshooting:
@@ -432,6 +493,7 @@ Debug output includes:
 - Loop detection algorithm progress
 - Process creation and termination
 - Memory and CPU usage
+- Timing and benchmark data
 - Error stack traces
 
 ### Performance Optimization
@@ -440,6 +502,9 @@ Debug output includes:
 ```bash
 # Reduce generation duration
 python ilterm.py --duration 8
+
+# Set shorter minimum duration for quicker variety
+🎛️ > set minduration  # Set to 20-30 seconds
 
 # Use ALSA for lower latency
 python ilterm.py --driver alsa
@@ -453,6 +518,9 @@ nice -n 10 python ilterm.py --prompt "ambient"
 # Use longer durations for better quality
 python ilterm.py --duration 20
 
+# Set longer minimum duration for extended listening
+🎛️ > set minduration  # Set to 120-180 seconds
+
 # Dedicated CPU cores
 taskset -c 2,3 python ilterm.py --prompt "complex orchestral"
 ```
@@ -464,10 +532,13 @@ Common log patterns and meanings:
 ```
 ✅ Perfect loop found?                    # Loop detection succeeded
 ❌ No interesting loop                    # AI output not suitable for looping
-🎚️ Normalized from X to -14 LUFS        # Audio loudness standardization
+🎚️ Peak norm: X → 0.7                   # Peak normalization applied
 🎯 Zero-crossing optimization...         # Fine-tuning loop boundaries
 🔄 Reinitializing...                     # Recovering from error
 ⚠️ Zero-crossing rejected               # Optimization would break rhythm
+📈 Benchmark stats updated               # Performance data recorded
+⏱️ Current loop: Xs, Ys left            # Minimum duration timing
+✅ Song ended, waiting next loop         # Ready to switch loops
 ```
 
 ## Advanced Configuration
@@ -508,49 +579,17 @@ export PYGAME_HIDE_SUPPORT_PROMPT=1
 export OMP_NUM_THREADS=4
 ```
 
-## Development and Contributing
+### Custom Preset Creation
 
-### Code Structure
+You can modify the presets in `il1.py` by editing the presets dictionary:
 
-- `ilterm.py`: Core engine with terminal interface
-- `il1.py`: Lightweight GUI wrapper around core engine  
-- `il2.py`: Advanced GUI with visualizations (experimental)
-
-### Key Classes and Methods
-
-**InfiniLoopTerminal** (main engine):
-- `find_perfect_loop_advanced()`: Multi-metric loop detection
-- `find_perfect_loop_simple()`: Beat-focused fallback algorithm
-- `generate_audio_safe()`: AI generation with LUFS normalization
-- `process_loop_detection()`: Complete loop analysis pipeline
-- `safe_file_swap()`: Thread-safe file management
-- `validate_audio_file()`: Multi-stage file validation
-
-### Bug Reports and Feature Requests
-
-When reporting issues, please include:
-
-- **Version**: Which file (ilterm.py, il1.py, il2.py)
-- **System**: OS, Python version, RAM, CPU details
-- **Audio**: Driver used, audio hardware
-- **Logs**: Complete error messages with debug mode enabled
-- **Reproduction**: Exact steps to reproduce the issue
-- **Prompt**: The generation prompt that caused issues
-
-### Testing
-
-```bash
-# Test basic functionality
-python ilterm.py --generate-only "test ambient" test_output.wav
-
-# Test audio system
-python ilterm.py --prompt "short test" --duration 5 --verbose
-
-# Test all drivers
-for driver in pulse alsa dsp; do
-  echo "Testing $driver..."
-  timeout 30 python ilterm.py --prompt "test" --driver $driver --duration 5
-done
+```python
+presets = {
+    "Custom Jazz": "smooth jazz piano trio seamless loop",
+    "Epic Cinema": "cinematic orchestral epic soundtrack loop",
+    "Nature Ambient": "forest sounds ambient nature seamless loop",
+    # Add your own presets here
+}
 ```
 
 ## License
@@ -572,60 +611,43 @@ For commercial licensing, please contact the authors.
 
 - **MusicGPT** by gabotechs for AI music generation: https://github.com/gabotechs/MusicGPT
 - **librosa** team for audio analysis: https://librosa.org/
-- **pyloudnorm** by csteinmetz1 for LUFS normalization: https://github.com/csteinmetz1/pyloudnorm
+- **pyloudnorm** by csteinmetz1 for audio processing: https://github.com/csteinmetz1/pyloudnorm
 - Developed with assistance from AI language models
 - Audio processing powered by librosa, soundfile, and scipy
 - GUI implementation using tkinter and matplotlib
 
 ## Changelog
 
-- ➕ LUFS normalization for professional audio quality
-- ➕ Enhanced loop detection with beat-focused fallback
-- ➕ Zero-crossing optimization for seamless transitions
-- ➕ Comprehensive error handling and file validation
-- ➕ Process management with CPU priority and affinity
-- ➕ Debug mode with detailed logging
-- ➕ Interactive terminal with full command set
-- ➕ Settings persistence in GUI version
-- ➕ Preset system for quick generation
-- 🔧 Improved memory management and cleanup
-- 🔧 Better cross-platform audio driver support
-- 🐛 Fixed race conditions in file swapping
-- 🐛 Resolved audio dropout issues
+### Latest Version
+- ➕ **Simplified Peak Normalization** replacing complex LUFS system
+- ➕ **Complete GUI System** with tabbed interface and presets
+- ➕ **Benchmark/Statistics System** for performance monitoring
+- ➕ **Configurable Minimum Song Duration** with real-time timing
+- ➕ **Preset System** with 6 musical style presets
+- ➕ **Settings Persistence** - automatic save/restore configuration
+- ➕ **Smart Loop Information** - random titles, artists, timing display
+- ➕ **Enhanced Memory Management** - improved cleanup and resource handling
+- ➕ **Advanced Status Monitoring** - real-time progress and timing information
+- ➕ **Optional Enhancement Files** for custom titles and artists
+- 🔧 **Improved Loop Detection** with better beat alignment fallback
+- 🔧 **Better Error Recovery** with comprehensive validation
+- 🔧 **Enhanced Debug System** with detailed timing and benchmark logging
+- 🐛 **Fixed Audio Buffer Management** preventing memory leaks
+- 🐛 **Resolved Timing Issues** in loop switching logic
+- 🐛 **Improved File Validation** preventing corrupted audio playback
 
+---
 **🎵 Enjoy infinite AI music with INFINI LOOP! 🎵**
 ---
 
-# INFINI LOOP - Generazione Musicale Infinita con AI Locale
+# INFINI LOOP - Generazione Musicale AI Locale Infinita
 
-INFINI LOOP è un sistema musicale basato su intelligenza artificiale progettato per generare loop audio infiniti e senza interruzioni.
-Crea automaticamente nuovi frammenti musicali, rileva i migliori punti di loop e li riproduce in sequenza continua, mentre prepara il segmento successivo — offrendo un flusso musicale ininterrotto e sempre nuovo.
+INFINI LOOP è un sistema musicale alimentato da AI progettato per generare loop audio continui e senza interruzioni.
+Crea automaticamente nuovi frammenti musicali utilizzando l'AI, rileva i migliori punti di loop e li riproduce continuamente preparando quello successivo — risultando in un flusso fluido, infinito e sempre nuovo di musica strumentale.
 
-All'avvio, uno dei due file .wav inclusi verrà riprodotto subito, così potrai ascoltare musica anche mentre l'IA prepara la prima generazione.
+All'avvio, verrà riprodotto uno dei due file .wav pre-inclusi, così potrai goderti la musica immediatamente mentre viene preparata la prima generazione AI.
 
-Una volta configurato, il tuo computer diventa una stazione musicale AI locale, in grado di produrre nuovi brani con transizioni fluide e rilevamento automatico del loop. Locale, privato, e più personale di qualsiasi playlist di YouTube o Spotify.
-
-**NOVITÀ IN QUESTA VERSIONE:**
-- **Normalizzazione**: Standardizzazione volume audio
-- **Rilevamento Loop Migliorato**: Analisi multi-metrica avanzata con fallback basato sui ritmi
-- **Ottimizzazione Zero-Crossing**: Raffinamento preciso dei punti di loop per transizioni perfette
-- **Gestione Errori Robusta**: Validazione file avanzata e recupero da crash
-- **Generazione Intelligente**: Sistema di retry adattivo con validazione qualità
-- **Ottimizzazioni Performance**: Migliore gestione memoria e processi
-- **Modalità Debug**: Logging completo per diagnostica
-- **Benchmark**: Per testare i tempi di generazione dei sample
-
-Versione GUI Avanzata (**sperimentale**):
-
-<img width="1234" height="679" alt="immagine" src="https://github.com/user-attachments/assets/19390959-ba49-476e-8b26-df606c6dad36" />
-
-Versione GUI Leggera (**PIÙ raccomandata**):
-
-<img width="672" height="864" alt="immagine" src="https://github.com/user-attachments/assets/3f99ec86-661b-4a5a-8f0a-f97731340f84" />
-
-Versione Terminale (**raccomandata**):
-
-<img width="849" height="608" alt="immagine" src="https://github.com/user-attachments/assets/9a95d2dd-8690-4d00-8735-530511ef9498" />
+Una volta configurato e in funzione, la tua macchina diventa una stazione musicale AI locale, producendo continuamente nuove tracce con transizioni. Locale, privata, più personale di qualsiasi playlist YouTube o Spotify.
 
 ## Indice
 
@@ -642,61 +664,68 @@ Versione Terminale (**raccomandata**):
 
 ## Caratteristiche
 
-- **Generazione Musicale AI Locale**: Utilizza MusicGPT per sintesi audio di alta qualità (https://github.com/gabotechs/MusicGPT)
+- **Generazione Musicale AI Locale**: Alimentato da MusicGPT per sintesi audio di alta qualità (https://github.com/gabotechs/MusicGPT)
 - **Rilevamento Loop Avanzato**: Analisi multi-metrica con algoritmi adattivi
   - Analisi similarità spettrale
   - Misurazione continuità forma d'onda
-  - Allineamento ritmi e preservazione beat
+  - Allineamento beat e preservazione ritmo
   - Ottimizzazione coerenza di fase
-  - Raffinamento zero-crossing
-- **Riproduzione Continua**: Loop infinito nativo con transizioni
+  - Affinamento zero-crossing
+- **Riproduzione Senza Interruzioni**: Loop infinito nativo con transizioni crossfade
 - **Generazione Intelligente**: Sistema retry con validazione qualità e recupero errori
 - **Interfacce Multiple**: Terminale, GUI leggera e GUI avanzata con visualizzazioni
+- **Sistema Benchmark**: Monitoraggio performance e statistiche tempi generazione
+- **Gestione Loop Intelligente**: Durata minima configurabile prima del cambio loop
+- **Sistema Preset**: Generazione rapida con stili musicali pre-configurati
 - **Gestione Processi**: Ottimizzazione priorità CPU/IO e terminazione sicura
-- **Funzione Esportazione**: Salva loop generati per uso futuro
+- **Funzionalità Esportazione**: Salva loop generati per uso successivo
+- **Persistenza Impostazioni**: Salvataggio/ripristino automatico delle preferenze utente
 - **Modalità Debug**: Logging completo e tracking stato file
 
 ## Versioni Disponibili
 
-### 1. Versione Terminale (`ilterm.py`) - Più Stabile ⭐
+### 1. Versione GUI Leggera (`il1.py`) - Più Raccomandata ⭐
 
-- Interfaccia a riga di comando con modalità interattiva completa
-- Supporto transizione reale tra i loop
+- Interfaccia grafica pulita con organizzazione a schede
+- Stesso motore audio robusto della versione terminale
+- Supporto transizioni crossfade reali con feedback visivo
+- **Sistema Preset** per generazione rapida
+- **Scheda Statistiche**: Dati benchmark e tracking tempi generazione
+- **Scheda Impostazioni**: Configura durata generazione, durata minima brano, driver audio
+- **Informazioni Loop**: Visualizza titoli casuali, artisti, durata e genere
+- Monitoraggio stato real-time con informazioni timing
+- Persistenza impostazioni tra sessioni
+- Funzionalità salvataggio loop corrente
+
+### 2. Versione Terminale (`ilterm.py`) - Più Stabile ⭐
+
+- Interfaccia command-line con modalità interattiva completa
+- Supporto transizioni reali tra loop
 - Validazione audio avanzata e recupero errori
 - Modalità debug con logging dettagliato
-- Modalità generazione singola per loop individuali
-- Configurazione completa delle impostazioni
-- Consumo risorse minimo
+- Modalità solo-generazione per singoli loop
+- Configurazione completa impostazioni
+- Consumo risorse più basso
+- **Sistema benchmark** per tracking performance generazione
 
 **Comandi Interattivi:**
 - `start '<prompt>'` - Avvia loop infinito
 - `stop` - Ferma riproduzione
-- `status` - Status sistema dettagliato
+- `status` - Stato dettagliato sistema con info timing
 - `save <file.wav>` - Esporta loop corrente
-- `set duration/driver` - Cambia impostazioni
-- `debug on/off` - Attiva/disattiva debug
-- `validate current/next/both` - Controlla integrità file
+- `set duration/minduration/driver` - Cambia impostazioni inclusa durata minima brano
+- `debug on/off` - Attiva/disattiva modalità debug
+- `validate current/next/both` - Verifica integrità file
 - `help` - Mostra tutti i comandi
-
-### 2. Versione GUI Leggera (`il1.py`) - Più Raccomandata ⭐
-
-- Interfaccia grafica pulita con controlli essenziali
-- Stesso motore audio robusto della versione terminale
-- Supporto transizione reale con feedback visivo
-- Sistema preset per generazione rapida
-- Monitoraggio status in tempo reale
-- Persistenza impostazioni
-- Display informazioni loop (titolo, artista, durata)
-- Salvataggio/caricamento configurazione
 
 ### 3. Versione GUI Avanzata (`il2.py`) - Sperimentale
 
 - Interfaccia grafica completa con visualizzazioni audio
-- Analisi forma d'onda e spettro in tempo reale
-- Display visivo delle metriche del loop
-- Parametri di generazione configurabili
-- **Nota**: Non supporta crossfading tra tracce
-- Maggiore utilizzo risorse per le visualizzazioni
+- Analisi forma d'onda e spettro real-time
+- Visualizzazione metriche loop
+- Parametri generazione configurabili
+- **Nota**: Non supporta transizione tra tracce
+- Utilizzo risorse più alto a causa delle visualizzazioni
 
 ## Requisiti di Sistema
 
@@ -704,31 +733,31 @@ Versione Terminale (**raccomandata**):
 
 - **Sistema Operativo**: Linux (Ubuntu 20.04+ o equivalente)
 - **Python**: 3.8 o superiore
-- **RAM**: 8 GB memoria di sistema
+- **RAM**: 8 GB memoria sistema
 - **CPU**: Processore multi-core (2+ core raccomandati)
-- **Audio**: Sottosistema audio funzionante (PulseAudio, ALSA o OSS)
-- **Storage**: 500 MB spazio libero per file temporanei
+- **Audio**: Sottosistema audio funzionante (PulseAudio, ALSA, o OSS)
+- **Archiviazione**: 500 MB spazio libero per file temporanei
 
-### Requisiti Consigliati
+### Requisiti Raccomandati
 
 - **Sistema Operativo**: Ubuntu 22.04 LTS
 - **Python**: 3.10 o superiore
-- **RAM**: 16 GB memoria di sistema
-- **CPU**: CPU moderna ad alta frequenza (3+ GHz, 4+ core)
-- **Audio**: PulseAudio con configurazione a bassa latenza
-- **Storage**: 2 GB spazio libero
+- **RAM**: 16 GB memoria sistema
+- **CPU**: CPU moderna alta frequenza (3+ GHz, 4+ core)
+- **Audio**: PulseAudio con configurazione bassa latenza
+- **Archiviazione**: 2 GB spazio libero
 
-### Note sulle Performance
+### Note Performance
 
-- **MusicGPT (medium)** funziona meglio su CPU moderne ad alta frequenza
+- **MusicGPT (medium)** performa meglio su CPU moderne ad alta frequenza
 - **Supporto GPU** è sperimentale e non richiesto
 - **Errori allocazione memoria** si verificano con RAM insufficiente (<8 GB)
-- **Inferenza lenta** capita con CPU deboli (<2 core o <2 GHz)
-- **Dropout audio** possono verificarsi senza driver audio configurati correttamente
+- **Inferenza lenta** accade con CPU deboli (<2 core o <2 GHz)
+- **Interruzioni audio** possono verificarsi senza configurazione driver audio appropriata
 
 ## Installazione
 
-### Passo 1: Installa Dipendenze di Sistema
+### Passo 1: Installa Dipendenze Sistema
 
 ```bash
 # Per Ubuntu/Debian:
@@ -741,7 +770,7 @@ sudo apt install -y ffmpeg pulseaudio-utils alsa-utils python3-pip python3-dev \
 ### Passo 2: Installa Dipendenze Python
 
 ```bash
-# Installa librerie core per elaborazione audio
+# Installa librerie processing audio core
 pip install librosa soundfile scipy numpy pydub matplotlib pillow \
            pyaudio psutil pyloudnorm
 
@@ -757,14 +786,14 @@ pip install librosa==0.10.1 soundfile==0.12.1 scipy==1.11.4 \
 git clone https://github.com/yourusername/infiniloop.git
 cd infiniloop
 
-# Rendi eseguibili gli script
+# Rendi script eseguibili
 chmod +x ilterm.py il1.py il2.py
 ```
 
-### Passo 4: Scarica e Configura il Binario MusicGPT
+### Passo 4: Scarica e Configura Binario MusicGPT
 
-1. Visita la [pagina releases di MusicGPT](https://github.com/gabotechs/MusicGPT/releases)
-2. Scarica `musicgpt-x86_64-unknown-linux-gnu` (versione più recente)
+1. Visita la [pagina release MusicGPT](https://github.com/gabotechs/MusicGPT/releases)
+2. Scarica `musicgpt-x86_64-unknown-linux-gnu` (ultima versione)
 3. Posizionalo nella stessa directory degli script Python
 4. Rendilo eseguibile:
 
@@ -778,48 +807,73 @@ chmod +x musicgpt-x86_64-unknown-linux-gnu
 ### Passo 5: Configura Sistema Audio (Linux)
 
 ```bash
-# Assicurati che i servizi audio siano attivi
+# Assicurati che i servizi audio siano in esecuzione
 sudo systemctl --user enable pulseaudio
 sudo systemctl --user start pulseaudio
 
 # Testa output audio
 speaker-test -t wav -c 2
 
-# Opzionale: Configura audio a bassa latenza
+# Opzionale: Configura audio bassa latenza
 echo "default-sample-rate = 44100" >> ~/.pulse/daemon.conf
 echo "alternate-sample-rate = 48000" >> ~/.pulse/daemon.conf
 pulseaudio --kill && pulseaudio --start
 ```
 
-### Passo 6: File di Setup Opzionali
+## Nota Utilizzo
 
-Crea questi file opzionali nella directory INFINI LOOP per funzionalità migliorate:
+MusicGPT scaricherà il modello selezionato (medium di default) al primo avvio. La primissima generazione sarà significativamente più lenta delle successive. Questo si applica a tutte le versioni di INFINI LOOP.
+
+Si suggerisce di eseguire un test musicgpt, che scaricherà il modello, prima di eseguire INFINILOOP:
 
 ```bash
-# Titoli casuali (nomi.txt, nomi2.txt)
-echo -e "AMBIENT\nCHILL\nDREAM\nFLOW\nWAVE" > nomi.txt
-echo -e "LOOPS\nBEATS\nSOUNDS\nVIBES\nRHYTHM" > nomi2.txt
-
-# Artisti casuali (artisti.txt)
-echo -e "AI COMPOSER\nDIGITAL ORCHESTRA\nSYNTHETIC SOUNDS\nNEURAL BEATS\nALGORITHMIC MUSIC" > artisti.txt
+./musicgpt-x86_64-unknown-linux-gnu "Create a relaxing LoFi song" --model medium
 ```
 
-## Utilizzo
+Questo produrrà un campione di test e scaricherà il modello richiesto.
 
-**Nota**: Al primo avvio, MusicGPT scaricherà il modello selezionato (medium di default). La primissima generazione sarà significativamente più lenta rispetto alle successive. Questo vale per tutte le versioni di INFINI LOOP.
+### Versione GUI Leggera (`il1.py`) - Raccomandata
+
+```bash
+python il1.py
+```
+
+**Passi Utilizzo:**
+1. **Inserisci Prompt**: Digita la tua descrizione musicale (es. "chitarra acustica calma")
+2. **Scegli Preset**: Clicca pulsanti preset per configurazioni rapide
+3. **Configura Impostazioni**: 
+   - **Durata Generazione**: 5-30 secondi (10-15s ottimale per loop brevi)
+   - **Durata Minima Brano**: 10-300 secondi (quanto a lungo ogni loop suona prima di cambiare)
+   - **Driver Audio**: pulse/alsa/dsp
+4. **Avvia Generazione**: Clicca "▶️ AVVIA LOOP" 
+5. **Monitora Progresso**: Guarda barra stato, informazioni loop e timing
+6. **Visualizza Statistiche**: Controlla benchmark tempi generazione nella scheda Statistiche
+7. **Salva Loop**: Usa "💾 Salva Loop Corrente" per esportare
+8. **Debug**: Abilita modalità debug in Impostazioni per troubleshooting
+
+**Visualizzazione Informazioni Loop:**
+- **Titolo**: Titolo casuale da combinazioni parole
+- **Artista**: Nome artista casuale da combinazioni parole
+- **Durata**: Lunghezza loop effettiva e tempo riproduzione trascorso
+- **Genere**: Prompt generazione corrente
+
+**Informazioni Timing Real-time:**
+- Mostra tempo trascorso da inizio loop corrente
+- Visualizza tempo rimanente fino soddisfazione durata minima
+- Indica quando loop è pronto per passare alla prossima generazione
 
 ### Versione Terminale (`ilterm.py`)
 
 #### Avvio Rapido
 
 ```bash
-# Modalità interattiva (consigliata)
+# Modalità interattiva (raccomandata)
 python ilterm.py
 
 # Generazione diretta con prompt
 python ilterm.py --prompt "electronic dance loop"
 
-# Impostazioni personalizzate
+# Impostazioni personalizzate con durata minima
 python ilterm.py --prompt "ambient chill" --duration 20 --driver pulse
 
 # Genera singolo loop ed esci
@@ -831,28 +885,33 @@ python ilterm.py --prompt "test loop" --verbose
 
 #### Comandi Interattivi
 
-In modalità interattiva, usa questi comandi:
+Quando in modalità interattiva, usa questi comandi:
 
 ```bash
 🎛️ > start 'ambient electronic loop'     # Avvia loop infinito
 🎛️ > stop                                # Ferma riproduzione
-🎛️ > status                              # Mostra status dettagliato
+🎛️ > status                              # Mostra stato dettagliato con info timing
 🎛️ > save my_favorite_loop.wav          # Esporta loop corrente
-🎛️ > set duration                        # Cambia durata generazione (5-30s)
+🎛️ > set duration                        # Cambia lunghezza generazione (5-30s)
+🎛️ > set minduration                     # Cambia durata minima brano (10-300s)
 🎛️ > set driver                          # Cambia driver audio
 🎛️ > debug on                            # Abilita logging debug
-🎛️ > validate both                       # Controlla integrità file
+🎛️ > validate both                       # Verifica integrità file
 🎛️ > help                                # Mostra tutti i comandi
-🎛️ > quit                                # Esci dal programma
+🎛️ > quit                                # Esci programma
+🎛️ > set minduration                     # Configura durata minima brano
+# Range: 10-300 secondi (5 minuti max)
+# Il loop corrente suonerà almeno questo tempo prima di cambiare
+# Suggerimento: 30-60s per varietà, 120s+ per sessioni ascolto più lunghe
 ```
 
-#### Opzioni Riga di Comando
+#### Opzioni Command Line
 
 ```bash
 python ilterm.py [OPZIONI]
 
 Opzioni:
-  -p, --prompt TEXT        Prompt per generazione musicale
+  -p, --prompt TEXT        Prompt generazione musicale
   -i, --interactive        Avvia in modalità interattiva
   -g, --generate-only PROMPT OUTPUT  Genera singolo loop e salva
   -d, --duration INTEGER   Durata generazione (5-30 secondi)
@@ -863,30 +922,7 @@ Opzioni:
   -h, --help               Mostra messaggio aiuto
 ```
 
-### Versione GUI Leggera (`il1.py`)
-
-```bash
-python il1.py
-```
-
-**Passi di Utilizzo:**
-1. **Inserisci Prompt**: Digita la tua descrizione musicale (es. "calm acoustic guitar")
-2. **Scegli Preset**: Clicca i pulsanti preset per configurazioni rapide
-3. **Regola Durata**: Usa la tab impostazioni per cambiare durata generazione (10-15s ottimali)
-4. **Avvia Generazione**: Clicca "▶️ START LOOP"
-5. **Monitora Progresso**: Osserva barra stato e tab log
-6. **Salva Loop**: Usa "💾 Save Current Loop" per esportare
-7. **Impostazioni**: Configura durata, driver audio, modalità debug
-
-**Preset Disponibili:**
-- **Ambient**: Paesaggi sonori eterei
-- **Reggae**: Ritmi reggae classici
-- **Electronic**: Synth e beat da ballo
-- **Classical**: Arrangiamenti orchestrali
-- **Rock**: Loop guidati da chitarra
-- **Lofi Rap**: Beat hip-hop melodici
-
-### Versione GUI Avanzata (`il2.py`)
+### Versione GUI Avanzata (`il2.py`) - SPERIMENTALE
 
 ```bash
 python il2.py
@@ -894,90 +930,122 @@ python il2.py
 
 1. Inserisci il tuo prompt musicale nel campo testo
 2. Scegli tipo algoritmo:
-   - **Avanzato**: Analisi multi-metrica (consigliato)
+   - **Avanzato**: Analisi multi-metrica (raccomandato)
    - **Classico**: Solo similarità spettrale
-3. Seleziona modello (medium consigliato) e durata
+3. Seleziona modello (medium raccomandato) e durata
 4. Clicca "AVVIA" per iniziare generazione
-5. Monitora visualizzazioni in tempo reale per analisi loop
+5. Monitora visualizzazioni real-time per analisi loop
 6. Usa pulsante "SALVA" per salvare loop
 
 **Nota**: Questa versione non supporta crossfading tra loop.
 
 ## Dettagli Tecnici
 
-### Pipeline Elaborazione Audio
+### Pipeline Processing Audio
 
 1. **Generazione AI**: MusicGPT crea audio grezzo usando prompt testuali
 2. **Validazione Qualità**: Controllo integrità file multi-stadio
 3. **Analisi Loop**: Algoritmo multi-metrico avanzato rileva punti loop ottimali
-4. **Normalizzazione Audio**: Standardizzazione LUFS a -14 dB (standard broadcast)
-5. **Ottimizzazione Zero-Crossing**: Affina punti loop per transizioni perfette
-6. **Riproduzione Continua**: Loop infinito nativo con generazione in background
+4. **Normalizzazione Picco**: Standardizzazione semplice basata su ampiezza a livello picco 0.7
+5. **Ottimizzazione Zero-Crossing**: Affina punti loop per transizioni senza interruzioni
+6. **Riproduzione Continua**: Loop infinito nativo con generazione background e crossfade
+7. **Controllo Durata Minima**: Timing configurabile prima di permettere cambi loop
 
 ### Algoritmo Rilevamento Loop
 
 INFINI LOOP usa un approccio sofisticato a due stadi:
 
 #### Stadio 1: Analisi Multi-Metrica Avanzata
-1. **Similarità Spettrale**: Analisi cepstrale mel-frequency dei confini loop
+1. **Similarità Spettrale**: Analisi mel-frequency cepstral dei confini loop
 2. **Continuità Forma d'Onda**: Cross-correlazione e matching RMS
-3. **Allineamento Beat**: Preservazione ritmo usando tracking beat
+3. **Allineamento Beat**: Preservazione ritmo usando beat tracking
 4. **Continuità Fase**: Analisi coerenza fase STFT
-5. **Punteggio Composito**: Combinazione pesata di tutte le metriche
+5. **Scoring Composito**: Combinazione pesata di tutte le metriche
 
-#### Stadio 2: Fallback Focalizzato sui Beat
+#### Stadio 2: Fallback Focalizzato su Beat
 1. **Rilevamento Tempo**: Analisi BPM con misurazione consistenza
-2. **Struttura Musicale**: Preferenza per loop da 1, 2, 4, 8 misure
+2. **Struttura Musicale**: Preferenza per loop 1, 2, 4, 8 misure
 3. **Allineamento Griglia Beat**: Aggancio a posizioni beat rilevate
 4. **Preservazione Ritmo**: Mantiene coerenza musicale
 
-### Normalizzazione Audio
+### Normalizzazione Audio (Semplificata)
 
-Normalizzazione LUFS (Loudness Units relative to Full Scale) professionale:
-- **Target**: -14 LUFS (standard Spotify/YouTube)
-- **Limitazione Picchi**: Previene clipping sopra -0.1 dBFS
-- **Range Dinamico**: Preserva dinamiche musicali
-- **Consistenza**: Volume uniforme su tutti i loop generati
+**Sistema normalizzazione basato su picco:**
+- **Picco Target**: 0.7 ampiezza (70% del massimo)
+- **Scaling Semplice**: Regolazione gain lineare basata su picco corrente
+- **Prevenzione Clipping**: Limiting aggiuntivo a 0.95 se necessario
+- **Fallback**: Normalizzazione basata su RMS per segnali molto quieti
+- **Consistenza**: Volume uniforme attraverso loop generati
+
+*Nota: La precedente normalizzazione LUFS è stata sostituita con questo approccio più semplice basato su picco per migliore affidabilità.*
+
+### Sistema Benchmark
+
+**Tracking Performance:**
+- Registra tempo generazione per ogni durata campione
+- Raggruppa dati per durata richiesta (5s, 10s, 15s, etc.)
+- Calcola tempi generazione medi
+- Visualizza statistiche nella scheda Statistiche GUI
+- Memorizza dati in file `benchdata.json`
+- Fornisce insights per selezione durata ottimale
+
+### Gestione Loop Intelligente
+
+**Durata Minima Configurabile:**
+- Default: 30 secondi tempo riproduzione minimo
+- Range: 10-300 secondi (5 minuti massimo)
+- Previene cambio rapido tra loop
+- Permette apprezzamento di ogni pezzo generato
+- Visualizzazione timing real-time mostra progresso
+
+**Sistema Informazioni Loop:**
+- Generazione titolo casuale da combinazioni parole
+- Selezione nome artista AI
+- Visualizzazione durata e timing real-time
+- Informazioni genere da prompt corrente
 
 ### Gestione Processi
 
-- **Priorità CPU**: Generazione in background con `nice` e `ionice`
-- **Affinità CPU**: Assegnazione core per performance ottimali
-- **Gestione Memoria**: Pulizia file temporanei e prevenzione leak
-- **Terminazione Sicura**: Spegnimento processi con gestione timeout
-- **Recupero Errori**: Retry automatico con backoff esponenziale
+- **Priorità CPU**: Generazione background con `nice` e `ionice`
+- **Affinità CPU**: Assegnamento core per performance ottimale
+- **Gestione Memoria**: Migliorato cleanup file temporanei e prevenzione leak
+- **Terminazione Sicura**: Spegnimento processo graduale con gestione timeout
+- **Recupero Errori**: Retry automatico con exponential backoff
+- **Gestione Buffer**: Gestione buffer audio intelligente con cleanup appropriato
 
-### Raccomandazioni Modelli
+### Raccomandazioni Modello
 
-- **Modello Small**: Veloce ma spesso bassa qualità - non consigliato per musica
-- **Modello Medium**: Miglior bilanciamento qualità/velocità - **consigliato**
-- **Modello Large**: Qualità massima ma molto lento e intensivo di risorse
+- **Modello Small**: Veloce ma spesso qualità bassa - non raccomandato per musica
+- **Modello Medium**: Miglior equilibrio tra qualità e velocità - **raccomandato**
+- **Modello Large**: Qualità più alta ma molto lento e intensivo di risorse
 
 ## Risoluzione Problemi
 
 ### Problemi Comuni e Soluzioni
 
-#### Problemi di Generazione
+#### Problemi Generazione
 
 **Problema**: "File audio generato con errori dalla AI"
 - **Causa**: Binario MusicGPT non trovato o non eseguibile
-- **Soluzione**:
+- **Soluzione**: 
   ```bash
   chmod +x musicgpt-x86_64-unknown-linux-gnu
   ./musicgpt-x86_64-unknown-linux-gnu --help  # Testa binario
   ```
 
 **Problema**: Generazione molto lenta (>60 secondi)
-- **Causa**: CPU insufficiente o memoria
+- **Causa**: Potenza CPU o memoria insufficiente
 - **Soluzioni**:
   - Usa durata più breve (8-12 secondi)
   - Chiudi altre applicazioni
   - Assicurati 16+ GB RAM disponibili
-  - Controlla che CPU non sia throttling per calore
+  - Verifica CPU non throttling per calore
+  - Controlla statistiche benchmark per trovare durata ottimale
 
 **Problema**: "No interesting loop" o output bassa qualità
-- **Causa**: Audio generato da AI non adatto per loop
+- **Causa**: Audio generato AI non adatto per looping
 - **Soluzioni**:
+  - Usa pulsanti preset in GUI per prompt provati
   - Aggiungi parole chiave: "seamless", "loopable", "nointro"
   - Prova prompt diversi: evita "song", "verse", "chorus"
   - Usa modello medium invece di small
@@ -991,7 +1059,7 @@ Normalizzazione LUFS (Loudness Units relative to Full Scale) professionale:
   # Testa sistema audio
   speaker-test -t wav -c 2
   
-  # Prova driver audio diversi
+  # Prova driver audio diversi in Impostazioni GUI o terminale
   python ilterm.py --driver alsa    # o pulse, dsp
   
   # Controlla PulseAudio
@@ -999,8 +1067,8 @@ Normalizzazione LUFS (Loudness Units relative to Full Scale) professionale:
   systemctl --user restart pulseaudio
   ```
 
-**Problema**: Audio che salta o dropout
-- **Causa**: Buffer underrun audio o problemi driver
+**Problema**: Balbettio audio o interruzioni
+- **Causa**: Underrun buffer audio o problemi driver
 - **Soluzioni**:
   - Prova driver audio diversi (pulse → alsa → dsp)
   - Aumenta dimensione buffer audio:
@@ -1018,9 +1086,24 @@ Normalizzazione LUFS (Loudness Units relative to Full Scale) professionale:
   echo "default-sample-rate = 44100" >> ~/.pulse/daemon.conf
   pulseaudio --kill && pulseaudio --start
   ```
+
+#### Problemi Specifici GUI
+
+**Problema**: Impostazioni non salvate tra sessioni
+- **Causa**: Problemi permessi o directory configurazione mancante
+- **Soluzione**: Verifica che `infiniloop_settings.json` possa essere creato nella directory applicazione
+
+**Problema**: Titoli casuali mostrano come "UNTITLED"
+- **Causa**: File miglioramento opzionali mancanti
+- **Soluzione**: Crea file `nomi.txt`, `nomi2.txt`, e `artisti.txt` come descritto nell'installazione
+
+**Problema**: Scheda statistiche vuota
+- **Causa**: Dati benchmark non ancora raccolti o disabilitati
+- **Soluzione**: Abilita benchmark in Impostazioni e genera alcuni loop per popolare dati
+
 ### Modalità Debug
 
-Abilita logging completo per diagnostica:
+Abilita logging completo per troubleshooting:
 
 ```bash
 # Versione terminale
@@ -1031,28 +1114,32 @@ python ilterm.py
 🎛️ > debug on
 🎛️ > start 'test ambient'
 
-# Versione GUI: Tab Impostazioni → Abilita modalità debug
+# Versione GUI: scheda Impostazioni → Abilita modalità debug
 ```
 
 Output debug include:
-- Tracking stato file (creazione, validazione, eliminazione)
-- Passi pipeline elaborazione audio
+- Tracking stato file (creazione, validazione, cancellazione)
+- Passi pipeline processing audio
 - Progresso algoritmo rilevamento loop
 - Creazione e terminazione processi
 - Utilizzo memoria e CPU
+- Timing e dati benchmark
 - Stack trace errori
 
 ### Ottimizzazione Performance
 
-#### Per Sistemi Entry-Level:
+#### Per Sistemi Low-End:
 ```bash
 # Riduci durata generazione
 python ilterm.py --duration 8
 
+# Imposta durata minima più breve per varietà più rapida
+🎛️ > set minduration  # Imposta a 20-30 secondi
+
 # Usa ALSA per latenza più bassa
 python ilterm.py --driver alsa
 
-# Abbassa priorità processo
+# Priorità processo più bassa
 nice -n 10 python ilterm.py --prompt "ambient"
 ```
 
@@ -1060,6 +1147,9 @@ nice -n 10 python ilterm.py --prompt "ambient"
 ```bash
 # Usa durate più lunghe per qualità migliore
 python ilterm.py --duration 20
+
+# Imposta durata minima più lunga per ascolto esteso
+🎛️ > set minduration  # Imposta a 120-180 secondi
 
 # Core CPU dedicati
 taskset -c 2,3 python ilterm.py --prompt "complex orchestral"
@@ -1071,11 +1161,14 @@ Pattern log comuni e significati:
 
 ```
 ✅ Perfect loop found?                    # Rilevamento loop riuscito
-❌ No interesting loop                    # Output AI non adatto per loop
-🎚️ Normalized from X to -14 LUFS        # Standardizzazione volume audio
+❌ No interesting loop                    # Output AI non adatto per looping
+🎚️ Peak norm: X → 0.7                   # Normalizzazione picco applicata
 🎯 Zero-crossing optimization...         # Affinamento confini loop
 🔄 Reinitializing...                     # Recupero da errore
-⚠️ Zero-crossing rejected               # Ottimizzazione comprometterebbe ritmo
+⚠️ Zero-crossing rejected               # Ottimizzazione romperebbe ritmo
+📈 Benchmark stats updated               # Dati performance registrati
+⏱️ Current loop: Xs, Ys left            # Timing durata minima
+✅ Song ended, waiting next loop         # Pronto per cambiare loop
 ```
 
 ## Configurazione Avanzata
@@ -1116,59 +1209,27 @@ export PYGAME_HIDE_SUPPORT_PROMPT=1
 export OMP_NUM_THREADS=4
 ```
 
-## Sviluppo e Contributi
+### Creazione Preset Personalizzati
 
-### Struttura Codice
+Puoi modificare i preset in `il1.py` editando il dizionario presets:
 
-- `ilterm.py`: Engine core con interfaccia terminale
-- `il1.py`: Wrapper GUI leggero attorno all'engine core
-- `il2.py`: GUI avanzata con visualizzazioni (sperimentale)
-
-### Classi e Metodi Chiave
-
-**InfiniLoopTerminal** (engine principale):
-- `find_perfect_loop_advanced()`: Rilevamento loop multi-metrico
-- `find_perfect_loop_simple()`: Algoritmo fallback focalizzato sui beat
-- `generate_audio_safe()`: Generazione AI con normalizzazione LUFS
-- `process_loop_detection()`: Pipeline completa analisi loop
-- `safe_file_swap()`: Gestione file thread-safe
-- `validate_audio_file()`: Validazione file multi-stadio
-
-### Segnalazioni Bug e Richieste Funzionalità
-
-Quando segnali problemi, includi:
-
-- **Versione**: Quale file (ilterm.py, il1.py, il2.py)
-- **Sistema**: OS, versione Python, RAM, dettagli CPU
-- **Audio**: Driver usato, hardware audio
-- **Log**: Messaggi errore completi con modalità debug abilitata
-- **Riproduzione**: Passi esatti per riprodurre il problema
-- **Prompt**: Il prompt di generazione che ha causato problemi
-
-### Testing
-
-```bash
-# Testa funzionalità di base
-python ilterm.py --generate-only "test ambient" test_output.wav
-
-# Testa sistema audio
-python ilterm.py --prompt "short test" --duration 5 --verbose
-
-# Testa tutti i driver
-for driver in pulse alsa dsp; do
-  echo "Testing $driver..."
-  timeout 30 python ilterm.py --prompt "test" --driver $driver --duration 5
-done
+```python
+presets = {
+    "Jazz Personalizzato": "smooth jazz piano trio seamless loop",
+    "Cinema Epico": "cinematic orchestral epic soundtrack loop",
+    "Ambient Natura": "forest sounds ambient nature seamless loop",
+    # Aggiungi i tuoi preset qui
+}
 ```
 
 ## Licenza
 
-Questo progetto è rilasciato sotto licenza Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0).
+Questo progetto è rilasciato sotto la Licenza Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0).
 
 **Permessi:**
 - ✅ Condividi e adatta il materiale
 - ✅ Usa per scopi personali ed educativi
-- ✅ Modifica e costruisci sopra il codice
+- ✅ Modifica e costruisci sul codice
 
 **Restrizioni:**
 - ❌ Uso commerciale senza permesso
@@ -1179,28 +1240,32 @@ Per licenze commerciali, contatta gli autori.
 ## Crediti
 
 - **MusicGPT** di gabotechs per generazione musicale AI: https://github.com/gabotechs/MusicGPT
-- **librosa** team per analisi audio: https://librosa.org/
-- **pyloudnorm** di csteinmetz1 per normalizzazione LUFS: https://github.com/csteinmetz1/pyloudnorm
-- Sviluppato con assistenza di modelli linguistici AI
-- Elaborazione audio basata su librosa, soundfile e scipy
+- Team **librosa** per analisi audio: https://librosa.org/
+- **pyloudnorm** di csteinmetz1 per processing audio: https://github.com/csteinmetz1/pyloudnorm
+- Sviluppato con assistenza di modelli linguaggio AI
+- Processing audio alimentato da librosa, soundfile e scipy
 - Implementazione GUI usando tkinter e matplotlib
 
 ## Changelog
 
-- ➕ Normalizzazione LUFS per qualità audio professionale
-- ➕ Rilevamento loop migliorato con fallback basato sui beat
-- ➕ Ottimizzazione zero-crossing per transizioni perfette
-- ➕ Gestione errori completa e validazione file
-- ➕ Gestione processi con priorità CPU e affinità
-- ➕ Modalità debug con logging dettagliato
-- ➕ Terminale interattivo con set comandi completo
-- ➕ Persistenza impostazioni nella versione GUI
-- ➕ Sistema preset per generazione rapida
-- 🔧 Gestione memoria e pulizia migliorate
-- 🔧 Supporto driver audio multi-piattaforma migliorato
-- 🐛 Corrette race condition nel file swapping
-- 🐛 Risolti problemi dropout audio
+### Ultima Versione
+- ➕ **Normalizzazione Picco Semplificata** sostituendo sistema LUFS complesso
+- ➕ **Sistema GUI Completo** con interfaccia a schede e preset
+- ➕ **Sistema Benchmark/Statistiche** per monitoraggio performance
+- ➕ **Durata Minima Brano Configurabile** con timing real-time
+- ➕ **Sistema Preset** con 6 preset stili musicali
+- ➕ **Persistenza Impostazioni** - salvataggio/ripristino automatico configurazione
+- ➕ **Informazioni Loop Intelligenti** - titoli casuali, artisti, visualizzazione timing
+- ➕ **Gestione Memoria Migliorata** - cleanup migliorato e gestione risorse
+- ➕ **Monitoraggio Stato Avanzato** - progresso real-time e informazioni timing
+- ➕ **File Miglioramento Opzionali** per titoli e artisti personalizzati
+- 🔧 **Rilevamento Loop Migliorato** con migliore fallback allineamento beat
+- 🔧 **Migliore Recupero Errori** con validazione completa
+- 🔧 **Sistema Debug Migliorato** con timing dettagliato e logging benchmark
+- 🐛 **Risolto Gestione Buffer Audio** prevenendo memory leak
+- 🐛 **Risolti Problemi Timing** nella logica cambio loop
+- 🐛 **Migliorata Validazione File** prevenendo riproduzione audio corrotto
 
 ---
 
-**🎵 Buona musica con INFINI LOOP! 🎵**
+**🎵 Goditi musica AI infinita con INFINI LOOP! 🎵**
