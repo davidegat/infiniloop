@@ -8,7 +8,7 @@ Once set up and running, your machine becomes a local AI music station, continuo
 
 INFINI LOOP is powered by MusicGPT (https://github.com/gabotechs/MusicGPT) and MusicGen models by Meta (https://huggingface.co/spaces/facebook/MusicGen). According to Meta, the model was trained on licensed data from the following sources: the Meta Music Initiative Sound Collection, Shutterstock music collection, and the Pond5 music collection. See the paper for more details about the training set and corresponding preprocessing.
 
-All audio (and statistics) generated with INFINI LOOP is produced locally and never sent to any external service. The resulting music is entirely owned by the user, who retains full rights to use, distribute, modify, and commercialize it without restrictions.
+All audios (and statistics) generated with INFINI LOOP are produced locally and never sent to, or require, any external service. The resulting music is entirely owned by the user, who retains full rights to use, distribute, modify, and commercialize it without restrictions.
 
 GUI version:
 
@@ -342,7 +342,7 @@ Una volta configurato e in esecuzione, la tua macchina diventa una stazione musi
 
 INFINI LOOP è alimentato da MusicGPT (https://github.com/gabotechs/MusicGPT) e i modelli MusicGen di Meta (https://huggingface.co/spaces/facebook/MusicGen). Secondo Meta, il modello è stato addestrato su dati con licenza dalle seguenti fonti: la Meta Music Initiative Sound Collection, la collezione musicale Shutterstock e la collezione musicale Pond5. Vedi il documento per maggiori dettagli sul set di addestramento e il preprocessing corrispondente.
 
-Tutto l'audio (e le statistiche) generato con INFINI LOOP è prodotto localmente e mai inviato a servizi esterni. La musica risultante è interamente di proprietà dell'utente, che mantiene tutti i diritti per usare, distribuire, modificare e commercializzare senza restrizioni.
+Tutti i file audio (e le statistiche) generati con INFINI LOOP sono prodotti localmente e non vengono inviati a, nè fanno uso di, servizi esterni. La musica risultante è interamente di proprietà dell'utente, che mantiene tutti i diritti per usare, distribuire, modificare e commercializzare senza restrizioni.
 
 Versione GUI:
 
