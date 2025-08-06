@@ -37,7 +37,7 @@ class InfiniLoopTerminal:
         self.FILE2 = os.path.join(self.base_dir, "music2.wav")
         self.CURRENT, self.NEXT = self.FILE1, self.FILE2
 
-        self.CROSSFADE_MS = 1500
+        self.CROSSFADE_MS = 1000
         self.CROSSFADE_SEC = self.CROSSFADE_MS / 1000
         self.PROMPT, self.model, self.duration = "", "small", 8
 
@@ -82,7 +82,8 @@ class InfiniLoopTerminal:
         self.benchmark_file = "benchdata.json"
         self.benchmark_data = []
         self.load_benchmark_data()
-
+        self.current_generation_process = None
+        self.generation_lock = threading.Lock()
 
     def load_benchmark_data(self):
 
@@ -681,7 +682,7 @@ class InfiniLoopTerminal:
                 new_duration_samples = int(closest_ideal * avg)
                 if abs(new_duration_samples - duration_initial) < duration_initial * 0.2:
                     target_duration = new_duration_samples
-                    self.logging_system(f"🎯 Duration adjustment needed")
+                    self.logging_system(f"🎯 Duration adjustment:")
                     self.logging_system(f"✅ Done! {duration_beats} -> {closest_ideal}\n")
 
             search_window = min(int(avg * 0.5), target_duration // 10)
@@ -790,7 +791,6 @@ class InfiniLoopTerminal:
         if not candidates: raise Exception("No candidates found")
         best = sorted(candidates, key=lambda x: x["score"], reverse=True)[0]
         if best["score"] < 0.15: raise Exception(f"Best score too low: {best['score']:.3f}")
-        self.logging_system("🎯 Beat-safe zero-crossing")
 
         s, e = best["start"], best["end"]
 
@@ -824,7 +824,6 @@ class InfiniLoopTerminal:
 
 
     def find_perfect_loop_weights(self, y, sr):
-        self.logging_system("🧠 Checking sample for loops")
         if not len(y) or sr <= 0:
             raise Exception("Invalid input: empty audio from AI?")
 
@@ -1165,6 +1164,8 @@ class InfiniLoopTerminal:
                 self.debug_file_state("PRE_GENERATION", raw)
 
                 t = self._run_ai_generation(p, m, d, raw)
+
+                # Se siamo arrivati qui, la generazione è completata con successo
                 self.logging_system(f"⏱️ AI made it in {t:.2f}s!")
 
                 if self.benchmark_enabled:
@@ -1181,11 +1182,22 @@ class InfiniLoopTerminal:
                 self._trigger_ui_cb()
 
         except subprocess.CalledProcessError as e:
-            self._handle_subprocess_err(e)
+            if not self.stop_requested:  # Solo se non è uno stop volontario
+                self._handle_subprocess_err(e)
+            else:
+                self.generation_status = "Stopped"
+                raise Exception("Generation stopped by user")
         except subprocess.TimeoutExpired:
-            self._handle_timeout()
+            if not self.stop_requested:  # Solo se non è uno stop volontario
+                self._handle_timeout()
+            else:
+                self.generation_status = "Stopped"
+                raise Exception("Generation stopped by user")
         except Exception as e:
-            self.generation_status = "Error"
+            if "stopped by user" in str(e).lower():
+                self.generation_status = "Stopped"
+            else:
+                self.generation_status = "Error"
             raise
         finally:
             self.is_generating = False
@@ -1199,14 +1211,66 @@ class InfiniLoopTerminal:
 
     def _run_ai_generation(self, prompt, model, dur, out):
         t0 = time.time()
-        subprocess.run([
-            "ionice", "-c", "2", "-n", "7", "nice", "-n", "10",
-            "./musicgpt-x86_64-unknown-linux-gnu", prompt,
-            "--model", model, "--secs", str(dur),
-            "--output", out,
-            "--no-playback", "--no-interactive", "--ui-no-open"
-        ], check=True, capture_output=True, text=True)
-        return time.time() - t0
+
+        with self.generation_lock:
+            if self.stop_requested:
+                raise Exception("Generation cancelled by user")
+
+            self.current_generation_process = subprocess.Popen([
+                "ionice", "-c", "2", "-n", "7", "nice", "-n", "10",
+                "./musicgpt-x86_64-unknown-linux-gnu", prompt,
+                "--model", model, "--secs", str(dur),
+                "--output", out,
+                "--no-playback", "--no-interactive", "--ui-no-open"
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        try:
+            # Polling per permettere interruzione pulita
+            while self.current_generation_process.poll() is None:
+                if self.stop_requested:
+                    self.logging_system("🛑 Generation stopped")
+                    self._terminate_generation_process()
+                time.sleep(0.1)
+
+            # Processo terminato naturalmente
+            returncode = self.current_generation_process.returncode
+            stdout, stderr = self.current_generation_process.communicate()
+
+            with self.generation_lock:
+                self.current_generation_process = None
+
+            if returncode != 0:
+                raise subprocess.CalledProcessError(returncode, "musicgpt", stderr)
+
+            return time.time() - t0
+
+        except Exception as e:
+            with self.generation_lock:
+                if self.current_generation_process:
+                    self._terminate_generation_process()
+                    self.current_generation_process = None
+            raise
+
+    def _terminate_generation_process(self):
+        """Termina il processo di generazione in modo pulito"""
+        if not self.current_generation_process:
+            return
+
+        try:
+            # Prima prova con SIGTERM (terminazione pulita)
+            self.current_generation_process.terminate()
+            try:
+                self.current_generation_process.wait(timeout=3.0)
+                return  # Processo terminato pulitamente
+            except subprocess.TimeoutExpired:
+                pass
+
+            # Se non risponde, usa SIGKILL ma non loggare come errore
+            self.current_generation_process.kill()
+            self.current_generation_process.wait(timeout=1.0)
+
+        except Exception:
+            pass  # Ignora errori durante la terminazione
 
     def _save_benchmark(self, dur, elapsed):
         self.benchmark_data.append({
@@ -1241,9 +1305,16 @@ class InfiniLoopTerminal:
                 self.logging_system(f"❌ UI callback failed: {e}")
 
     def _handle_subprocess_err(self, e):
-        self.logging_system(f"❌ Generation error: {e}\n{e.stderr.strip()}")
-        self.generation_status = "Error"
-        raise
+        # Se è un SIGKILL causato dallo stop dell'utente, non loggare come errore
+        if self.stop_requested and e.returncode == -9:
+            self.logging_system("🛑 Generation stopped by user")
+            self.generation_status = "Stopped"
+            raise Exception("Generation stopped by user")
+        else:
+            # Errore reale
+            self.logging_system(f"❌ Generation error: {e}\n{e.stderr.strip()}")
+            self.generation_status = "Error"
+            raise
 
     def _handle_timeout(self):
         self.logging_system("❌ Generation timeout (120s)")
@@ -1629,12 +1700,12 @@ class InfiniLoopTerminal:
 
 
     def start_loop(self, prompt):
-
         self.PROMPT = prompt.strip()
         if not self.PROMPT:
             print("❌ Error: Please enter a prompt!")
             return False
 
+        self.stop_requested = False  # <-- AGGIUNGI QUESTA LINEA
         self.is_playing = True
 
         self.loop_thread = threading.Thread(target=self.main_loop, daemon=True)
@@ -1645,12 +1716,19 @@ class InfiniLoopTerminal:
 
     def stop_loop(self):
         self.is_playing = False
+        self.stop_requested = True  # <-- AGGIUNGI QUESTA LINEA
+
         if hasattr(self, "stop_event"):
             self.stop_event.set()
         self.logging_system("⏹️ Loop stopped")
 
-        self.thread_pool.shutdown(wait=False, cancel_futures=True)
+        # Termina generazione in corso
+        with self.generation_lock:
+            if self.current_generation_process:
+                self._terminate_generation_process()
+                self.current_generation_process = None
 
+        self.thread_pool.shutdown(wait=False, cancel_futures=True)
         self.thread_pool = ThreadPoolExecutor(
             max_workers=4, thread_name_prefix="infiniloop"
         )

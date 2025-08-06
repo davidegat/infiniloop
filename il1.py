@@ -724,7 +724,6 @@ class InfiniLoopGUI:
 
 
     def create_log_tab(self):
-
         log_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
         self.notebook.add(log_frame, text="📋 Console")
 
@@ -744,19 +743,57 @@ class InfiniLoopGUI:
         log_scrollbar.pack(side='right', fill='y')
         self.log_text.config(yscrollcommand=log_scrollbar.set)
 
-        clear_btn = tk.Button(log_frame,
-                             text="🗑️  Clear Log",
-                             font=('Segoe UI', 10),
-                             bg=self.colors['accent'],
-                             fg='white',
-                             activebackground=self.colors['accent_hover'],
-                             relief='flat',
-                             bd=0,
-                             padx=15,
-                             pady=8,
-                             cursor='hand2',
-                             command=self.clear_log)
-        clear_btn.pack(pady=5)
+        # Frame per i pulsanti
+        button_frame = tk.Frame(log_frame, bg=self.colors['bg'])
+        button_frame.pack(pady=5)
+
+        # Pulsante START
+        self.log_start_button = tk.Button(button_frame,
+                                        text="▶️ START",
+                                        font=('Segoe UI', 10, 'bold'),
+                                        bg=self.colors['success'],
+                                        fg='white',
+                                        activebackground='#00f094',
+                                        activeforeground='white',
+                                        relief='flat',
+                                        bd=0,
+                                        padx=15,
+                                        pady=8,
+                                        cursor='hand2',
+                                        command=self.start_loop)
+        self.log_start_button.pack(side='left', padx=5)
+
+        # Pulsante STOP
+        self.log_stop_button = tk.Button(button_frame,
+                                        text="⏹️ STOP",
+                                        font=('Segoe UI', 10, 'bold'),
+                                        bg=self.colors['danger'],
+                                        fg='white',
+                                        activebackground='#ff5c4c',
+                                        activeforeground='white',
+                                        relief='flat',
+                                        bd=0,
+                                        padx=15,
+                                        pady=8,
+                                        cursor='hand2',
+                                        state='disabled',
+                                        command=self.stop_loop)
+        self.log_stop_button.pack(side='left', padx=5)
+
+        # Pulsante CLEAR LOG
+        clear_btn = tk.Button(button_frame,
+                            text="🗑️ Clear Log",
+                            font=('Segoe UI', 10),
+                            bg=self.colors['accent'],
+                            fg='white',
+                            activebackground=self.colors['accent_hover'],
+                            relief='flat',
+                            bd=0,
+                            padx=15,
+                            pady=8,
+                            cursor='hand2',
+                            command=self.clear_log)
+        clear_btn.pack(side='left', padx=5)
 
 
     def create_benchmark_tab(self):
@@ -957,6 +994,10 @@ class InfiniLoopGUI:
 
             self.log_queue.put("__UPDATE_NOW_PLAYING__")
 
+    def _run_loop(self, prompt):
+
+        self.app.start_loop(prompt)
+
     def start_loop(self):
         prompt = self.prompt_entry.get().strip()
         if prompt == "e.g. ambient chill loop, jazz piano..." or not prompt:
@@ -966,8 +1007,15 @@ class InfiniLoopGUI:
         self.app.last_prompt = prompt
         self.save_settings()
         self.is_running = True
+
+        # Aggiorna pulsanti nel tab Controls
         self.start_button.config(state='disabled')
         self.stop_button.config(state='normal')
+
+        # Aggiorna pulsanti nel tab Console
+        self.log_start_button.config(state='disabled')
+        self.log_stop_button.config(state='normal')
+
         self.prompt_entry.config(state='disabled')
         self.status_indicator.config(text="🟢")
         self.status_label.config(text=f"🟢 PLAYING")
@@ -975,20 +1023,22 @@ class InfiniLoopGUI:
         thread = threading.Thread(target=self._run_loop, args=(prompt,), daemon=True)
         thread.start()
 
-
-    def _run_loop(self, prompt):
-
-        self.app.start_loop(prompt)
-
-
+    # Modifica nel metodo stop_loop():
     def stop_loop(self):
         self.app.stop_loop()
         self.is_running = False
+
+        # Aggiorna pulsanti nel tab Controls
         self.start_button.config(state='normal')
         self.stop_button.config(state='disabled')
+
+        # Aggiorna pulsanti nel tab Console
+        self.log_start_button.config(state='normal')
+        self.log_stop_button.config(state='disabled')
+
         self.prompt_entry.config(state='normal')
         self.status_indicator.config(text="🔴")
-        self.status_label.config(text=f"🔴 STOPPED - Model: {self.app.model}")  # ← Modifica qui
+        self.status_label.config(text=f"🔴 STOPPED - Model: {self.app.model}")
 
         self.current_loop_file = None
         self.last_title = None
