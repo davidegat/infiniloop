@@ -17,7 +17,7 @@ Terminal version (**recommended for advanced users**):
 
 Lightweight GUI version (**MOST recommended**):
 
-<img width="695" height="881" alt="immagine" src="https://github.com/user-attachments/assets/1bcbf69c-a16e-47ec-afe1-2749a3fc2228" />
+<img width="500" height="881" alt="immagine" src="https://github.com/user-attachments/assets/1bcbf69c-a16e-47ec-afe1-2749a3fc2228" />
 
 ## Table of Contents
 
