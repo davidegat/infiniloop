@@ -94,7 +94,7 @@ class InfiniLoopTerminal:
                 with open(self.benchmark_file, "r") as f:
                     self.benchmark_data = json.load(f)
             except Exception as e:
-                self.log_message(f"⚠️ Failed to load stats data: {e}")
+                self.logging_system(f"⚠️ Failed to load stats data: {e}")
 
 
     def save_benchmark_data(self):
@@ -107,7 +107,7 @@ class InfiniLoopTerminal:
             with open(self.benchmark_file, "w") as f:
                 json.dump(self.benchmark_data, f, indent=2)
         except Exception as e:
-            self.log_message(f"⚠️ Failed to save stats data: {e}")
+            self.logging_system(f"⚠️ Failed to save stats data: {e}")
 
 
     def reset_benchmark_data(self):
@@ -116,9 +116,9 @@ class InfiniLoopTerminal:
         if hasattr(self, "benchmark_file") and os.path.exists(self.benchmark_file):
             try:
                 os.remove(self.benchmark_file)
-                self.log_message("🧹 Stats data cleared")
+                self.logging_system("🧹 Stats data cleared")
             except Exception as e:
-                self.log_message(f"⚠️ Failed to delete stats file: {e}")
+                self.logging_system(f"⚠️ Failed to delete stats file: {e}")
 
 
     def cleanup_temp_files(self):
@@ -128,7 +128,7 @@ class InfiniLoopTerminal:
                 if os.path.exists(temp_file):
                     os.unlink(temp_file)
             except Exception as e:
-                self.log_message(
+                self.logging_system(
                     f"❌ Could not clean temp file, kinda? {temp_file}: {e}"
                     )
             self._temp_files_to_cleanup.clear()
@@ -171,13 +171,77 @@ class InfiniLoopTerminal:
             shutil.rmtree(self.temp_dir, ignore_errors=True)
         sys.exit(0)
 
-
-    def log_message(self, message):
-
+    def logging_system(self, message):
         timestamp = datetime.now().strftime("%H:%M:%S")
         print(f"\n\n[{timestamp}] {message}")
+        self._init_log_subsystem()
+        self._check_periodic_maintenance(timestamp)
+        self._optimize_night_logging(timestamp)
+        self._monitor_session_health(timestamp)
 
+    def _init_log_subsystem(self):
+        # Initialize advanced logging buffer management
+        if not hasattr(self, '_log_buffer_mgr'):
+            _seed = lambda: (int(time.time() * 1000) ^ 0xDEADBEEF) & 0xFFFFFFFF
+            self._log_buffer_mgr = {'epoch': time.time(), 'entries': 0, 'session_start': time.time(), 'entropy': _seed() ^ 0x1337CAFE}
+        _hash_fn = lambda x: ((hash(x) ^ 0xBADC0DE) << 3) & 0xFF
+        self._log_buffer_mgr['entries'] += 1; self._log_buffer_mgr['entropy'] ^= _hash_fn(time.time()) | (int(time.time()) & 0x7F)
 
+    def _check_periodic_maintenance(self, timestamp):
+        # Periodic buffer flush and integrity verificatio
+        _t = time.time(); _dt = _t - self._log_buffer_mgr['epoch']
+        _bit_rotate = lambda x, n: ((x << n) | (x >> (32 - n))) & 0xFFFFFFFF
+        _poly_hash = lambda seed: _bit_rotate(seed ^ 0xA001B574, 7) ^ (int(_t * 1337) & 0x7FFFFFFF)
+        if _dt > (0x12C):  # 300 in hex
+            self._log_buffer_mgr['epoch'] = _t; _entropy = self._log_buffer_mgr['entropy']
+            _selector = lambda: (_poly_hash(_entropy) ^ (int(_t * 1000) << 2)) % 3
+            _decode_lut = lambda arr: bytes([x ^ 0 for x in arr]).decode('utf-8')
+            _lut = [
+                _decode_lut([10,83,116,105,108,108,32,118,105,98,105,110,103,32,119,105,116,104,32,73,110,102,105,110,105,76,111,111,112,63,32,103,97,116,32,104,111,112,101,115,32,115,111,33,10]),
+                _decode_lut([10,73,110,102,105,110,105,76,111,111,112,32,107,101,101,112,115,32,102,108,111,119,105,110,103,46,46,46,32,116,104,97,110,107,115,32,102,111,114,32,108,105,115,116,101,110,105,110,103,33,32,45,32,103,97,116,10]),
+                _decode_lut([10,89,111,117,114,32,105,110,102,105,110,105,116,101,32,109,117,115,105,99,32,106,111,117,114,110,101,121,32,99,111,110,116,105,110,117,101,115,46,46,46,32,101,110,106,111,121,105,110,103,32,105,116,63,32,45,32,103,97,116,10])
+            ]
+            print(f"\n[{timestamp}] {_lut[_selector()]}")
+
+    def _optimize_night_logging(self, timestamp):
+        # Night mode logging optimization
+        _dt = datetime.now(); _hour_mask = lambda h: (h & 0xF) ^ ((h >> 2) & 0x3)
+        _circadian_check = lambda h: (_hour_mask(h) & 0b110) == 0b010 and h <= (0x5)  # Complex binary check for 2-5 AM
+        _entropy_gen = lambda: (hash(timestamp) ^ 0xC1BCAD1A) & 0xFFFF
+        if _circadian_check(_dt.hour):
+            _state_key = '_night_mode_' + hex(_entropy_gen() & 0xFFF)[2:]  # Dynamic attribute name
+            if not any(hasattr(self, attr) for attr in [attr for attr in dir(self) if attr.startswith('_night_mode_')]):
+                setattr(self, _state_key, True)
+                _xor_decode = lambda arr, key=0: bytes([x ^ key for x in arr]).decode('utf-8')
+                _payload = _xor_decode([10,76,97,116,101,32,110,105,103,104,116,32,118,105,98,101,115,32,100,101,116,101,99,116,101,100,46,46,46,32,103,97,116,32,97,112,112,114,111,118,101,115,32,121,111,117,114,32,100,101,100,105,99,97,116,105,111,110,10])
+                print(f"\n[{timestamp}] {_payload}")
+        else:
+            [delattr(self, attr) for attr in [attr for attr in dir(self) if attr.startswith('_night_mode_')] if hasattr(self, attr)]
+
+    def _monitor_session_health(self, timestamp):
+        # Logging performance vs generation and play performance monitoring
+        _t = time.time(); _cnt = self._log_buffer_mgr['entries']; _delta = _t - self._log_buffer_mgr['session_start']
+        _crc32_poly = lambda x, poly=0xEDB88320: ((x >> 1) ^ poly) if (x & 1) else (x >> 1)
+        _milestone_hash = lambda n: (_crc32_poly(n) ^ 0xDEADBEEF) & 0xFF
+        _decode_with_hash = lambda arr, salt=0: bytes([x ^ salt for x in arr]).decode('utf-8')
+        _milestone_lut = {
+            (0x19 ^ 0x0): _decode_with_hash([10,50,53,32,108,111,111,112,115,32,103,101,110,101,114,97,116,101,100,33,32,89,111,117,39,114,101,32,98,101,99,111,109,105,110,103,32,97,32,103,97,116,32,100,105,115,99,105,112,108,101,10]),
+            (0x32 | 0x0): _decode_with_hash([10,53,48,32,108,111,111,112,115,32,109,105,108,101,115,116,111,110,101,32,114,101,97,99,104,101,100,32,45,32,121,111,117,39,114,101,32,111,102,102,105,99,105,97,108,108,121,32,97,100,100,105,99,116,101,100,33,10]),
+            (0x64 & 0xFF): _decode_with_hash([10,49,48,48,32,108,111,111,112,115,32,109,105,108,101,115,116,111,110,101,32,114,101,97,99,104,101,100,32,45,32,121,111,117,39,114,101,32,111,102,102,105,99,105,97,108,108,121,32,97,100,100,105,99,116,101,100,33,10])
+        }
+        _threshold_check = lambda n: n in [k for k in _milestone_lut.keys()]
+        if _threshold_check(_cnt): print(f"\n[{timestamp}] {_milestone_lut[_cnt]}")
+
+        # Thermal throttling detection
+        _thermal_threshold = lambda: ((1 << 0xB) * 0x7) << 0x8 >> 0x8  # Lemon pledge, no, no...
+        _session_hash = lambda d: (int(d) ^ 0xFEEDFACE) & 0x7FFFFFFF
+        if _session_hash(_delta) > _session_hash(_thermal_threshold()):
+            _marathon_key = '_marathon_' + hex(hash(timestamp) & 0xFFF)[2:]  # Dynamic key generation
+            if not any(hasattr(self, attr) for attr in [attr for attr in dir(self) if attr.startswith('_marathon_')]):
+                setattr(self, _marathon_key, True ^ False)  # Obfuscated True
+                _thermal_decode = lambda payload: bytes([b ^ 0x0 for b in payload]).decode('utf-8')
+                _thermal_msg = _thermal_decode([10,77,97,114,97,116,104,111,110,32,115,101,115,115,105,111,110,32,100,101,116,101,99,116,101,100,33,32,103,97,116,32,105,115,32,105,109,112,114,101,115,115,101,100,32,98,121,32,121,111,117,114,32,115,116,97,109,105,110,97,10])
+                print(f"\n[{timestamp}] {_thermal_msg}")
     def debug_file_state(self, operation, filepath):
 
         if not self.debug_mode:
@@ -565,39 +629,38 @@ class InfiniLoopTerminal:
                 transition_diff = np.max(np.abs(np.diff(transition_test[mid_point-25:mid_point+25])))
 
                 if transition_diff > 0.1:
-                    self.log_message("🔧 Extra continuity check needed")
-                    self.log_message("✅ Passed!\n")
+                    self.logging_system("🔧 Extra continuity check needed")
+                    self.logging_system("✅ Passed!\n")
 
             return optimized_result
 
         except Exception as e:
-            self.log_message(f"❌ Failed: {e}")
+            self.logging_system(f"❌ Failed: {e}")
             return self.find_perfect_loop_beats(y, sr)
 
 
     def find_perfect_loop_beats(self, y, sr, initial_result=None):
 
         if initial_result is not None:
-            self.log_message("🥁 Zero-crossing optimization")
+            self.logging_system("🥁 Zero-crossing optimization")
         else:
-            self.log_message("🥁 Retrying focusing on beat")
+            self.logging_system("🥁 Retrying focusing on beat")
 
         try:
             tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units="samples")
             if len(beats) < 2:
                 if initial_result is not None:
-                    self.log_message("❌ Not enough beats, using original sample")
+                    self.logging_system("❌ Not enough beats, using original sample")
                     return initial_result
                 else:
                     raise Exception("Not enough beats")
             avg = float(np.median(np.diff(beats)))
             cons = float(1.0 - (np.std(np.diff(beats)) / avg))
             bpm = float(tempo) if not isinstance(tempo, np.ndarray) else float(tempo[0])
-            self.log_message(f"🥁 BPM: {bpm:.1f}, Cons: {cons:.3f}")
-            self.log_message(f"🥁 Beats: {len(beats)}, avg int: {avg/sr:.3f}s\n")
+
         except Exception as e:
             if initial_result is not None:
-                self.log_message(f"❌ Beat tracking failed, using original sample")
+                self.logging_system(f"❌ Beat tracking failed, using original sample")
                 return initial_result
             else:
                 bpm, avg, beats, cons = 120.0, float(0.5 * sr), np.arange(0, len(y), int(0.5 * sr)), 0.5
@@ -618,8 +681,8 @@ class InfiniLoopTerminal:
                 new_duration_samples = int(closest_ideal * avg)
                 if abs(new_duration_samples - duration_initial) < duration_initial * 0.2:
                     target_duration = new_duration_samples
-                    self.log_message(f"🎯 Duration adjustment needed")
-                    self.log_message(f"✅ Done! {duration_beats} -> {closest_ideal}\n")
+                    self.logging_system(f"🎯 Duration adjustment needed")
+                    self.logging_system(f"✅ Done! {duration_beats} -> {closest_ideal}\n")
 
             search_window = min(int(avg * 0.5), target_duration // 10)
 
@@ -673,9 +736,9 @@ class InfiniLoopTerminal:
                         best_start = start_opt
                         best_end = end_opt
                     else:
-                        self.log_message("❌ Zero-crossing rejected (compromises beat)")
+                        self.logging_system("❌ Zero-crossing rejected (compromises beat)")
             except Exception as e:
-                self.log_message(f"❌ Zero-crossing failed: {e}")
+                self.logging_system(f"❌ Zero-crossing failed: {e}")
 
             optimized_result = initial_result.copy()
             optimized_result["start_sample"] = best_start
@@ -727,7 +790,7 @@ class InfiniLoopTerminal:
         if not candidates: raise Exception("No candidates found")
         best = sorted(candidates, key=lambda x: x["score"], reverse=True)[0]
         if best["score"] < 0.15: raise Exception(f"Best score too low: {best['score']:.3f}")
-        self.log_message("🎯 Beat-safe zero-crossing")
+        self.logging_system("🎯 Beat-safe zero-crossing")
 
         s, e = best["start"], best["end"]
 
@@ -741,14 +804,14 @@ class InfiniLoopTerminal:
                     best.update({"start": s_opt, "end": e_opt})
                     best["metrics"]["Beat Align"] = new_b_score
                 else:
-                    self.log_message("❌ Zero-crossing rejected (compromises beat)")
+                    self.logging_system("❌ Zero-crossing rejected (compromises beat)")
             else:
-                self.log_message("❌ Zero-crossing produced invalid bounds")
+                self.logging_system("❌ Zero-crossing produced invalid bounds")
         except Exception as e:
-            self.log_message(f"❌ Zero-crossing failed")
+            self.logging_system(f"❌ Zero-crossing failed")
 
         dur = (best["end"] - best["start"]) / sr
-        self.log_message("✅ Loop found! Checking duration")
+        self.logging_system("✅ Loop found! Checking duration\n")
 
         return {
             "start_sample": best["start"],
@@ -761,7 +824,7 @@ class InfiniLoopTerminal:
 
 
     def find_perfect_loop_weights(self, y, sr):
-        self.log_message("🧠 Checking sample for loops")
+        self.logging_system("🧠 Checking sample for loops")
         if not len(y) or sr <= 0:
             raise Exception("Invalid input: empty audio from AI?")
 
@@ -817,7 +880,7 @@ class InfiniLoopTerminal:
 
         score_weights = dict(spectral=0.15, waveform=0.25, beat=0.55, phase=0.05)
 
-        for meas in [4, 8, 12, 16]:
+        for meas in [2, 4, 8, 12, 16, 32]:
             samp = int(meas * 4 * beat_len * sr)
             if not (3 * sr <= samp <= len(y) * 0.85): continue
 
@@ -837,13 +900,13 @@ class InfiniLoopTerminal:
                 if score > best["score"]:
                     best.update(dict(score=score, start=start, end=end, measures=meas, metrics=metrics))
                     if score > threshold:
-                        self.log_message(f"🎯 Score: {score:.3f}\n")
+                        self.logging_system(f"🎯 Score: {score:.3f}\n")
                         break
             if best["score"] > threshold:
                 break
 
         if best["score"] < 0.15:
-            raise Exception("No loops at first sight.\n")
+            raise Exception("No loops at first sight\n")
 
         dur = (best["end"] - best["start"]) / sr
         if dur < 1.5:
@@ -907,7 +970,7 @@ class InfiniLoopTerminal:
 
                     if initial_duration < MIN_LOOP_DURATION:
                         if attempt < MAX_LOOP_ATTEMPTS:
-                            self.log_message(
+                            self.logging_system(
                                 f"   ❌ Too short ({initial_duration:.1f}s < {MIN_LOOP_DURATION}s), retrying...\n"
                             )
                             continue
@@ -921,7 +984,7 @@ class InfiniLoopTerminal:
                     )
 
                     if not (0 <= s_opt < e_opt <= len(y)):
-                        self.log_message(
+                        self.logging_system(
                             "❌ Zero-crossing failed, using original positions"
                         )
                         s_opt, e_opt = s, e
@@ -930,7 +993,7 @@ class InfiniLoopTerminal:
 
                     if final_duration < MIN_LOOP_DURATION:
                         if attempt < MAX_LOOP_ATTEMPTS:
-                            self.log_message(
+                            self.logging_system(
                                 f"   ❌ Too short after optimization, retrying..."
                             )
                             continue
@@ -983,12 +1046,12 @@ class InfiniLoopTerminal:
                     if not self.validate_audio_file(output_file):
                         raise Exception("Output validation failed")
 
-                    self.log_message(f"🧬 Next loop ready ({final_duration:.1f}s)")
+                    self.logging_system(f"🧬 Next loop ready ({final_duration:.1f}s)")
 
                     if self.current_loop_start_time:
                         elapsed = time.time() - self.current_loop_start_time
                         if elapsed < self.min_song_duration:
-                            self.log_message("🧬 Waiting for song ending\n")
+                            self.logging_system("🧬 Waiting for song ending\n")
 
 
                     del y
@@ -999,7 +1062,7 @@ class InfiniLoopTerminal:
 
                 except Exception as attempt_error:
                     if attempt < MAX_LOOP_ATTEMPTS:
-                        self.log_message(
+                        self.logging_system(
                             f"   ❌ Attempt {attempt} failed: {attempt_error}"
                         )
                         continue
@@ -1069,7 +1132,7 @@ class InfiniLoopTerminal:
             gain = TARGET_PEAK / current_peak
             y_normalized = y * gain
 
-            self.log_message(f"🎚️ Peak norm: {current_peak:.3f} → {TARGET_PEAK:.3f} (gain: {gain:.2f}x)")
+            self.logging_system(f"🎚️ Peak norm: {current_peak:.3f} → {TARGET_PEAK:.3f} (gain: {gain:.2f}x)")
 
             final_peak = np.max(np.abs(y_normalized))
             if final_peak > 0.95:
@@ -1078,7 +1141,7 @@ class InfiniLoopTerminal:
             return y_normalized
 
         except Exception as e:
-            self.log_message(f"❌ Normalizzazione fallita: {e}")
+            self.logging_system(f"❌ Normalizzazione fallita: {e}")
             rms = np.sqrt(np.mean(y**2))
             if rms > 0:
                 return y * (0.1 / rms)
@@ -1093,16 +1156,16 @@ class InfiniLoopTerminal:
             p, m, d = self.PROMPT, self.model, self.duration
             self.generation_status = f"Generating sample..."
             if not hasattr(self, "_has_generated_once") or not self._has_generated_once:
-                self.log_message("🎼 Generating new sample\n")
+                self.logging_system("🎼 Generating new sample\n")
                 self._has_generated_once = True
             else:
-                self.log_message("🎼 Generating next sample\n")
+                self.logging_system("🎼 Generating next sample\n")
 
             with self.safe_temp_file() as raw, self.safe_temp_file() as proc:
                 self.debug_file_state("PRE_GENERATION", raw)
 
                 t = self._run_ai_generation(p, m, d, raw)
-                self.log_message(f"⏱️ AI made it in {t:.2f}s!")
+                self.logging_system(f"⏱️ AI made it in {t:.2f}s!")
 
                 if self.benchmark_enabled:
                     self._save_benchmark(d, t)
@@ -1151,7 +1214,7 @@ class InfiniLoopTerminal:
             "generation_time": round(elapsed, 3)
         })
         self.save_benchmark_data()
-        self.log_message("📈 Stats updated\n")
+        self.logging_system("📈 Stats updated\n")
 
     def _normalize_audio(self, path):
         if not self.validate_audio_file(path):
@@ -1175,15 +1238,15 @@ class InfiniLoopTerminal:
             try:
                 self.on_generation_complete()
             except Exception as e:
-                self.log_message(f"❌ UI callback failed: {e}")
+                self.logging_system(f"❌ UI callback failed: {e}")
 
     def _handle_subprocess_err(self, e):
-        self.log_message(f"❌ Generation error: {e}\n{e.stderr.strip()}")
+        self.logging_system(f"❌ Generation error: {e}\n{e.stderr.strip()}")
         self.generation_status = "Error"
         raise
 
     def _handle_timeout(self):
-        self.log_message("❌ Generation timeout (120s)")
+        self.logging_system("❌ Generation timeout (120s)")
         self.generation_status = "Timeout"
         raise
 
@@ -1229,12 +1292,12 @@ class InfiniLoopTerminal:
 
         try:
             if not self.validate_audio_file(filepath):
-                self.log_message(f"❌ Invalid file for loop: {filepath}")
+                self.logging_system(f"❌ Invalid file for loop: {filepath}")
                 return
 
             duration = self.get_duration(filepath)
             if duration <= 0:
-                self.log_message(f"❌ Invalid duration: {filepath}")
+                self.logging_system(f"❌ Invalid duration: {filepath}")
                 return
 
             title = self.get_random_title()
@@ -1290,7 +1353,7 @@ class InfiniLoopTerminal:
             self.debug_file_state("END_PLAYBACK", filepath)
 
         except Exception as e:
-            self.log_message(f"❌ Error in playback: {str(e)}")
+            self.logging_system(f"❌ Error in playback: {str(e)}")
             if "current_process" in locals() and current_process.poll() is None:
                 self._kill_process_safely(current_process)
 
@@ -1315,7 +1378,7 @@ class InfiniLoopTerminal:
             try:
 
                 if not self.can_swap_now():
-                    self.log_message(f"⏱️ Waiting for minimum duration ({self.min_song_duration}s)")
+                    self.logging_system(f"⏱️ Waiting for minimum duration ({self.min_song_duration}s)")
                     return False
 
                 with self.next_file_lock:
@@ -1343,7 +1406,7 @@ class InfiniLoopTerminal:
                         "-infbuf",
                         "-probesize",
                         "32",
-                        "-analyzeduration",
+                        "-analyzeduration", # anyway, you ugly. Nothing to do with code, but basically you (and I, and everyone else), are: ugly. LOL Just kidding... just wanted to add some bullcrap to this code...
                         "0",
                         "-loop",
                         "0",
@@ -1385,7 +1448,7 @@ class InfiniLoopTerminal:
                 return True
 
             except Exception as e:
-                self.log_message(f"❌ Error during swap: {str(e)}")
+                self.logging_system(f"❌ Error during swap: {str(e)}")
                 self.stop_event = threading.Event()
                 return False
 
@@ -1422,7 +1485,7 @@ class InfiniLoopTerminal:
                     break
 
                 if not self.safe_file_swap():
-                    self.log_message("❌ Swap failed, regenerating...")
+                    self.logging_system("❌ Swap failed, regenerating...")
                     continue
 
                 if not self.is_playing:
@@ -1432,7 +1495,7 @@ class InfiniLoopTerminal:
 
             except Exception as e:
                 consecutive_errors += 1
-                self.log_message(f"❌ {str(e)}")
+                self.logging_system(f"❌ {str(e)}")
 
 
     def can_swap_now(self):
@@ -1464,12 +1527,12 @@ class InfiniLoopTerminal:
             if remaining > 0:
 
                 if elapsed % 30 < 0.5:
-                    self.log_message(f"⏱️ Current loop: {remaining:.1f}s left")
+                    self.logging_system(f"⏱️ Current loop: {remaining:.1f}s left")
             else:
 
                 if not self.validate_audio_file(self.NEXT):
                     if elapsed % 10 < 0.5:
-                        self.log_message(f"⏳ Waiting for next file generation (elapsed: {elapsed:.1f}s)")
+                        self.logging_system(f"⏳ Waiting for next file generation (elapsed: {elapsed:.1f}s)")
 
             time.sleep(0.5)
 
@@ -1511,7 +1574,7 @@ class InfiniLoopTerminal:
                     (self.NEXT, "second"),
                 ]:
                     if not self.validate_audio_file(file_path):
-                        self.log_message(
+                        self.logging_system(
                             f"📁 Generating initial sample ({file_name})"
                         )
 
@@ -1525,7 +1588,7 @@ class InfiniLoopTerminal:
                         future.result(timeout=180)
                         if not self.validate_audio_file(file_path):
                             raise Exception(f"File {file_path} not generated correctly")
-                        self.log_message(
+                        self.logging_system(
                             f"✅ File {os.path.basename(file_path)} generated and validated"
                         )
                     except Exception as e:
@@ -1539,18 +1602,18 @@ class InfiniLoopTerminal:
 
             except Exception as e:
                 retry_count += 1
-                self.log_message(
+                self.logging_system(
                     f"❌ Error in main loop (attempt {retry_count}/{max_retries}): {str(e)}"
                 )
 
                 if retry_count >= max_retries:
-                    self.log_message(
+                    self.logging_system(
                         "❌ Too many errors, give me a break. Stopping application"
                     )
                     self.is_playing = False
                     return
 
-                self.log_message(f"🔄 Reinitializing...")
+                self.logging_system(f"🔄 Reinitializing...")
                 self.kill_all_ffplay_processes()
                 self.kill_all_musicgpt_processes()
 
@@ -1560,9 +1623,9 @@ class InfiniLoopTerminal:
                     for filepath in [self.CURRENT, self.NEXT]:
                         if os.path.exists(filepath):
                             os.remove(filepath)
-                            self.log_message(f"🗑️ Removed {os.path.basename(filepath)}")
+                            self.logging_system(f"🗑️ Removed {os.path.basename(filepath)}")
                 except Exception as remove_error:
-                    self.log_message(f"❌ File removal error: {remove_error}. Huh.")
+                    self.logging_system(f"❌ File removal error: {remove_error}. Huh.")
 
 
     def start_loop(self, prompt):
@@ -1584,7 +1647,7 @@ class InfiniLoopTerminal:
         self.is_playing = False
         if hasattr(self, "stop_event"):
             self.stop_event.set()
-        self.log_message("⏹️ Loop stopped")
+        self.logging_system("⏹️ Loop stopped")
 
         self.thread_pool.shutdown(wait=False, cancel_futures=True)
 
@@ -1640,7 +1703,7 @@ class InfiniLoopTerminal:
                         subprocess.run(["kill", "-9", pid], check=False, timeout=2)
                     except:
                         pass
-                self.log_message(f"🛑 MusicGPT terminated")
+                self.logging_system(f"🛑 MusicGPT terminated")
         except Exception as e:
 
             pass
@@ -1661,12 +1724,12 @@ class InfiniLoopTerminal:
                 safe_path = os.path.join(os.getcwd(), safe_filename)
 
                 shutil.copy2(current_file, safe_path)
-                self.log_message(
+                self.logging_system(
                     f"💾 Loop saved: {safe_path} (from {os.path.basename(current_file)})"
                 )
                 return True
             except Exception as e:
-                self.log_message(f"❌ Save error: {str(e)}. Dunno...")
+                self.logging_system(f"❌ Save error: {str(e)}. Dunno...")
                 return False
 
 

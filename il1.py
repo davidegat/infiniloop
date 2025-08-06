@@ -30,8 +30,8 @@ class InfiniLoopGUI:
         self.last_title = None
         self.last_artist = None
 
-        self.original_log = self.app.log_message
-        self.app.log_message = self.capture_log
+        self.original_log = self.app.logging_system
+        self.app.logging_system = self.capture_log
 
         self.colors = {
             'bg': '#1a1a2e',
