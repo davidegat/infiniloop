@@ -49,9 +49,110 @@ class InfiniLoopGUI:
         self.setup_styles()
         self.create_ui()
         self.load_settings()
+
+        self.update_model_ui()
         self.update_loop()
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+    def get_model_path(self, model_name):
+        home = os.path.expanduser("~")
+        model_paths = {
+            "small": os.path.join(home, ".local/share/musicgpt/v1/small_fp32/decoder_model_merged.onnx"),
+            "medium": os.path.join(home, ".local/share/musicgpt/v1/medium_fp32/decoder_model_merged.onnx_data"),
+            "large": os.path.join(home, ".local/share/musicgpt/v1/large_fp32/decoder_model_merged.onnx_data")
+        }
+        return model_paths.get(model_name)
+
+    def is_model_installed(self, model_name):
+
+        model_path = self.get_model_path(model_name)
+        return model_path and os.path.exists(model_path)
+
+    def get_model_size(self, model_name):
+
+        model_path = self.get_model_path(model_name)
+        if model_path and os.path.exists(model_path):
+            size_bytes = os.path.getsize(model_path)
+            return round(size_bytes / (1024 * 1024), 1)  # Converti in MB
+        return 0
+
+    def delete_model(self, model_name):
+
+        if not self.is_model_installed(model_name):
+            messagebox.showwarning("Warning", f"Model {model_name} is not installed!")
+            return
+
+        model_path = self.get_model_path(model_name)
+        size_mb = self.get_model_size(model_name)
+
+
+        result = messagebox.askyesno(
+            "Confirm Model Deletion",
+            f"Are you sure you want to delete the {model_name} model?\n\n"
+            f"Path: {model_path}\n"
+            f"Size: {size_mb} MB\n\n"
+            f"This action cannot be undone."
+        )
+
+        if result:
+            try:
+                os.remove(model_path)
+                self.capture_log(f"✅ Model {model_name} deleted successfully ({size_mb} MB freed)")
+                messagebox.showinfo("Success", f"Model {model_name} deleted successfully!")
+
+
+                if self.app.model == model_name:
+                    available_models = [m for m in ["small", "medium", "large"] if self.is_model_installed(m)]
+                    if available_models:
+                        self.app.model = available_models[0]
+                        self.model_var.set(self.app.model)
+                        self.capture_log(f"🔄 Switched to model: {self.app.model}")
+                    else:
+                        self.capture_log("⚠️ No models available! Please install a model to continue.")
+
+
+                self.update_model_ui()
+                self.save_settings()
+
+            except Exception as e:
+                self.capture_log(f"❌ Failed to delete model {model_name}: {e}")
+                messagebox.showerror("Error", f"Failed to delete model {model_name}:\n{e}")
+
+    def update_model_ui(self):
+
+        available_models = []
+        model_labels = []
+
+        for model in ["small", "medium", "large"]:
+            if self.is_model_installed(model):
+                size_mb = self.get_model_size(model)
+                available_models.append(model)
+                model_labels.append(f"{model} ({size_mb} MB) ✅")
+            else:
+                available_models.append(model)
+                model_labels.append(f"{model} (not installed)")
+
+
+        self.model_menu['values'] = model_labels
+
+
+        if hasattr(self, 'model_delete_buttons'):
+            for model, button in self.model_delete_buttons.items():
+                if self.is_model_installed(model):
+                    button.config(state='normal')
+                else:
+                    button.config(state='disabled')
+
+
+        self.status_label.config(text=f"🔴 Ready - Model: {self.app.model}")
+
+    def get_model_display_text(self, model):
+
+        if self.is_model_installed(model):
+            size_mb = self.get_model_size(model)
+            return f"{model} ({size_mb} MB) ✅"
+        else:
+            return f"{model} (not installed)"
 
     def on_generation_complete(self):
 
@@ -63,7 +164,7 @@ class InfiniLoopGUI:
         style = ttk.Style()
         style.theme_use('clam')
 
-        # Stili base
+
         style.configure(".",
             background=self.colors['bg'],
             foreground=self.colors['text'],
@@ -71,13 +172,13 @@ class InfiniLoopGUI:
             focuscolor='none',
             relief='flat')
 
-        # Frame cards
+
         style.configure("Card.TFrame",
             background=self.colors['bg_card'],
             relief='raised',
             borderwidth=2)
 
-        # Labels
+
         style.configure("Heading.TLabel",
             background=self.colors['bg'],
             foreground=self.colors['accent'],
@@ -88,7 +189,7 @@ class InfiniLoopGUI:
             foreground=self.colors['accent'],
             font=('Segoe UI', 24, 'bold'))
 
-        # Buttons
+
         style.configure("Accent.TButton",
             background=self.colors['accent'],
             foreground='white',
@@ -114,7 +215,7 @@ class InfiniLoopGUI:
         style.map("Danger.TButton",
             background=[('active', '#ff5c4c')])
 
-        # Notebook
+
         style.configure("TNotebook",
             background=self.colors['bg'],
             borderwidth=0)
@@ -130,7 +231,7 @@ class InfiniLoopGUI:
             foreground=[('selected', self.colors['text'])],
             padding=[('selected', [20, 12])])
 
-        # ← AGGIUNTO: Stile per Combobox
+
         style.configure("TCombobox",
             fieldbackground=self.colors['bg_secondary'],
             background=self.colors['bg_secondary'],
@@ -150,7 +251,7 @@ class InfiniLoopGUI:
             selectbackground=[('readonly', self.colors['accent'])],
             selectforeground=[('readonly', 'white')])
 
-        # Stile per il dropdown del Combobox
+
         self.root.option_add('*TCombobox*Listbox.background', self.colors['bg_secondary'])
         self.root.option_add('*TCombobox*Listbox.foreground', self.colors['text'])
         self.root.option_add('*TCombobox*Listbox.selectBackground', self.colors['accent'])
@@ -344,7 +445,7 @@ class InfiniLoopGUI:
             'genre': tk.StringVar(value="---")
         }
 
-        # ← Modifica: aggiunto "Model:" nella lista
+
         for label, var in [("Title:", self.np_info['title']),
                         ("Artist:", self.np_info['artist']),
                         ("Duration:", self.np_info['duration']),
@@ -365,17 +466,36 @@ class InfiniLoopGUI:
 
     def update_min_duration(self):
 
-        """Aggiorna min_song_duration nell'app e salva le impostazioni"""
         self.app.min_song_duration = self.min_duration_var.get()
         self.save_settings()
 
     def update_model(self, event=None):
-        """Aggiorna il modello AI nell'app e salva le impostazioni"""
-        self.app.model = self.model_var.get()
-        self.save_settings()
+
+        selected_text = self.model_var.get()
+
+
+        for model in ["small", "medium", "large"]:
+            if selected_text.startswith(model):
+                if self.is_model_installed(model):
+                    self.app.model = model
+                    self.save_settings()
+                    self.status_label.config(text=f"🔴 Ready - Model: {self.app.model}")
+                    self.capture_log(f"🔄 Model changed to: {model}")
+                    break
+                else:
+                    self.app.model = model
+                    self.save_settings()
+                    self.status_label.config(text=f"🔴 Ready - Model: {self.app.model}")
+                    self.capture_log(f"🔄 Model changed to: {model}")
+                    messagebox.showwarning(
+                        "Model Not Installed",
+                        f"Model '{model}' will be downloaded at next play.\nExpect longer times for the first loop!\n\nYou can choose an installed model instead."
+                    )
+                    break
+
 
     def update_min_sample_duration(self):
-        """Aggiorna min_sample_duration nell'app e salva le impostazioni"""
+
         self.app.min_sample_duration = self.min_sample_var.get()
         self.save_settings()
 
@@ -385,7 +505,7 @@ class InfiniLoopGUI:
 
         settings_card = self.create_card(settings_frame, "⚙️ Configuration")
 
-        # Selezione modello AI
+
         model_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         model_frame.pack(fill='x', pady=10)
 
@@ -394,17 +514,45 @@ class InfiniLoopGUI:
                 bg=self.colors['bg_card'],
                 fg=self.colors['text']).pack(side='left')
 
-        self.model_var = tk.StringVar(value=self.app.model)
-        model_menu = ttk.Combobox(model_frame,
+
+        model_control_frame = tk.Frame(model_frame, bg=self.colors['bg_card'])
+        model_control_frame.pack(side='left', padx=10, fill='x', expand=True)
+
+        self.model_var = tk.StringVar(value=self.get_model_display_text(self.app.model))
+        self.model_menu = ttk.Combobox(model_control_frame,
                                 textvariable=self.model_var,
-                                values=["small", "medium", "large"],
+                                values=[self.get_model_display_text(m) for m in ["small", "medium", "large"]],
                                 state="readonly",
-                                width=15)
-        model_menu.pack(side='left', padx=10)
-        model_menu.bind('<<ComboboxSelected>>', self.update_model)
+                                width=25)
+        self.model_menu.pack(side='left')
+        self.model_menu.bind('<<ComboboxSelected>>', self.update_model)
+
+
+        delete_frame = tk.Frame(model_control_frame, bg=self.colors['bg_card'])
+        delete_frame.pack(side='left', padx=(10, 0))
+
+
+        self.model_delete_buttons = {}
+        for model in ["small", "medium", "large"]:
+            btn = tk.Button(delete_frame,
+                        text=f"🗑️ {model}",
+                        font=('Segoe UI', 8),
+                        bg=self.colors['danger'],
+                        fg='white',
+                        activebackground='#ff5c4c',
+                        activeforeground='white',
+                        relief='flat',
+                        bd=0,
+                        padx=8,
+                        pady=4,
+                        cursor='hand2',
+                        state='normal' if self.is_model_installed(model) else 'disabled',
+                        command=lambda m=model: self.delete_model(m))
+            btn.pack(side='left', padx=1)
+            self.model_delete_buttons[model] = btn
 
         model_help = tk.Label(model_frame,
-                            text="(prioritizes variety over sound quality)",
+                            text="(delete)",
                             font=('Segoe UI', 9),
                             bg=self.colors['bg_card'],
                             fg=self.colors['text_secondary'])
@@ -467,11 +615,11 @@ class InfiniLoopGUI:
                             fg=self.colors['text_secondary'])
         help_label.pack(side='left', padx=(10, 0))
 
-        # ← AGGIUNTO: Minimum sample duration
+
         min_sample_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         min_sample_frame.pack(fill='x', pady=10)
 
-        tk.Label(min_sample_frame, text="Minimum loop length:",
+        tk.Label(min_sample_frame, text="Loop length:",
                 font=('Segoe UI', 11),
                 bg=self.colors['bg_card'],
                 fg=self.colors['text']).pack(side='left')
@@ -983,7 +1131,7 @@ class InfiniLoopGUI:
             json.dump(settings, f)
 
 
-    # PASSO 6: Modificare load_settings in il1.py
+
     def load_settings(self):
         try:
             with open("infiniloop_settings.json", "r") as f:
@@ -1000,7 +1148,7 @@ class InfiniLoopGUI:
             if hasattr(self, 'min_duration_var'):
                 self.min_duration_var.set(self.app.min_song_duration)
 
-            # ← AGGIUNTO: Caricamento min_sample_duration
+
             self.app.min_sample_duration = settings.get("min_sample_duration", 2.6)
             if hasattr(self, 'min_sample_var'):
                 self.min_sample_var.set(self.app.min_sample_duration)
@@ -1022,6 +1170,9 @@ class InfiniLoopGUI:
                 self.benchmark_var.set(self.app.benchmark_enabled)
 
             os.environ["SDL_AUDIODRIVER"] = self.app.audio_driver
+
+            if hasattr(self, 'model_menu'):
+                self.update_model_ui()
 
         except Exception as e:
             self.capture_log(f"⚠️ Failed to load settings: {e}")
