@@ -132,10 +132,10 @@ pulseaudio --kill && pulseaudio --start
 MusicGPT will download the selected model on first use. The very first generation will be significantly slower than subsequent ones. GUI Version has an initial support for model downloading and deleting, but you may want to download and test your desired model from terminal first:
 
 ```bash
-# For small model (fast, good quality, less variety)
+# For small model (fast, good quality, less variety - recommended)
 ./musicgpt-x86_64-unknown-linux-gnu "Create a relaxing LoFi song" --model small
 
-# For medium model (balanced quality and speed - recommended)
+# For medium model (balanced quality and speed)
 ./musicgpt-x86_64-unknown-linux-gnu "Create a relaxing LoFi song" --model medium
 
 # For large model (highest quality but very slow - not recommended)
@@ -176,7 +176,7 @@ python il1.py
 python ilterm.py
 
 # Direct generation with specific model
-python ilterm.py --prompt "electronic dance loop" --model medium
+python ilterm.py --prompt "electronic dance loop" --model small
 
 #### Interactive Commands
 
@@ -214,7 +214,7 @@ Options:
 
 ### Model Comparison & Recommendations
 
-- **Small Model** ⭐ **RECOMMENDED**: 
+- **Small Model** ⭐⭐⭐ **RECOMMENDED**: 
   - Generation time: Fast (typically 15-30 seconds)
   - Quality: Good audio fidelity
   - Variety: Less musical complexity
@@ -468,10 +468,10 @@ pulseaudio --kill && pulseaudio --start
 MusicGPT scaricherà il modello selezionato al primo utilizzo. La primissima generazione sarà significativamente più lenta delle successive. La Versione GUI ha un supporto iniziale per il download e l'eliminazione dei modelli scaricati, ma potresti voler scaricare e testare il modello desiderato dal terminale prima:
 
 ```bash
-# Per modello small (veloce, buona qualità, meno varietà)
+# Per modello small (veloce, buona qualità, meno varietà - raccomandato)
 ./musicgpt-x86_64-unknown-linux-gnu "Crea una canzone LoFi rilassante" --model small
 
-# Per modello medium (qualità e velocità bilanciate - raccomandato)
+# Per modello medium (qualità e velocità bilanciate)
 ./musicgpt-x86_64-unknown-linux-gnu "Crea una canzone LoFi rilassante" --model medium
 
 # Per modello large (massima qualità ma molto lento - non raccomandato)
@@ -512,7 +512,7 @@ python il1.py
 python ilterm.py
 
 # Generazione diretta con modello specifico
-python ilterm.py --prompt "loop elettronico dance" --model medium
+python ilterm.py --prompt "loop elettronico dance" --model small
 ```
 
 #### Comandi Interattivi
