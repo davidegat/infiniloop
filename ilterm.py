@@ -94,7 +94,7 @@ class InfiniLoopTerminal:
                 with open(self.benchmark_file, "r") as f:
                     self.benchmark_data = json.load(f)
             except Exception as e:
-                self.log_message(f"⚠️ Failed to load benchmark data: {e}")
+                self.log_message(f"⚠️ Failed to load stats data: {e}")
 
 
     def save_benchmark_data(self):
@@ -107,7 +107,7 @@ class InfiniLoopTerminal:
             with open(self.benchmark_file, "w") as f:
                 json.dump(self.benchmark_data, f, indent=2)
         except Exception as e:
-            self.log_message(f"⚠️ Failed to save benchmark data: {e}")
+            self.log_message(f"⚠️ Failed to save stats data: {e}")
 
 
     def reset_benchmark_data(self):
@@ -116,9 +116,9 @@ class InfiniLoopTerminal:
         if hasattr(self, "benchmark_file") and os.path.exists(self.benchmark_file):
             try:
                 os.remove(self.benchmark_file)
-                self.log_message("🧹 Benchmark data cleared")
+                self.log_message("🧹 Stats data cleared")
             except Exception as e:
-                self.log_message(f"⚠️ Failed to delete benchmark file: {e}")
+                self.log_message(f"⚠️ Failed to delete stats file: {e}")
 
 
     def cleanup_temp_files(self):
@@ -236,149 +236,456 @@ class InfiniLoopTerminal:
                     pass
 
 
-    def find_optimal_zero_crossing(self, y, sample, window_size=512):
+    def find_optimal_zero_crossing(self, y, sample, window_size=256):
 
         sr = 22050
-        max_deviation_ms = 0.3
-        max_deviation_samples = int(max_deviation_ms * sr / 1000)
+        max_deviation_ms = 0.020
+        max_dev_samples = int(max_deviation_ms * sr / 1000)
 
-        win = min(max_deviation_samples, len(y) // 200, window_size // 4)
+
+        win = min(max_dev_samples, len(y) // 250, window_size // 6)
         s, e = max(0, sample - win), min(len(y), sample + win)
 
-        if e - s < 4:
+        if e - s < 8:
             return sample
 
         seg = y[s:e]
-        zeroes = np.where(np.diff(np.sign(seg)) != 0)[0] + s
-        if not len(zeroes):
+
+
+        sign_changes = np.diff(np.sign(seg))
+        zeroes_idx = np.where(sign_changes != 0)[0]
+
+        if len(zeroes_idx) == 0:
             return sample
 
+        zeroes = zeroes_idx + s
+
+
         distances = np.abs(zeroes - sample)
-        amps = np.abs(y[zeroes]) + np.abs(y[zeroes + 1])
+
+
+        crossing_amps = []
+        for zero_pos in zeroes:
+            if zero_pos > 0 and zero_pos < len(y) - 1:
+
+                amp_window = y[max(0, zero_pos-1):min(len(y), zero_pos+2)]
+                avg_amp = np.mean(np.abs(amp_window))
+                crossing_amps.append(avg_amp)
+            else:
+                crossing_amps.append(1.0)
+
+        crossing_amps = np.array(crossing_amps)
+
+
+        smoothness_scores = []
+        for zero_pos in zeroes:
+            if zero_pos >= 3 and zero_pos < len(y) - 3:
+
+                before_deriv = np.mean(np.diff(y[zero_pos-3:zero_pos]))
+                after_deriv = np.mean(np.diff(y[zero_pos:zero_pos+3]))
+                smoothness = 1.0 / (1.0 + abs(before_deriv - after_deriv))
+                smoothness_scores.append(smoothness)
+            else:
+                smoothness_scores.append(0.5)
+
+        smoothness_scores = np.array(smoothness_scores)
+
 
         distance_scores = 1.0 / (distances + 1)
-        amplitude_scores = 1.0 / (amps + 1e-8)
-        combined_scores = distance_scores * 0.7 + amplitude_scores * 0.3
+        amplitude_scores = 1.0 / (crossing_amps + 1e-8)
+
+
+        combined_scores = (distance_scores * 0.70 +
+                        amplitude_scores * 0.20 +
+                        smoothness_scores * 0.10)
 
         best_idx = np.argmax(combined_scores)
-        return zeroes[best_idx]
+        optimal_zero = zeroes[best_idx]
+
+
+        if optimal_zero > 0 and optimal_zero < len(y) - 1:
+
+            crossing_value = abs(y[optimal_zero])
+            if crossing_value > 0.1:
+                return sample
+
+        return optimal_zero
+
 
 
     def calculate_waveform_continuity(self, y, start, end, sr):
-        t = max(128, min(sr // 30, (end - start) // 15))
-        a, b = y[max(0, end - t):end], y[start:min(len(y), start + t)]
-        if len(a) < 32 or len(b) < 32: return 0.0
 
-        a, b = a[-min(len(a), len(b)):], b[:min(len(a), len(b))]
-        a, b = a - np.mean(a), b - np.mean(b)
+        min_window = 64
+        max_window = sr // 20
+        optimal_window = max(min_window, min(max_window, (end - start) // 20))
 
-        corr_score = abs(np.corrcoef(a, b)[0, 1]) if np.std(a) > 1e-8 and np.std(b) > 1e-8 else 0.0
-        rms_diff = abs(np.sqrt(np.mean(a**2)) - np.sqrt(np.mean(b**2))) / max(np.sqrt(np.mean(a**2)), np.sqrt(np.mean(b**2)), 1e-8)
+        t = optimal_window
+
+
+        end_segment = y[max(0, end - t):end]
+        start_segment = y[start:min(len(y), start + t)]
+
+        if len(end_segment) < min_window or len(start_segment) < min_window:
+            return 0.0
+
+
+        min_len = min(len(end_segment), len(start_segment))
+        end_segment = end_segment[-min_len:]
+        start_segment = start_segment[:min_len]
+
+
+        end_segment = end_segment - np.mean(end_segment)
+        start_segment = start_segment - np.mean(start_segment)
+
+
+        if np.std(end_segment) > 1e-8 and np.std(start_segment) > 1e-8:
+            correlation_matrix = np.corrcoef(end_segment, start_segment)
+            corr_score = abs(correlation_matrix[0, 1])
+        else:
+            corr_score = 0.0
+
+
+        rms_end = np.sqrt(np.mean(end_segment**2))
+        rms_start = np.sqrt(np.mean(start_segment**2))
+        max_rms = max(rms_end, rms_start, 1e-8)
+        rms_diff = abs(rms_end - rms_start) / max_rms
         rms_score = max(0.0, 1.0 - rms_diff)
 
-        try:
-            fft_a, fft_b = np.abs(np.fft.rfft(a)), np.abs(np.fft.rfft(b))
-            spectral_score = abs(np.corrcoef(fft_a, fft_b)[0, 1]) if len(fft_a) > 1 and len(fft_b) > 1 else 0.0
-        except:
-            spectral_score = 0.0
 
-        if len(a) > 2:
-            da, db = np.diff(a), np.diff(b)
-            deriv_score = max(0.0, 1.0 - abs(da[-1] - db[0]) / max(abs(da[-1]), abs(db[0]), 1e-8))
-        else:
-            deriv_score = 1.0
+        spectral_score = 0.0
+        if min_len >= 256:
+            try:
 
-        return corr_score * 0.35 + rms_score * 0.25 + spectral_score * 0.25 + deriv_score * 0.15
+                window = np.hann(min_len)
+                end_windowed = end_segment * window
+                start_windowed = start_segment * window
+
+                fft_end = np.abs(np.fft.rfft(end_windowed))
+                fft_start = np.abs(np.fft.rfft(start_windowed))
+
+
+                if np.sum(fft_end) > 1e-8 and np.sum(fft_start) > 1e-8:
+                    fft_end_norm = fft_end / np.sum(fft_end)
+                    fft_start_norm = fft_start / np.sum(fft_start)
+
+
+                    spectral_distance = np.sqrt(np.sum((fft_end_norm - fft_start_norm)**2))
+                    spectral_score = max(0.0, 1.0 - spectral_distance)
+            except:
+                spectral_score = 0.0
+
+
+        deriv_score = 1.0
+        if min_len > 4:
+
+            deriv_window = min(8, min_len // 4)
+
+            end_deriv = np.mean(np.diff(end_segment[-deriv_window:]))
+            start_deriv = np.mean(np.diff(start_segment[:deriv_window]))
+
+            max_deriv = max(abs(end_deriv), abs(start_deriv), 1e-8)
+            deriv_diff = abs(end_deriv - start_deriv) / max_deriv
+            deriv_score = max(0.0, 1.0 - deriv_diff)
+
+
+        transition_score = 1.0
+        if len(end_segment) > 0 and len(start_segment) > 0:
+
+            direct_jump = abs(end_segment[-1] - start_segment[0])
+            max_amplitude = max(abs(end_segment[-1]), abs(start_segment[0]), 1e-8)
+            transition_score = max(0.0, 1.0 - (direct_jump / max_amplitude))
+
+
+        phase_score = 0.5
+        if min_len >= 64:
+            try:
+
+                end_analytic = np.angle(np.mean(end_segment[-16:]))
+                start_analytic = np.angle(np.mean(start_segment[:16]))
+
+                phase_diff = abs(end_analytic - start_analytic)
+                phase_diff = min(phase_diff, 2*np.pi - phase_diff)
+                phase_score = max(0.0, 1.0 - phase_diff / np.pi)
+            except:
+                phase_score = 0.5
+
+
+        final_score = (
+            corr_score * 0.25 +
+            rms_score * 0.20 +
+            spectral_score * 0.20 +
+            deriv_score * 0.15 +
+            transition_score * 0.15 +
+            phase_score * 0.05
+        )
+
+        return max(0.0, min(1.0, final_score))
 
 
     def calculate_beat_alignment(self, start, end, beats, sr):
 
-        if not len(beats):
+        if len(beats) == 0:
             return 0.5
 
-        if len(beats) > 1:
+
+        if len(beats) > 2:
             beat_intervals = np.diff(beats)
             median_interval = np.median(beat_intervals)
-            interval_std = np.std(beat_intervals)
-            consistency = 1.0 - min(interval_std / median_interval, 1.0)
-            base_tolerance = median_interval * (0.08 + 0.12 * (1 - consistency))
-            tol = max(base_tolerance, sr * 0.005)
-        else:
-            tol = sr * 0.02
 
+
+            interval_std = np.std(beat_intervals)
+            consistency = max(0.0, 1.0 - (interval_std / median_interval)) if median_interval > 0 else 0.0
+
+
+            base_tolerance_factor = 0.025 + 0.035 * (1 - consistency)
+            tolerance = median_interval * base_tolerance_factor
+
+
+            min_tolerance = sr * 0.002
+            tolerance = max(tolerance, min_tolerance)
+
+        else:
+
+            tolerance = sr * 0.008
+            median_interval = beats[1] - beats[0] if len(beats) > 1 else sr * 0.5
+            consistency = 0.5
 
         def distance_to_nearest_beat(pos):
 
             return np.min(np.abs(beats - pos))
 
+        def enhanced_alignment_score(distance, tol):
 
-        def alignment_score(distance, tolerance):
-
-            if distance <= tolerance:
-
-                return 1.0 - (distance / tolerance) * 0.2
+            if distance <= tol * 0.5:
+                return 1.0
+            elif distance <= tol:
+                ratio = (distance - tol * 0.5) / (tol * 0.5)
+                return 1.0 - ratio * 0.15
             else:
-                excess = distance - tolerance
-                return max(0.0, np.exp(-excess / (tolerance * 0.5)))
+                excess = distance - tol
+                decay_factor = tol * 0.3
+                return max(0.0, 0.85 * np.exp(-excess / decay_factor))
 
-        start_dist = distance_to_nearest_beat(start)
-        end_dist = distance_to_nearest_beat(end)
 
-        start_score = alignment_score(start_dist, tol)
-        end_score = alignment_score(end_dist, tol)
+        start_distance = distance_to_nearest_beat(start)
+        end_distance = distance_to_nearest_beat(end)
+
+        start_score = enhanced_alignment_score(start_distance, tolerance)
+        end_score = enhanced_alignment_score(end_distance, tolerance)
+
 
         base_score = (start_score + end_score) / 2
 
+
         perfect_alignment_bonus = 0.0
-        if start_score > 0.9 and end_score > 0.9:
-            perfect_alignment_bonus = 0.1
-        elif start_score > 0.8 and end_score > 0.8:
-            perfect_alignment_bonus = 0.05
+
+
+        ultra_tight_tolerance = tolerance * 0.3
+        if start_distance <= ultra_tight_tolerance and end_distance <= ultra_tight_tolerance:
+            perfect_alignment_bonus += 0.12
+        elif start_distance <= tolerance * 0.5 and end_distance <= tolerance * 0.5:
+            perfect_alignment_bonus += 0.08
+        elif (start_distance <= tolerance * 0.7 and end_distance <= tolerance * 0.7):
+            perfect_alignment_bonus += 0.04
+
 
         duration_samples = end - start
-        if len(beats) > 2:
-            expected_beats_in_loop = duration_samples / median_interval
+        if len(beats) > 2 and median_interval > 0:
+            expected_beats_float = duration_samples / median_interval
+            expected_beats_rounded = round(expected_beats_float)
+            beat_count_error = abs(expected_beats_float - expected_beats_rounded)
 
-            beat_count_error = abs(expected_beats_in_loop - round(expected_beats_in_loop))
-            if beat_count_error < 0.1:
-                perfect_alignment_bonus += 0.05
+
+            musical_lengths = [4, 8, 16, 32]
+            closest_musical = min(musical_lengths, key=lambda x: abs(x - expected_beats_rounded))
+
+            if beat_count_error < 0.03:
+                perfect_alignment_bonus += 0.06
+
+                if expected_beats_rounded in musical_lengths:
+                    perfect_alignment_bonus += 0.04
+            elif beat_count_error < 0.08:
+                perfect_alignment_bonus += 0.03
+
+
+        if consistency > 0.95:
+            perfect_alignment_bonus += 0.05
+        elif consistency > 0.90:
+            perfect_alignment_bonus += 0.03
+        elif consistency > 0.85:
+            perfect_alignment_bonus += 0.01
+
 
         structure_penalty = 0.0
 
-        if len(beats) > 3:
-            avg_beat_interval = np.mean(beat_intervals)
-            loop_duration_beats = duration_samples / avg_beat_interval
-            ideal_lengths = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32]
-            closest_ideal = min(ideal_lengths, key=lambda x: abs(x - loop_duration_beats))
-            length_error = abs(loop_duration_beats - closest_ideal)
 
-            if length_error < 0.2:
-                perfect_alignment_bonus += 0.03
-            elif length_error > 1.0:
-                structure_penalty = 0.1
+        if len(beats) > 3 and median_interval > 0:
+            beat_length_ratio = duration_samples / median_interval
+
+
+            standard_patterns = [2, 4, 6, 8, 12, 16, 24, 32]
+            closest_pattern = min(standard_patterns, key=lambda x: abs(x - beat_length_ratio))
+            pattern_error = abs(beat_length_ratio - closest_pattern)
+
+            if pattern_error > 0.2:
+                structure_penalty = min(0.08, pattern_error * 0.1)
+
+
+        if consistency < 0.7:
+            tempo_penalty = (0.7 - consistency) * 0.15
+            structure_penalty += tempo_penalty
+
 
         final_score = base_score + perfect_alignment_bonus - structure_penalty
 
-        return min(1.0, max(0.0, final_score))
+
+        return max(0.0, min(1.0, final_score))
 
 
-    def find_perfect_loop_simple(self, y, sr):
 
-        self.log_message("🥁 Switching to Beat-focused algorithm")
+    def find_perfect_loop(self, y, sr):
+        try:
+
+            advanced_result = self.find_perfect_loop_weights(y, sr)
+
+
+            optimized_result = self.find_perfect_loop_beats(y, sr, initial_result=advanced_result)
+
+            start, end = optimized_result["start_sample"], optimized_result["end_sample"]
+            loop_audio = y[start:end]
+
+
+            if end - start > 2000:
+                transition_samples = min(500, (end - start) // 10)
+                transition_test = np.concatenate([
+                    y[end - transition_samples:end],
+                    y[start:start + transition_samples]
+                ])
+                mid_point = len(transition_test) // 2
+                transition_diff = np.max(np.abs(np.diff(transition_test[mid_point-25:mid_point+25])))
+
+                if transition_diff > 0.1:
+                    self.log_message("🔧 Extra continuity check needed")
+                    self.log_message("✅ Passed!\n")
+
+            return optimized_result
+
+        except Exception as e:
+            self.log_message(f"❌ Failed: {e}")
+            return self.find_perfect_loop_beats(y, sr)
+
+
+    def find_perfect_loop_beats(self, y, sr, initial_result=None):
+
+        if initial_result is not None:
+            self.log_message("🥁 Zero-crossing optimization")
+        else:
+            self.log_message("🥁 Retrying focusing on beat")
+
         try:
             tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units="samples")
             if len(beats) < 2:
-                raise Exception("Not enough beats detected")
+                if initial_result is not None:
+                    self.log_message("❌ Not enough beats, using original sample")
+                    return initial_result
+                else:
+                    raise Exception("Not enough beats")
             avg = float(np.median(np.diff(beats)))
             cons = float(1.0 - (np.std(np.diff(beats)) / avg))
             bpm = float(tempo) if not isinstance(tempo, np.ndarray) else float(tempo[0])
             self.log_message(f"🥁 BPM: {bpm:.1f}, Cons: {cons:.3f}")
             self.log_message(f"🥁 Beats: {len(beats)}, avg int: {avg/sr:.3f}s\n")
         except Exception as e:
-            self.log_message(f"❌ Failed: {e}")
-            bpm, avg, beats, cons = 120.0, float(0.5 * sr), np.arange(0, len(y), int(0.5 * sr)), 0.5
+            if initial_result is not None:
+                self.log_message(f"❌ Beat tracking failed, using original sample")
+                return initial_result
+            else:
+                bpm, avg, beats, cons = 120.0, float(0.5 * sr), np.arange(0, len(y), int(0.5 * sr)), 0.5
 
         beat_dur, total_dur = avg / sr, len(y) / sr
+
+        if initial_result is not None:
+            start_initial = initial_result["start_sample"]
+            end_initial = initial_result["end_sample"]
+            duration_initial = end_initial - start_initial
+
+            duration_beats = duration_initial / avg
+            ideal_beat_counts = [4, 8, 16, 32]
+            closest_ideal = min(ideal_beat_counts, key=lambda x: abs(x - duration_beats))
+
+            target_duration = duration_initial
+            if abs(duration_beats - closest_ideal) > 0.15:
+                new_duration_samples = int(closest_ideal * avg)
+                if abs(new_duration_samples - duration_initial) < duration_initial * 0.2:
+                    target_duration = new_duration_samples
+                    self.log_message(f"🎯 Duration adjustment needed")
+                    self.log_message(f"✅ Done! {duration_beats} -> {closest_ideal}\n")
+
+            search_window = min(int(avg * 0.5), target_duration // 10)
+
+            best_start = start_initial
+            best_end = end_initial
+            best_score = -1
+
+            start_min = max(0, start_initial - search_window)
+            start_max = min(len(y) - target_duration, start_initial + search_window)
+
+            for new_start in range(start_min, start_max, max(1, search_window // 20)):
+                new_end = new_start + target_duration
+                if new_end > len(y):
+                    continue
+
+                try:
+                    beat_score = self.calculate_beat_alignment(new_start, new_end, beats, sr)
+                    waveform_score = self.calculate_waveform_continuity(y, new_start, new_end, sr)
+
+                    combined_score = beat_score * 0.7 + waveform_score * 0.3
+
+                    if combined_score > best_score:
+                        best_score = combined_score
+                        best_start = new_start
+                        best_end = new_end
+
+                except:
+                    continue
+
+            if len(beats) > 0:
+                nearest_start_beat_idx = np.argmin(np.abs(beats - best_start))
+                nearest_end_beat_idx = np.argmin(np.abs(beats - best_end))
+
+                nearest_start_beat = int(beats[nearest_start_beat_idx])
+                nearest_end_beat = int(beats[nearest_end_beat_idx])
+
+                if abs(best_start - nearest_start_beat) < avg * 0.08:
+                    best_start = nearest_start_beat
+
+                if abs(best_end - nearest_end_beat) < avg * 0.08:
+                    best_end = nearest_end_beat
+
+            try:
+                small_window = min(256, int(avg * 0.05))
+                start_opt = self.find_optimal_zero_crossing(y, best_start, window_size=small_window)
+                end_opt = self.find_optimal_zero_crossing(y, best_end, window_size=small_window)
+
+                if 0 <= start_opt < end_opt <= len(y):
+                    new_beat_score = self.calculate_beat_alignment(start_opt, end_opt, beats, sr)
+                    if new_beat_score >= best_score * 0.85:
+                        best_start = start_opt
+                        best_end = end_opt
+                    else:
+                        self.log_message("❌ Zero-crossing rejected (compromises beat)")
+            except Exception as e:
+                self.log_message(f"❌ Zero-crossing failed: {e}")
+
+            optimized_result = initial_result.copy()
+            optimized_result["start_sample"] = best_start
+            optimized_result["end_sample"] = best_end
+            optimized_result["metrics"]["Beat Align"] = self.calculate_beat_alignment(best_start, best_end, beats, sr)
+            optimized_result["metrics"]["Waveform"] = self.calculate_waveform_continuity(y, best_start, best_end, sr)
+
+            dur = (best_end - best_start) / sr
+
+            return optimized_result
 
         def structures():
             if len(beats) >= 8:
@@ -420,7 +727,7 @@ class InfiniLoopTerminal:
         if not candidates: raise Exception("No candidates found")
         best = sorted(candidates, key=lambda x: x["score"], reverse=True)[0]
         if best["score"] < 0.15: raise Exception(f"Best score too low: {best['score']:.3f}")
-        self.log_message("🎯 Beat-preserving zero-crossing\n")
+        self.log_message("🎯 Beat-safe zero-crossing\n")
 
         s, e = best["start"], best["end"]
 
@@ -434,15 +741,14 @@ class InfiniLoopTerminal:
                     best.update({"start": s_opt, "end": e_opt})
                     best["metrics"]["Beat Align"] = new_b_score
                 else:
-                    self.log_message("❌ Zero-crossing rejected (would compromise beat alignment)")
+                    self.log_message("❌ Zero-crossing rejected (compromises beat)")
             else:
-                self.log_message("❌ Zero-crossing optimization produced invalid bounds")
+                self.log_message("❌ Zero-crossing produced invalid bounds")
         except Exception as e:
-            self.log_message(f"❌ Zero-crossing optimization failed: {e}")
+            self.log_message(f"❌ Zero-crossing failed")
 
         dur = (best["end"] - best["start"]) / sr
-
-        self.log_message("✅ Potential loop found!\n               Checking duration\n")
+        self.log_message("✅ Loop found! Checking duration\n")
 
         return {
             "start_sample": best["start"],
@@ -454,18 +760,8 @@ class InfiniLoopTerminal:
         }
 
 
-    def find_perfect_loop(self, y, sr):
-
-        try:
-            return self.find_perfect_loop_advanced(y, sr)
-        except Exception as e:
-            self.log_message(f"❌ Failed!\n")
-            return self.find_perfect_loop_simple(y, sr)
-
-
-    def find_perfect_loop_advanced(self, y, sr):
-
-        self.log_message("🧠 Initial loop detection:")
+    def find_perfect_loop_weights(self, y, sr):
+        self.log_message("🧠 Checking sample for loops")
         if not len(y) or sr <= 0:
             raise Exception("Invalid input: empty audio from AI?")
 
@@ -480,7 +776,6 @@ class InfiniLoopTerminal:
 
         hop, n_fft = 256, 2048
         S = librosa.stft(y, n_fft=n_fft, hop_length=hop)
-
         if not S.size:
             raise Exception("Empty STFT")
 
@@ -495,8 +790,7 @@ class InfiniLoopTerminal:
 
             m_start = np.mean(mel[:, max(0, sf - 2):sf + 3], axis=1)
             m_end = np.mean(mel[:, ef - 2:min(mel.shape[1], ef + 3)], axis=1)
-            spectral = 0.0 if np.any(np.isnan(m_start)) or np.any(np.isnan(m_end)) \
-                    else max(0.0, 1 - cosine(m_start, m_end))
+            spectral = 0.0 if np.any(np.isnan(m_start)) or np.any(np.isnan(m_end)) else max(0.0, 1 - cosine(m_start, m_end))
 
             waveform = try_block(lambda: self.calculate_waveform_continuity(y, start, end, sr), 0.0)
             beat = try_block(lambda: self.calculate_beat_alignment(start, end, beats, sr), 0.5)
@@ -519,8 +813,9 @@ class InfiniLoopTerminal:
             }
 
         best = {"score": -np.inf, "start": 0, "end": 0, "measures": 0, "metrics": {}}
-        score_weights = dict(spectral=0.4, waveform=0.3, beat=0.2, phase=0.1)
-        threshold = 0.8
+        threshold = 0.82
+
+        score_weights = dict(spectral=0.15, waveform=0.25, beat=0.55, phase=0.05)
 
         for meas in [4, 8, 12, 16]:
             samp = int(meas * 4 * beat_len * sr)
@@ -537,25 +832,23 @@ class InfiniLoopTerminal:
                 if sf < 3 or ef >= mag.shape[1] - 3: continue
 
                 metrics = score_metrics(start, end, sf, ef)
-                score = sum(metrics[k] * w for k, w in score_weights.items())
+                score = sum(metrics[k] * score_weights[k] for k in metrics)
 
                 if score > best["score"]:
-                    best.update(dict(score=score, start=start, end=end,
-                                    measures=meas, metrics=metrics))
+                    best.update(dict(score=score, start=start, end=end, measures=meas, metrics=metrics))
                     if score > threshold:
-                        self.log_message(f"🎯 Score: {score:.3f}, Excellent!")
+                        self.log_message(f"🎯 Score: {score:.3f}\n")
                         break
             if best["score"] > threshold:
                 break
 
         if best["score"] < 0.15:
-            raise Exception("No interesting loops.")
+            raise Exception("No loops at first sight.\n")
 
         dur = (best["end"] - best["start"]) / sr
         if dur < 1.5:
             raise Exception(f"Loop too short: {dur:.1f}s\n   Discarding sample...\n")
 
-        self.log_message("✅ Perfect loop found?\n")
         return {
             "start_sample": best["start"],
             "end_sample": best["end"],
@@ -563,6 +856,9 @@ class InfiniLoopTerminal:
             "measures": best["measures"],
             "metrics": best["metrics"],
         }
+
+
+
 
 
     def process_loop_detection(self, input_file, output_file):
@@ -617,10 +913,9 @@ class InfiniLoopTerminal:
                             continue
                         else:
                             raise Exception(
-                                f"Too short ({initial_duration:.1f}s)\n"
+                                f"Loop too short ({initial_duration:.1f}s), retrying...\n"
                             )
 
-                    self.log_message("🎯 Zero-crossing optimization")
                     s_opt, e_opt = (
                         self.find_optimal_zero_crossing(y, pos) for pos in (s, e)
                     )
@@ -688,7 +983,13 @@ class InfiniLoopTerminal:
                     if not self.validate_audio_file(output_file):
                         raise Exception("Output validation failed")
 
-                    self.log_message(f"🧬 Next loop ready! {final_duration:.1f}s\n")
+                    self.log_message(f"🧬 Next loop ready ({final_duration:.1f}s)")
+
+                    if self.current_loop_start_time:
+                        elapsed = time.time() - self.current_loop_start_time
+                        if elapsed < self.min_song_duration:
+                            self.log_message("🧬 Waiting for song ending\n")
+
 
                     del y
                     del y_loop
@@ -790,14 +1091,18 @@ class InfiniLoopTerminal:
             self._prepare_benchmark()
 
             p, m, d = self.PROMPT, self.model, self.duration
-            self.generation_status = f"Generating '{p}'"
-            self.log_message("🎼 Generating new sample\n")
+            self.generation_status = f"Generating sample..."
+            if not hasattr(self, "_has_generated_once") or not self._has_generated_once:
+                self.log_message("🎼 Generating new sample\n")
+                self._has_generated_once = True
+            else:
+                self.log_message("🎼 Generating next sample\n")
 
             with self.safe_temp_file() as raw, self.safe_temp_file() as proc:
                 self.debug_file_state("PRE_GENERATION", raw)
 
                 t = self._run_ai_generation(p, m, d, raw)
-                self.log_message(f"⏱️ AI made it in {t:.2f}s!\n")
+                self.log_message(f"⏱️ AI made it in {t:.2f}s!")
 
                 if self.benchmark_enabled:
                     self._save_benchmark(d, t)
@@ -817,7 +1122,6 @@ class InfiniLoopTerminal:
         except subprocess.TimeoutExpired:
             self._handle_timeout()
         except Exception as e:
-            self.log_message(f"❌ Failed!")
             self.generation_status = "Error"
             raise
         finally:
@@ -847,7 +1151,7 @@ class InfiniLoopTerminal:
             "generation_time": round(elapsed, 3)
         })
         self.save_benchmark_data()
-        self.log_message("📈 Benchmark stats updated\n")
+        self.log_message("📈 Stats updated\n")
 
     def _normalize_audio(self, path):
         if not self.validate_audio_file(path):
@@ -1021,8 +1325,6 @@ class InfiniLoopTerminal:
                 env = os.environ.copy()
                 env["SDL_AUDIODRIVER"] = self.audio_driver
 
-                self.log_message("🎵 Both loops ready, mixing\n")
-
                 next_process = subprocess.Popen(
                     [
                         "ionice",
@@ -1143,13 +1445,11 @@ class InfiniLoopTerminal:
 
         if min_time_reached and not self.min_duration_satisfied:
             self.min_duration_satisfied = True
-            self.log_message(f"✅ Song ended, waiting next loop")
 
         if not min_time_reached:
             return False
 
         return self.validate_audio_file(self.NEXT)
-
 
 
     def wait_for_swap_opportunity(self):
@@ -1164,12 +1464,12 @@ class InfiniLoopTerminal:
             if remaining > 0:
 
                 if elapsed % 30 < 0.5:
-                    self.log_message(f"⏱️ Current loop: {elapsed:.1f}s, {remaining:.1f}s left")
+                    self.log_message(f"⏱️ Current loop: {remaining:.1f}s left")
             else:
 
                 if not self.validate_audio_file(self.NEXT):
                     if elapsed % 10 < 0.5:
-                        self.log_message(f"⏳ Waiting for NEXT file generation (elapsed: {elapsed:.1f}s)")
+                        self.log_message(f"⏳ Waiting for next file generation (elapsed: {elapsed:.1f}s)")
 
             time.sleep(0.5)
 

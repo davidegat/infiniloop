@@ -362,12 +362,12 @@ class InfiniLoopGUI:
                 fg=self.colors['text_secondary']).pack(side='left', padx=(0, 10))
 
         presets = {
-            "Ambient":   "ambient ethereal slow pads seamless loop",
-            "Reggae":    "slow reggae dub bass groove seamless loop",
-            "EDM":       "chill EDM disco, synth, seamless loop",
-            "Rock":      "90s rock electric guitar heavy drums nointro loop",
-            "Lofi Rap":  "Japanese koto, lofi hiphop, music for studying, trap bass",
-            "Synthwave": "80s retro synthwave, seamless nointro loop"
+            "Ambient":   "ambient ethereal slow pads, punchy drums, tight bass, 4/4 nointro seamless loop",
+            "Reggae":    "slow reggae dub bass groove, punchy drums, tight bass, echo, 4/4 nointro seamless loop",
+            "EDM":       "chill EDM disco, synth, punchy drums, tight bass, 4/4 nointro seamless loop",
+            "Rock":      "90s rock, electric guitar, heavy punchy drums, tight bass, 4/4 nointro loop",
+            "Lofi Rap":  "slow calm lofi hiphop, music for studying, 4/4, punchy drums, tight bass, nointro seamless loop",
+            "Synthwave": "80s retro synthwave, punchy drums, tight bass, nointro seamless loop"
         }
 
         for name, prompt in presets.items():
@@ -458,10 +458,18 @@ class InfiniLoopGUI:
                     fg=self.colors['text_secondary'],
                     width=10,
                     anchor='w').pack(side='left')
-            tk.Label(row, textvariable=var,
-                    font=('Segoe UI', 11, 'bold'),
-                    bg=self.colors['bg_card'],
-                    fg=self.colors['text']).pack(side='left')
+            label_value = tk.Label(row,
+                textvariable=var,
+                font=('Segoe UI', 11, 'bold'),
+                bg=self.colors['bg_card'],
+                fg=self.colors['text'],
+                wraplength=300,
+                justify='left',
+                anchor='w'
+            )
+            label_value.pack(side='left', fill='x', expand=True)
+
+
 
 
     def update_min_duration(self):
@@ -644,7 +652,7 @@ class InfiniLoopGUI:
                 fg=self.colors['text_secondary']).pack(side='left')
 
         sample_help_label = tk.Label(min_sample_frame,
-                                    text="(minimum acceptable loop length)",
+                                    text="(minimum valid loop length)",
                                     font=('Segoe UI', 9),
                                     bg=self.colors['bg_card'],
                                     fg=self.colors['text_secondary'])
