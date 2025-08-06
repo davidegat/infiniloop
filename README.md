@@ -324,11 +324,18 @@ For commercial licensing, please contact the authors.
 ## Credits
 
 - **MusicGPT** by gabotechs for AI music generation: https://github.com/gabotechs/MusicGPT
-- **librosa** team for audio analysis: https://librosa.org/
-- **pyloudnorm** by csteinmetz1 for audio processing: https://github.com/csteinmetz1/pyloudnorm
-- MusicGen models by Meta: https://huggingface.co/spaces/facebook/MusicGen
-- Developed with assistance from AI language models
-
+- **MusicGen models** by Meta for AI audio synthesis: https://huggingface.co/spaces/facebook/MusicGen
+- **librosa** team for advanced audio analysis and processing: https://librosa.org/
+- **SciPy community** for scientific computing algorithms: https://scipy.org/
+- **NumPy developers** for numerical computing foundation: https://numpy.org/
+- **SoundFile** by bastibe for audio file I/O: https://github.com/bastibe/python-soundfile
+- **pydub** by jiaaro for audio manipulation: https://github.com/jiaaro/pydub
+- **pyloudnorm** by csteinmetz1 for audio loudness normalization: https://github.com/csteinmetz1/pyloudnorm
+- **psutil** by giampaolo for system monitoring: https://github.com/giampaolo/psutil
+- **FFmpeg team** for multimedia framework and ffplay: https://ffmpeg.org/
+- **PulseAudio developers** for Linux audio system: https://www.freedesktop.org/wiki/Software/PulseAudio/
+- **Python Software Foundation** for Python programming language and tkinter GUI toolkit: https://www.python.org/
+- Developed with assistance from language models
 ---
 **🎵 Enjoy infinite AI music with INFINI LOOP! 🎵**
 
@@ -660,11 +667,22 @@ Per licenze commerciali, contatta gli autori.
 
 ## Crediti
 
-- **MusicGPT** by gabotechs per la generazione musicale AI: https://github.com/gabotechs/MusicGPT
-- **Team librosa** per l'analisi audio: https://librosa.org/
-- **pyloudnorm** by csteinmetz1 per l'elaborazione audio: https://github.com/csteinmetz1/pyloudnorm
-- MusicGen di Meta: https://huggingface.co/spaces/facebook/MusicGen
-- Sviluppato con l'assistenza di modelli linguistici AI
+- **MusicGPT** di gabotechs per la generazione musicale AI: https://github.com/gabotechs/MusicGPT
+- **Modelli MusicGen** di Meta per la sintesi audio AI: https://huggingface.co/spaces/facebook/MusicGen
+- **Team librosa** per l'analisi e elaborazione audio avanzata: https://librosa.org/
+- **Comunità SciPy** per algoritmi di calcolo scientifico: https://scipy.org/
+- **Sviluppatori NumPy** per le fondamenta del calcolo numerico: https://numpy.org/
+- **SoundFile** di bastibe per I/O file audio: https://github.com/bastibe/python-soundfile
+- **pydub** di jiaaro per la manipolazione audio: https://github.com/jiaaro/pydub
+- **pyloudnorm** di csteinmetz1 per la normalizzazione loudness audio: https://github.com/csteinmetz1/pyloudnorm
+- **psutil** di giampaolo per il monitoraggio di sistema: https://github.com/giampaolo/psutil
+- **Team FFmpeg** per il framework multimediale e ffplay: https://ffmpeg.org/
+- **Sviluppatori PulseAudio** per il sistema audio Linux: https://www.freedesktop.org/wiki/Software/PulseAudio/
+- **Python Software Foundation** per il linguaggio Python e toolkit GUI tkinter: https://www.python.org/
+- Sviluppato con l'assistenza di modelli linguistici
+
+---
+**🎵 Goditi musica AI infinita con INFINI LOOP! 🎵**
 
 ---
 **🎵 Goditi la musica AI infinita con INFINI LOOP! 🎵**
