@@ -56,50 +56,71 @@ class InfiniLoopGUI:
 
     def get_model_path(self, model_name):
         home = os.path.expanduser("~")
-        model_paths = {
-            "small": os.path.join(home, ".local/share/musicgpt/v1/small_fp32/decoder_model_merged.onnx"),
-            "medium": os.path.join(home, ".local/share/musicgpt/v1/medium_fp32/decoder_model_merged.onnx_data"),
-            "large": os.path.join(home, ".local/share/musicgpt/v1/large_fp32/decoder_model_merged.onnx_data")
+        model_dirs = {
+            "small": os.path.join(home, ".local/share/musicgpt/v1/small_fp32/"),
+            "medium": os.path.join(home, ".local/share/musicgpt/v1/medium_fp32/"),
+            "large": os.path.join(home, ".local/share/musicgpt/v1/large_fp32/")
         }
-        return model_paths.get(model_name)
+
+        model_dir = model_dirs.get(model_name)
+        if not model_dir or not os.path.exists(model_dir):
+            return None
+
+        # Trova il file più grande nella cartella del modello
+        largest_file = None
+        largest_size = 0
+
+        try:
+            for file in os.listdir(model_dir):
+                file_path = os.path.join(model_dir, file)
+                if os.path.isfile(file_path):
+                    file_size = os.path.getsize(file_path)
+                    if file_size > largest_size:
+                        largest_size = file_size
+                        largest_file = file_path
+        except Exception:
+            return None
+
+        return largest_file
+
 
     def is_model_installed(self, model_name):
 
         model_path = self.get_model_path(model_name)
         return model_path and os.path.exists(model_path)
 
-    def get_model_size(self, model_name):
 
+    def get_model_size(self, model_name):
         model_path = self.get_model_path(model_name)
         if model_path and os.path.exists(model_path):
             size_bytes = os.path.getsize(model_path)
             return round(size_bytes / (1024 * 1024), 1)  # Converti in MB
         return 0
 
-    def delete_model(self, model_name):
 
+    def delete_model(self, model_name):
         if not self.is_model_installed(model_name):
             messagebox.showwarning("Warning", f"Model {model_name} is not installed!")
             return
 
-        model_path = self.get_model_path(model_name)
+        home = os.path.expanduser("~")
+        model_dir = os.path.join(home, f".local/share/musicgpt/v1/{model_name}_fp32/")
         size_mb = self.get_model_size(model_name)
-
 
         result = messagebox.askyesno(
             "Confirm Model Deletion",
             f"Are you sure you want to delete the {model_name} model?\n\n"
-            f"Path: {model_path}\n"
+            f"Directory: {model_dir}\n"
             f"Size: {size_mb} MB\n\n"
             f"This action cannot be undone."
         )
 
         if result:
             try:
-                os.remove(model_path)
+                # Elimina l'intera cartella del modello
+                shutil.rmtree(model_dir)
                 self.capture_log(f"✅ Model {model_name} deleted successfully ({size_mb} MB freed)")
                 messagebox.showinfo("Success", f"Model {model_name} deleted successfully!")
-
 
                 if self.app.model == model_name:
                     available_models = [m for m in ["small", "medium", "large"] if self.is_model_installed(m)]
@@ -109,7 +130,6 @@ class InfiniLoopGUI:
                         self.capture_log(f"🔄 Switched to model: {self.app.model}")
                     else:
                         self.capture_log("⚠️ No models available! Please install a model to continue.")
-
 
                 self.update_model_ui()
                 self.save_settings()
