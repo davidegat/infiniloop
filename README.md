@@ -16,7 +16,7 @@ GUI version:
 
 Terminal version:
 
-<img width="500" alt="immagine" src="https://github.com/user-attachments/assets/9a95d2dd-8690-4d00-8735-530511ef9498" />
+<img width="500" height="949" alt="immagine" src="https://github.com/user-attachments/assets/0c75be8f-b8b7-4f3b-be23-db726700feae" />
 
 ## Table of Contents
 
@@ -350,7 +350,7 @@ Versione GUI:
 
 Versione Terminale:
 
-<img width="500" alt="immagine" src="https://github.com/user-attachments/assets/9a95d2dd-8690-4d00-8735-530511ef9498" />
+<img width="500" height="949" alt="immagine" src="https://github.com/user-attachments/assets/0c75be8f-b8b7-4f3b-be23-db726700feae" />
 
 ## Indice
 
