@@ -7,6 +7,10 @@ At startup, one of two pre-included .wav files will play, so you can enjoy music
 
 Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with transitions. Local, private, more personal than any YouTube or Spotify playlist.
 
+INFINI LOOP is powered by MusicGPT (https://github.com/gabotechs/MusicGPT) and MusicGen models by Meta (https://huggingface.co/facebook/musicgen-medium). The model was trained (according to Meta) on licensed data using the following sources: the Meta Music Initiative Sound Collection, Shutterstock music collection and the Pond5 music collection. See the paper for more details about the training set and corresponding preprocessing.
+
+All audio generated with INFINI LOOP is locally produced and not sent to any external service. The resulting music is entirely owned by the user, who retains full rights to use, distribute, modify, and commercialize it without restrictions.
+
 Advanced GUI version (**Experimental - NOT recommended**):
 
 <img width="500" alt="immagine" src="https://github.com/user-attachments/assets/19390959-ba49-476e-8b26-df606c6dad36" />
@@ -648,6 +652,10 @@ Crea automaticamente nuovi frammenti musicali utilizzando l'AI, rileva i miglior
 All'avvio, verrà riprodotto uno dei due file .wav pre-inclusi, così potrai goderti la musica immediatamente mentre viene preparata la prima generazione AI.
 
 Una volta configurato e in funzione, la tua macchina diventa una stazione musicale AI locale, producendo continuamente nuove tracce con transizioni. Locale, privata, più personale di qualsiasi playlist YouTube o Spotify.
+
+INFINI LOOP è basato su MusicGPT (https://github.com/gabotechs/MusicGPT) e sui modelli MusicGen sviluppati da Meta (https://huggingface.co/facebook/musicgen-medium). Il modello è stato addestrato (secondo Meta) su dati con licenza, utilizzando le seguenti fonti: Meta Music Initiative Sound Collection, la raccolta musicale di Shutterstock e quella di Pond5. Per maggiori dettagli sull’insieme di dati e sul preprocessing, si rimanda all’articolo originale.
+
+Tutti gli audio generati con INFINI LOOP sono prodotti localmente e non vengono inviati a servizi esterni. La musica risultante è di piena proprietà dell’utente, che ne detiene tutti i diritti di utilizzo, distribuzione, modifica e commercializzazione senza restrizioni.
 
 ## Indice
 
