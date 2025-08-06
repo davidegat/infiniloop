@@ -129,7 +129,7 @@ pulseaudio --kill && pulseaudio --start
 ```
 ### Important: Model Download
 
-MusicGPT will download the selected model on first use. The very first generation will be significantly slower than subsequent ones. **It is strongly recommended to download and test your desired model from the terminal first:**
+MusicGPT will download the selected model on first use. The very first generation will be significantly slower than subsequent ones. GUI Version has an initial support for model downloading and deleting, but you may want to download and test your desired model from terminal first:
 
 ```bash
 # For small model (fast, good quality, less variety)
@@ -464,7 +464,7 @@ pulseaudio --kill && pulseaudio --start
 
 ### Importante: Download del Modello
 
-MusicGPT scaricherà il modello selezionato al primo utilizzo. La primissima generazione sarà significativamente più lenta delle successive. **È fortemente raccomandato scaricare e testare il modello desiderato dal terminale prima:**
+MusicGPT scaricherà il modello selezionato al primo utilizzo. La primissima generazione sarà significativamente più lenta delle successive. La Versione GUI ha un supporto iniziale per il download e l'eliminazione dei modelli scaricati, ma potresti voler scaricare e testare il modello desiderato dal terminale prima:
 
 ```bash
 # Per modello small (veloce, buona qualità, meno varietà)
