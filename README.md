@@ -12,6 +12,8 @@ All audios (and statistics) generated with INFINI LOOP are produced locally and 
 
 GUI version:
 
+[Kooha-2025-08-07-01-01-29.webm](https://github.com/user-attachments/assets/073c7c4f-22db-482e-9c1b-874c1b09df8e)
+
 <img width="500" height="866" alt="immagine" src="https://github.com/user-attachments/assets/21454469-90b4-4e6a-8794-3ce02751d4c0" />
 
 Terminal version:
