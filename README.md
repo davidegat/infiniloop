@@ -6,9 +6,9 @@ At startup, one of two pre-included .wav files will play, so you can enjoy music
 
 Once set up and running, your machine becomes a local AI music station, continuously producing new tracks with smooth transitions. It's local, private, and more personal than any YouTube or Spotify playlist.
 
-INFINI LOOP is powered by MusicGPT (https://github.com/gabotechs/MusicGPT) and MusicGen models by Meta (https://huggingface.co/facebook/musicgen-medium). According to Meta, the model was trained on licensed data from the following sources: the Meta Music Initiative Sound Collection, Shutterstock music collection, and the Pond5 music collection. See the paper for more details about the training set and corresponding preprocessing.
+INFINI LOOP is powered by MusicGPT (https://github.com/gabotechs/MusicGPT) and MusicGen models by Meta (https://huggingface.co/spaces/facebook/MusicGen). According to Meta, the model was trained on licensed data from the following sources: the Meta Music Initiative Sound Collection, Shutterstock music collection, and the Pond5 music collection. See the paper for more details about the training set and corresponding preprocessing.
 
-All audio generated with INFINI LOOP is produced locally and never sent to any external service. The resulting music is entirely owned by the user, who retains full rights to use, distribute, modify, and commercialize it without restrictions.
+All audio (and statistics) generated with INFINI LOOP is produced locally and never sent to any external service. The resulting music is entirely owned by the user, who retains full rights to use, distribute, modify, and commercialize it without restrictions.
 
 GUI version:
 
@@ -32,7 +32,6 @@ Terminal version:
 ## Features
 
 - **Local AI Music Generation**: Powered by MusicGPT for high-quality audio synthesis
-- **Model Selection**: Choose between small (fast), medium (balanced), and large (slow/high quality) MusicGen models
 - **Advanced Loop Detection**: Multi-metric analysis with configurable minimum loop length
 - **Seamless Playback**: Native infinite looping with crossfade transitions
 - **Flexible Generation**: Configurable AI sample duration (5-30s) and minimum loop requirements
@@ -41,47 +40,27 @@ Terminal version:
 - **Preset System**: Quick generation with pre-configured musical styles
 - **Benchmark System**: Performance monitoring and generation time statistics
 - **Export Functionality**: Save generated loops for later use
-- **Settings Persistence**: Automatic save/restore of user preferences
-- **Debug Mode**: Comprehensive logging and file state tracking
 
 ## Available Versions
 
 ### 1. GUI Version (`il1.py`) - Recommended ⭐
 
 - Clean graphical interface with tabbed organization
-- Same robust audio engine as terminal version
-- Real crossfade transition support with visual feedback
-- Model Selection: Choose between small, medium, and large models directly from the interface
-- Sample Duration Control: Set AI generation length from 5-30 seconds
-- Minimum Loop Length: Configure required loop length for acceptance
 - Preset System for quick generation
 - Statistics Tab: Benchmark data and generation time tracking
 - Settings Tab: Configure all generation parameters and audio driver
 - Loop Information: Display random titles, artists, duration, and genre
 - Real-time status monitoring with timing information
-- Settings persistence across sessions
 - Save current loop functionality
 
 ### 2. Terminal Version (`ilterm.py`) - Most Stable ⭐
 
 - Command-line interface with full interactive mode
-- Real transition support between loops  
-- Advanced audio validation and error recovery
 - Debug mode with detailed logging
 - Generation-only mode for single loops
 - Complete settings configuration including model selection
 - Lowest resource consumption
 - Benchmark system for tracking generation performance
-
-**Interactive Commands:**
-- `start '<prompt>'` - Start infinite loop
-- `stop` - Stop playback
-- `status` - Show detailed system status with timing information
-- `save <file.wav>` - Export current loop
-- `set duration/minduration/minlength/model/driver` - Change settings
-- `debug on/off` - Toggle debug mode
-- `validate current/next/both` - Check file integrity
-- `help` - Show all commands
 
 ## Recommended Requirements
 
@@ -91,12 +70,6 @@ Terminal version:
 - **CPU**: Modern high-frequency CPU (3+ GHz, 4+ cores)
 - **Audio**: PulseAudio with low-latency configuration
 - **Storage**: 8 GB or more, depending on the model 
-
-### Performance Notes
-
-- **Memory allocation failures** occur with insufficient RAM (<8 GB)
-- **Slow inference** happens with weak CPUs (<2 cores or <2 GHz)
-- **Audio dropouts** may occur without proper audio driver configuration
 
 ## Installation
 
@@ -154,9 +127,6 @@ echo "default-sample-rate = 44100" >> ~/.pulse/daemon.conf
 echo "alternate-sample-rate = 48000" >> ~/.pulse/daemon.conf
 pulseaudio --kill && pulseaudio --start
 ```
-
-## Usage
-
 ### Important: Model Download
 
 MusicGPT will download the selected model on first use. The very first generation will be significantly slower than subsequent ones. **It is strongly recommended to download and test your desired model from the terminal first:**
@@ -173,6 +143,8 @@ MusicGPT will download the selected model on first use. The very first generatio
 ```
 
 This will download the required model and give you an idea of generation times before using INFINI LOOP.
+
+## Usage
 
 ### GUI Version (`il1.py`) - Recommended
 
@@ -204,16 +176,6 @@ python ilterm.py
 
 # Direct generation with specific model
 python ilterm.py --prompt "electronic dance loop" --model medium
-
-# Custom settings with all parameters
-python ilterm.py --prompt "ambient chill" --duration 20 --model small --minlength 5
-
-# Generate single loop and exit
-python ilterm.py --generate-only "jazz piano" output.wav --model medium
-
-# Debug mode
-python ilterm.py --prompt "test loop" --verbose
-```
 
 #### Interactive Commands
 
@@ -363,30 +325,30 @@ For commercial licensing, please contact the authors.
 - **MusicGPT** by gabotechs for AI music generation: https://github.com/gabotechs/MusicGPT
 - **librosa** team for audio analysis: https://librosa.org/
 - **pyloudnorm** by csteinmetz1 for audio processing: https://github.com/csteinmetz1/pyloudnorm
+- MusicGen models by Meta: https://huggingface.co/spaces/facebook/MusicGen
 - Developed with assistance from AI language models
 
 ---
 **🎵 Enjoy infinite AI music with INFINI LOOP! 🎵**
 
 ---
+# INFINI LOOP - Generazione Musicale AI Locale Infinita
 
-# INFINI LOOP - Generazione Musicale AI Infinita e Locale
-
-INFINI LOOP è un sistema musicale basato su AI progettato per generare loop audio infiniti e senza soluzione di continuità. Crea automaticamente nuovi frammenti musicali utilizzando l'AI, rileva i punti di loop ottimali e li riproduce continuamente mentre prepara il segmento successivo—risultando in un flusso fluido e infinito di musica strumentale sempre nuova.
+INFINI LOOP è un sistema musicale basato su AI progettato per generare loop audio continui e fluidi. Crea automaticamente nuovi frammenti musicali usando l'AI, rileva i punti di loop ottimali e li riproduce continuamente mentre prepara il segmento successivo—risultando in un flusso fluido e infinito di musica strumentale sempre fresca.
 
 All'avvio, uno dei due file .wav pre-inclusi verrà riprodotto, così potrai goderti la musica immediatamente mentre la prima generazione AI viene preparata.
 
-Una volta configurato e avviato, la tua macchina diventa una stazione musicale AI locale, che produce continuamente nuove tracce con transizioni fluide. È locale, privata e più personale di qualsiasi playlist di YouTube o Spotify.
+Una volta configurato e in esecuzione, la tua macchina diventa una stazione musicale AI locale, che produce continuamente nuove tracce con transizioni fluide. È locale, privato e più personale di qualsiasi playlist di YouTube o Spotify.
 
-INFINI LOOP è alimentato da MusicGPT (https://github.com/gabotechs/MusicGPT) e dai modelli MusicGen di Meta (https://huggingface.co/facebook/musicgen-medium). Secondo Meta, il modello è stato addestrato su dati autorizzati dalle seguenti fonti: la Meta Music Initiative Sound Collection, la collezione musicale Shutterstock e la collezione musicale Pond5. Consulta il documento per maggiori dettagli sul set di addestramento e la relativa elaborazione.
+INFINI LOOP è alimentato da MusicGPT (https://github.com/gabotechs/MusicGPT) e i modelli MusicGen di Meta (https://huggingface.co/spaces/facebook/MusicGen). Secondo Meta, il modello è stato addestrato su dati con licenza dalle seguenti fonti: la Meta Music Initiative Sound Collection, la collezione musicale Shutterstock e la collezione musicale Pond5. Vedi il documento per maggiori dettagli sul set di addestramento e il preprocessing corrispondente.
 
-Tutto l'audio generato con INFINI LOOP è prodotto localmente e non viene mai inviato a servizi esterni. La musica risultante è interamente di proprietà dell'utente, che mantiene tutti i diritti per utilizzare, distribuire, modificare e commercializzare senza restrizioni.
+Tutto l'audio (e le statistiche) generato con INFINI LOOP è prodotto localmente e mai inviato a servizi esterni. La musica risultante è interamente di proprietà dell'utente, che mantiene tutti i diritti per usare, distribuire, modificare e commercializzare senza restrizioni.
 
 Versione GUI:
 
 <img width="500" height="881" alt="immagine" src="https://github.com/user-attachments/assets/1bcbf69c-a16e-47ec-afe1-2749a3fc2228" />
 
-Versione terminale:
+Versione Terminale:
 
 <img width="500" alt="immagine" src="https://github.com/user-attachments/assets/9a95d2dd-8690-4d00-8735-530511ef9498" />
 
@@ -398,83 +360,54 @@ Versione terminale:
 - [Installazione](#installazione)
 - [Utilizzo](#utilizzo)
 - [Dettagli Tecnici](#dettagli-tecnici)
-- [Risoluzione Problemi](#risoluzione-problemi)
+- [Risoluzione dei Problemi](#risoluzione-dei-problemi)
 - [Licenza](#licenza)
 
 ## Caratteristiche
 
 - **Generazione Musicale AI Locale**: Alimentato da MusicGPT per sintesi audio di alta qualità
-- **Selezione Modello**: Scegli tra modelli MusicGen piccolo (veloce), medio (bilanciato) e grande (lento/alta qualità)
-- **Rilevamento Loop Avanzato**: Analisi multi-metrica con lunghezza minima loop configurabile
+- **Rilevamento Loop Avanzato**: Analisi multi-metrica con lunghezza minima del loop configurabile
 - **Riproduzione Fluida**: Loop infinito nativo con transizioni crossfade
-- **Generazione Flessibile**: Durata campione AI configurabile (5-30s) e requisiti loop minimi
-- **Gestione Loop Intelligente**: Durata minima brano configurabile prima del cambio (10-300s)
+- **Generazione Flessibile**: Durata campione AI configurabile (5-30s) e requisiti minimi di loop
+- **Gestione Loop Intelligente**: Durata minima canzone configurabile prima del cambio (10-300s)
 - **Interfacce Multiple**: Versioni terminale e GUI con monitoraggio in tempo reale
 - **Sistema Preset**: Generazione rapida con stili musicali pre-configurati
-- **Sistema Benchmark**: Monitoraggio prestazioni e statistiche tempi di generazione
+- **Sistema Benchmark**: Monitoraggio delle prestazioni e statistiche dei tempi di generazione
 - **Funzionalità Esportazione**: Salva i loop generati per uso successivo
-- **Persistenza Impostazioni**: Salvataggio/ripristino automatico delle preferenze utente
-- **Modalità Debug**: Logging completo e tracciamento stato file
 
 ## Versioni Disponibili
 
-### 1. Versione GUI (`il1.py`) - Consigliata ⭐
+### 1. Versione GUI (`il1.py`) - Raccomandata ⭐
 
 - Interfaccia grafica pulita con organizzazione a schede
-- Stesso motore audio robusto della versione terminale
-- Supporto reale transizioni crossfade con feedback visuale
-- Selezione Modello: Scegli tra modelli piccolo, medio e grande direttamente dall'interfaccia
-- Controllo Durata Campione: Imposta la lunghezza generazione AI da 5-30 secondi
-- Lunghezza Loop Minima: Configura la lunghezza loop richiesta per l'accettazione
 - Sistema Preset per generazione rapida
 - Scheda Statistiche: Dati benchmark e tracciamento tempi di generazione
 - Scheda Impostazioni: Configura tutti i parametri di generazione e driver audio
-- Informazioni Loop: Mostra titoli casuali, artisti, durata e genere
+- Informazioni Loop: Visualizza titoli casuali, artisti, durata e genere
 - Monitoraggio stato in tempo reale con informazioni temporali
-- Persistenza impostazioni tra sessioni
 - Funzionalità salvataggio loop corrente
 
 ### 2. Versione Terminale (`ilterm.py`) - Più Stabile ⭐
 
-- Interfaccia riga di comando con modalità interattiva completa
-- Supporto transizioni reali tra loop
-- Validazione audio avanzata e recupero errori
+- Interfaccia a riga di comando con modalità interattiva completa
 - Modalità debug con logging dettagliato
 - Modalità solo-generazione per loop singoli
 - Configurazione impostazioni completa inclusa selezione modello
-- Consumo risorse più basso
-- Sistema benchmark per tracciamento prestazioni generazione
+- Consumo risorse minimo
+- Sistema benchmark per tracciare le prestazioni di generazione
 
-**Comandi Interattivi:**
-- `start '<prompt>'` - Avvia loop infinito
-- `stop` - Ferma riproduzione
-- `status` - Mostra stato sistema dettagliato con informazioni temporali
-- `save <file.wav>` - Esporta loop corrente
-- `set duration/minduration/minlength/model/driver` - Cambia impostazioni
-- `debug on/off` - Attiva/disattiva modalità debug
-- `validate current/next/both` - Controlla integrità file
-- `help` - Mostra tutti i comandi
-
-## Requisiti di Sistema
-
-### Requisiti Consigliati
+## Requisiti Raccomandati
 
 - **Sistema Operativo**: Ubuntu 22.04 LTS
 - **Python**: 3.10 o superiore
-- **RAM**: 16 GB memoria sistema
-- **CPU**: CPU moderna alta frequenza (3+ GHz, 4+ core)
-- **Audio**: PulseAudio con configurazione bassa latenza
-- **Archiviazione**: 8 GB spazio libero o più a seconda del modello
-
-### Note Prestazioni
-
-- **Errori allocazione memoria** si verificano con RAM insufficiente (<8 GB)
-- **Inferenza lenta** accade con CPU deboli (<2 core o <2 GHz)
-- **Interruzioni audio** possono verificarsi senza configurazione driver audio appropriata
+- **RAM**: 16 GB memoria di sistema
+- **CPU**: CPU moderna ad alta frequenza (3+ GHz, 4+ core)
+- **Audio**: PulseAudio con configurazione a bassa latenza
+- **Archiviazione**: 8 GB o più, a seconda del modello
 
 ## Installazione
 
-### Passo 1: Installa Dipendenze Sistema
+### Passo 1: Installa Dipendenze di Sistema
 
 ```bash
 # Per Ubuntu/Debian:
@@ -487,7 +420,7 @@ sudo apt install -y ffmpeg pulseaudio-utils alsa-utils python3-pip python3-dev \
 ### Passo 2: Installa Dipendenze Python
 
 ```bash
-# Installa librerie elaborazione audio principali
+# Installa librerie core per elaborazione audio
 pip install librosa soundfile scipy numpy pydub matplotlib pillow \
            pyaudio psutil pyloudnorm
 
@@ -503,13 +436,13 @@ pip install librosa==0.10.1 soundfile==0.12.1 scipy==1.11.4 \
 git clone https://github.com/yourusername/infiniloop.git
 cd infiniloop
 
-# Rendi gli script eseguibili
+# Rendi eseguibili gli script
 chmod +x *.py
 ```
 
-### Passo 4: Scarica e Configura Binario MusicGPT
+### Passo 4: Scarica e Configura il Binario MusicGPT
 
-1. Visita la [pagina release MusicGPT](https://github.com/gabotechs/MusicGPT/releases)
+1. Visita la [pagina release di MusicGPT](https://github.com/gabotechs/MusicGPT/releases)
 2. Scarica `musicgpt-x86_64-unknown-linux-gnu` (versione più recente)
 3. Posizionalo nella stessa directory degli script Python
 4. Rendilo eseguibile:
@@ -521,7 +454,7 @@ chmod +x musicgpt-x86_64-unknown-linux-gnu
 ./musicgpt-x86_64-unknown-linux-gnu --help
 ```
 
-### Passo 5: Opzionale: Configura Audio Bassa Latenza
+### Passo 5: Opzionale: Configura Audio a Bassa Latenza
 
 ```bash
 echo "default-sample-rate = 44100" >> ~/.pulse/daemon.conf
@@ -529,43 +462,43 @@ echo "alternate-sample-rate = 48000" >> ~/.pulse/daemon.conf
 pulseaudio --kill && pulseaudio --start
 ```
 
-## Utilizzo
+### Importante: Download del Modello
 
-### Importante: Download Modello
-
-MusicGPT scaricherà il modello selezionato al primo utilizzo. La primissima generazione sarà significativamente più lenta delle successive. **È fortemente consigliato scaricare e testare il modello desiderato dal terminale prima:**
+MusicGPT scaricherà il modello selezionato al primo utilizzo. La primissima generazione sarà significativamente più lenta delle successive. **È fortemente raccomandato scaricare e testare il modello desiderato dal terminale prima:**
 
 ```bash
-# Per modello piccolo (veloce, buona qualità, meno varietà)
-./musicgpt-x86_64-unknown-linux-gnu "Create a relaxing LoFi song" --model small
+# Per modello small (veloce, buona qualità, meno varietà)
+./musicgpt-x86_64-unknown-linux-gnu "Crea una canzone LoFi rilassante" --model small
 
-# Per modello medio (qualità e velocità bilanciate - consigliato)
-./musicgpt-x86_64-unknown-linux-gnu "Create a relaxing LoFi song" --model medium
+# Per modello medium (qualità e velocità bilanciate - raccomandato)
+./musicgpt-x86_64-unknown-linux-gnu "Crea una canzone LoFi rilassante" --model medium
 
-# Per modello grande (qualità massima ma molto lento - non consigliato)
-./musicgpt-x86_64-unknown-linux-gnu "Create a relaxing LoFi song" --model large
+# Per modello large (massima qualità ma molto lento - non raccomandato)
+./musicgpt-x86_64-unknown-linux-gnu "Crea una canzone LoFi rilassante" --model large
 ```
 
 Questo scaricherà il modello richiesto e ti darà un'idea dei tempi di generazione prima di usare INFINI LOOP.
 
-### Versione GUI (`il1.py`) - Consigliata
+## Utilizzo
+
+### Versione GUI (`il1.py`) - Raccomandata
 
 ```bash
 python il1.py
 ```
 
-**Passi Utilizzo:**
-1. **Inserisci Prompt**: Digita la tua descrizione musicale (es. "chitarra acustica calma")
-2. **Scegli Modello**: Seleziona piccolo (veloce), medio (bilanciato), o grande (lento ma alta qualità)
-3. **Imposta Durata Campione**: Configura lunghezza generazione AI (5-30 secondi)
-4. **Imposta Lunghezza Loop Minima**: Imposta durata loop richiesta per accettazione
-5. **Scegli Preset**: Clicca pulsanti preset per configurazioni rapide
+**Passi di Utilizzo:**
+1. **Inserisci Prompt**: Digita la tua descrizione musicale (es., "chitarra acustica calma")
+2. **Scegli Modello**: Seleziona small (veloce), medium (bilanciato), o large (lento ma alta qualità)
+3. **Imposta Durata Campione**: Configura la lunghezza di generazione AI (5-30 secondi)
+4. **Imposta Lunghezza Minima Loop**: Imposta la durata loop richiesta per l'accettazione
+5. **Scegli Preset**: Clicca i pulsanti preset per configurazioni rapide
 6. **Configura Impostazioni**: 
-   - **Durata Minima Brano**: Quanto ogni loop suona prima del cambio (10-300 secondi)
+   - **Durata Minima Canzone**: Quanto tempo ogni loop suona prima del cambio (10-300 secondi)
    - **Driver Audio**: pulse/alsa/dsp
-7. **Avvia Generazione**: Clicca "▶️ AVVIA LOOP" 
-8. **Monitora Progresso**: Osserva barra stato, informazioni loop e temporizzazione
-9. **Visualizza Statistiche**: Controlla benchmark tempi generazione nella scheda Statistiche
+7. **Avvia Generazione**: Clicca "▶️ AVVIA LOOP"
+8. **Monitora Progresso**: Guarda la barra di stato, informazioni loop e tempistiche
+9. **Visualizza Statistiche**: Controlla i benchmark dei tempi di generazione nella scheda Statistiche
 10. **Salva Loop**: Usa "💾 Salva Loop Corrente" per esportare
 
 ### Versione Terminale (`ilterm.py`)
@@ -573,33 +506,24 @@ python il1.py
 #### Avvio Rapido
 
 ```bash
-# Modalità interattiva (consigliata)
+# Modalità interattiva (raccomandata)
 python ilterm.py
 
 # Generazione diretta con modello specifico
-python ilterm.py --prompt "electronic dance loop" --model medium
-
-# Impostazioni personalizzate con tutti i parametri
-python ilterm.py --prompt "ambient chill" --duration 20 --model small --minlength 5
-
-# Genera loop singolo ed esci
-python ilterm.py --generate-only "jazz piano" output.wav --model medium
-
-# Modalità debug
-python ilterm.py --prompt "test loop" --verbose
+python ilterm.py --prompt "loop elettronico dance" --model medium
 ```
 
 #### Comandi Interattivi
 
 ```bash
-🎛️ > start 'ambient electronic loop'     # Avvia loop infinito
+🎛️ > start 'loop elettronico ambient'     # Avvia loop infinito
 🎛️ > stop                                # Ferma riproduzione
 🎛️ > status                              # Mostra stato dettagliato
-🎛️ > save my_loop.wav                   # Esporta loop corrente
-🎛️ > set model                          # Cambia modello AI (small/medium/large)
+🎛️ > save mio_loop.wav                   # Esporta loop corrente
+🎛️ > set model                           # Cambia modello AI (small/medium/large)
 🎛️ > set duration                        # Cambia lunghezza generazione campione (5-30s)
-🎛️ > set minlength                       # Cambia lunghezza loop minima per accettazione
-🎛️ > set minduration                     # Cambia durata minima brano (10-300s)
+🎛️ > set minlength                       # Cambia lunghezza minima loop per accettazione
+🎛️ > set minduration                     # Cambia durata minima canzone (10-300s)
 🎛️ > set driver                          # Cambia driver audio
 🎛️ > debug on/off                        # Attiva/disattiva modalità debug
 🎛️ > help                                # Mostra tutti i comandi
@@ -612,10 +536,10 @@ python ilterm.py --prompt "test loop" --verbose
 python ilterm.py [OPZIONI]
 
 Opzioni:
-  -p, --prompt TEXT        Prompt generazione musicale
+  -p, --prompt TEXT        Prompt per generazione musicale
   -m, --model [small|medium|large]  Selezione modello AI
   -d, --duration INTEGER   Durata generazione campione (5-30 secondi)
-  --minlength INTEGER      Lunghezza loop minima per accettazione (secondi)
+  --minlength INTEGER      Lunghezza minima loop per accettazione (secondi)
   --driver [pulse|alsa|dsp]  Selezione driver audio
   -v, --verbose            Output dettagliato
   -h, --help               Mostra messaggio aiuto
@@ -625,44 +549,44 @@ Opzioni:
 
 ### Confronto Modelli e Raccomandazioni
 
-- **Modello Piccolo** ⭐ **CONSIGLIATO**: 
-  - Tempo generazione: Veloce (tipicamente 15-30 secondi)
+- **Modello Small** ⭐ **RACCOMANDATO**: 
+  - Tempo di generazione: Veloce (tipicamente 15-30 secondi)
   - Qualità: Buona fedeltà audio
   - Varietà: Meno complessità musicale
   - Migliore per: Test rapidi, loop più lunghi, iterazione veloce
 
-- **Modello Medio** ⭐⭐ **CONSIGLIATO**:
-  - Tempo generazione: Moderato (tipicamente 30-60 secondi)
+- **Modello Medium** ⭐⭐ **RACCOMANDATO**:
+  - Tempo di generazione: Moderato (tipicamente 30-60 secondi)
   - Qualità: Migliore fedeltà audio con buona struttura musicale
-  - Varietà: Eccellente equilibrio di creatività e coerenza
+  - Varietà: Eccellente bilanciamento di creatività e coerenza
   - Migliore per: Uso generale, prestazioni bilanciate
 
-- **Modello Grande**:
-  - Tempo generazione: Molto lento (tipicamente 2-5 minuti)
+- **Modello Large**:
+  - Tempo di generazione: Molto lento (tipicamente 2-5 minuti)
   - Qualità: Alta fedeltà e complessità musicale
   - Varietà: Massima diversità creativa
-  - Migliore per: Solo progetti speciali - **non consigliato per uso regolare**
+  - Migliore per: Solo progetti speciali - **non raccomandato per uso regolare**
 
-## Risoluzione Problemi
+## Risoluzione dei Problemi
 
 ### Problemi Comuni e Soluzioni
 
-#### Problemi Generazione
+#### Problemi di Generazione
 
 **Problema**: Generazione molto lenta
-- **Causa**: Selezione modello sbagliata o risorse sistema insufficienti
+- **Causa**: Selezione modello sbagliata o risorse di sistema insufficienti
 - **Soluzioni**:
-  - Prova modello piccolo per generazione più veloce
-  - Testa tempi generazione dal terminale prima usando il comando fornito nella sezione Utilizzo
+  - Prova il modello small per generazione più veloce
+  - Testa i tempi di generazione dal terminale prima usando il comando fornito nella sezione Utilizzo
   - Usa durata più breve (8-12 secondi)
   - Chiudi altre applicazioni
 
-**Problema**: "No interesting loop" o qualità scadente
-- **Causa**: Audio generato AI non adatto per loop o lunghezza loop minima troppo restrittiva
+**Problema**: "No interesting loop" o qualità scarsa
+- **Causa**: Audio generato dall'AI non adatto per loop o lunghezza minima loop troppo restrittiva
 - **Soluzioni**:
   - Aumenta durata campione AI a 15-20 secondi
-  - Abbassa requisito lunghezza loop minima (prova 2.0-3.0 secondi)
-  - Prova modelli diversi (medio spesso funziona meglio del piccolo per prompt complessi)
+  - Abbassa requisito lunghezza minima loop (prova 2.0-3.0 secondi)
+  - Prova modelli diversi (medium spesso funziona meglio di small per prompt complessi)
   - Usa pulsanti preset per prompt provati
   - Aggiungi parole chiave: "seamless", "loopable", "continuous"
 
@@ -675,43 +599,43 @@ Opzioni:
   speaker-test -t wav -c 2
   
   # Prova driver diversi nelle impostazioni
-  # GUI: scheda Impostazioni → Driver Audio
+  # GUI: Scheda Impostazioni → Driver Audio
   # Terminale: set driver
   ```
 
-**Problema**: Audio balbettante
-- **Causa**: Problemi buffer audio o driver
+**Problema**: Audio frammentato
+- **Causa**: Problemi buffer audio o problemi driver
 - **Soluzioni**:
   - Prova driver audio diversi (pulse → alsa → dsp)
   - Chiudi applicazioni non necessarie
-  - Controlla uso risorse sistema
+  - Controlla uso risorse di sistema
 
 ### Ottimizzazione Prestazioni
 
 #### Per Generazione Rapida:
-- Usa **modello piccolo** con durata 10-20 secondi
-- Imposta lunghezza loop minima a 3-5 secondi
-- Usa durata minima brano più breve (20-30 secondi)
+- Usa **modello small** con durata 10-20 secondi
+- Imposta lunghezza minima loop a 3-5 secondi
+- Usa durata minima canzone più breve (20-30 secondi)
 
 #### Per Più Varietà:
-- Usa **modello medio** con durata 10-15 secondi
-- Imposta lunghezza loop minima a 2.5-4 secondi
-- Usa durata minima brano più lunga (60-120 secondi)
+- Usa **modello medium** con durata 10-15 secondi  
+- Imposta lunghezza minima loop a 2.5-4 secondi
+- Usa durata minima canzone più lunga (60-120 secondi)
 
-Testa sempre il modello scelto dal terminale prima per capire i tempi di generazione:
+Testa sempre il tuo modello scelto dal terminale prima per capire i tempi di generazione:
 ```bash
-./musicgpt-x86_64-unknown-linux-gnu "test prompt" --model your_chosen_model
+./musicgpt-x86_64-unknown-linux-gnu "prompt di test" --model tuo_modello_scelto
 ```
-Oppure usa la funzionalità statistiche per registrare i tempi di generazione.
+O usa la funzionalità statistiche per registrare i tempi di generazione.
 
 ### Creazione Preset Personalizzati
 
-Modifica preset in `il1.py`:
+Modifica i preset in `il1.py`:
 
 ```python
 presets = {
-    "Jazz Personalizzato": "smooth jazz piano trio seamless loop",
-    "Cinema Epico": "cinematic orchestral epic soundtrack loop",
+    "Jazz Personalizzato": "trio piano jazz smooth loop continuo",
+    "Cinema Epico": "orchestrale cinematico epico soundtrack loop",
     # Aggiungi i tuoi preset qui
 }
 ```
@@ -734,10 +658,11 @@ Per licenze commerciali, contatta gli autori.
 
 ## Crediti
 
-- **MusicGPT** di gabotechs per generazione musicale AI: https://github.com/gabotechs/MusicGPT
-- Team **librosa** per analisi audio: https://librosa.org/
-- **pyloudnorm** di csteinmetz1 per elaborazione audio: https://github.com/csteinmetz1/pyloudnorm
-- Sviluppato con assistenza di modelli linguistici AI
+- **MusicGPT** by gabotechs per la generazione musicale AI: https://github.com/gabotechs/MusicGPT
+- **Team librosa** per l'analisi audio: https://librosa.org/
+- **pyloudnorm** by csteinmetz1 per l'elaborazione audio: https://github.com/csteinmetz1/pyloudnorm
+- MusicGen di Meta: https://huggingface.co/spaces/facebook/MusicGen
+- Sviluppato con l'assistenza di modelli linguistici AI
 
 ---
 **🎵 Goditi la musica AI infinita con INFINI LOOP! 🎵**
