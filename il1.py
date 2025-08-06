@@ -33,7 +33,6 @@ class InfiniLoopGUI:
         self.original_log = self.app.log_message
         self.app.log_message = self.capture_log
 
-
         self.colors = {
             'bg': '#1a1a2e',
             'bg_secondary': '#16213e',
@@ -47,22 +46,15 @@ class InfiniLoopGUI:
             'border': '#0f4c75'
         }
 
-
         self.setup_styles()
-
-
         self.create_ui()
-
-
         self.load_settings()
-
-
         self.update_loop()
-
-
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+
     def on_generation_complete(self):
+
         if hasattr(self, "update_benchmark_table"):
             self.update_benchmark_table()
 
@@ -123,18 +115,15 @@ class InfiniLoopGUI:
         style.map("Danger.TButton",
             background=[('active', '#ff5c4c')])
 
-
         style.configure("TNotebook",
             background=self.colors['bg'],
             borderwidth=0)
-
 
         style.configure("TNotebook.Tab",
             background=self.colors['bg_secondary'],
             foreground=self.colors['text_secondary'],
             padding=[10, 5],
             font=('Segoe UI', 10))
-
 
         style.map("TNotebook.Tab",
             background=[('selected', self.colors['bg_card'])],
@@ -146,30 +135,24 @@ class InfiniLoopGUI:
 
         self.root.configure(bg=self.colors['bg'])
 
-
         main_container = tk.Frame(self.root, bg=self.colors['bg'])
         main_container.pack(fill='both', expand=True, padx=20, pady=20)
 
-
         self.create_header(main_container)
-
 
         self.notebook = ttk.Notebook(main_container)
         self.notebook.pack(fill='both', expand=True, pady=(20, 0))
 
-
         self.create_controls_tab()
-
-
         self.create_settings_tab()
 
-
         self.create_log_tab()
+
         self.app.load_benchmark_data()
         self.create_benchmark_tab()
 
-
         self.create_status_bar(main_container)
+
 
     def create_header(self, parent):
 
@@ -177,14 +160,11 @@ class InfiniLoopGUI:
         header_frame.pack(fill='x', pady=(0, 10))
         header_frame.pack_propagate(False)
 
-
         gradient_frame = tk.Frame(header_frame, bg=self.colors['accent'])
         gradient_frame.pack(fill='both', expand=True, padx=2, pady=2)
 
-
         content_frame = tk.Frame(gradient_frame, bg=self.colors['accent'])
         content_frame.pack(fill='both', expand=True, padx=20)
-
 
         title_frame = tk.Frame(content_frame, bg=self.colors['accent'])
         title_frame.pack(side='left', fill='y')
@@ -203,17 +183,16 @@ class InfiniLoopGUI:
                                  bg=self.colors['accent'], fg='#e0e0e0')
         subtitle_label.pack(side='left', padx=(10, 0))
 
-
         self.status_indicator = tk.Label(content_frame, text="⚫",
                                         font=('Segoe UI', 20),
                                         bg=self.colors['accent'], fg='white')
         self.status_indicator.pack(side='right', padx=10)
 
+
     def create_controls_tab(self):
 
         controls_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
         self.notebook.add(controls_frame, text="🎛️ Controls")
-
 
         canvas = tk.Canvas(controls_frame, bg=self.colors['bg'], highlightthickness=0)
         scrollbar = ttk.Scrollbar(controls_frame, orient="vertical", command=canvas.yview)
@@ -230,7 +209,6 @@ class InfiniLoopGUI:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-
         prompt_frame = self.create_card(scrollable_frame, "🎼 Generation")
 
         tk.Label(prompt_frame, text="Music prompt:",
@@ -246,12 +224,9 @@ class InfiniLoopGUI:
                                      bd=10)
         self.prompt_entry.pack(fill='x', pady=(0, 10))
         self.prompt_entry.bind('<Return>', lambda e: self.start_loop())
-
-
         self.prompt_entry.insert(0, "e.g. ambient chill loop, jazz piano...")
         self.prompt_entry.bind('<FocusIn>', self.on_entry_focus_in)
         self.prompt_entry.bind('<FocusOut>', self.on_entry_focus_out)
-
 
         preset_frame = tk.Frame(prompt_frame, bg=self.colors['bg_card'])
         preset_frame.pack(fill='x', pady=(0, 10))
@@ -261,15 +236,15 @@ class InfiniLoopGUI:
                 bg=self.colors['bg_card'],
                 fg=self.colors['text_secondary']).pack(side='left', padx=(0, 10))
 
-
         presets = {
-            "Ambient": "ambient ethereal soundscape relaxing seamless nointro loopable",
-            "Reggae": "slow calm reggae riddim classic seamless nointro loopable",
-            "Electronic": "electronic synth dance beat edm seamless nointro loopable",
-            "Classical": "classical orchestral piano violin seamless nointro loopable",
-            "Rock": "rock guitar drums electric bass seamless nointro loopable",
-            "Lofi Rap": "melodic lofi rap beat relaxing loopable nointro"
+            "Ambient":   "ambient ethereal slow pads seamless loop",
+            "Reggae":    "slow reggae dub bass groove seamless loop",
+            "EDM":       "chill EDM disco, synth, seamless loop",
+            "Rock":      "90s rock electric guitar heavy drums nointro loop",
+            "Lofi Rap":  "Japanese koto, lofi hiphop, music for studying, trap bass",
+            "Synthwave": "80s retro synthwave, seamless nointro loop"
         }
+
 
         for name, prompt in presets.items():
             btn = tk.Button(preset_frame,
@@ -287,7 +262,6 @@ class InfiniLoopGUI:
                            command=lambda p=prompt: self.set_preset(p))
             btn.pack(side='left', padx=2)
             self.bind_hover(btn)
-
 
         button_frame = tk.Frame(prompt_frame, bg=self.colors['bg_card'])
         button_frame.pack(fill='x', pady=10)
@@ -323,7 +297,6 @@ class InfiniLoopGUI:
                                      command=self.stop_loop)
         self.stop_button.pack(side='left', fill='x', expand=True, padx=(5, 0))
 
-
         save_button = tk.Button(prompt_frame,
                                text="💾  Save Current Loop",
                                font=('Segoe UI', 11, 'bold'),
@@ -338,7 +311,6 @@ class InfiniLoopGUI:
                                cursor='hand2',
                                command=self.save_loop)
         save_button.pack(fill='x', pady=(5, 0))
-
 
         np_frame = self.create_card(scrollable_frame, "🎧 Loop info")
 
@@ -366,14 +338,20 @@ class InfiniLoopGUI:
                     bg=self.colors['bg_card'],
                     fg=self.colors['text']).pack(side='left')
 
+
+    def update_min_duration(self):
+
+        """Aggiorna min_song_duration nell'app e salva le impostazioni"""
+        self.app.min_song_duration = self.min_duration_var.get()
+        self.save_settings()
+
+
     def create_settings_tab(self):
 
         settings_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
         self.notebook.add(settings_frame, text="⚙️ Settings")
 
-
         settings_card = self.create_card(settings_frame, "⚙️ Configuration")
-
 
         duration_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         duration_frame.pack(fill='x', pady=10)
@@ -385,14 +363,14 @@ class InfiniLoopGUI:
 
         self.duration_var = tk.IntVar(value=self.app.duration)
         duration_spin = tk.Spinbox(duration_frame,
-                                   from_=5, to=30,
-                                   textvariable=self.duration_var,
-                                   font=('Segoe UI', 11),
-                                   bg=self.colors['bg_secondary'],
-                                   fg=self.colors['text'],
-                                   buttonbackground=self.colors['accent'],
-                                   width=10,
-                                   command=self.update_duration)
+                                from_=5, to=30,
+                                textvariable=self.duration_var,
+                                font=('Segoe UI', 11),
+                                bg=self.colors['bg_secondary'],
+                                fg=self.colors['text'],
+                                buttonbackground=self.colors['accent'],
+                                width=10,
+                                command=self.update_duration)
         duration_spin.pack(side='left', padx=10)
 
         tk.Label(duration_frame, text="seconds",
@@ -400,6 +378,37 @@ class InfiniLoopGUI:
                 bg=self.colors['bg_card'],
                 fg=self.colors['text_secondary']).pack(side='left')
 
+        min_duration_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
+        min_duration_frame.pack(fill='x', pady=10)
+
+        tk.Label(min_duration_frame, text="Minimum song duration:",
+                font=('Segoe UI', 11),
+                bg=self.colors['bg_card'],
+                fg=self.colors['text']).pack(side='left')
+
+        self.min_duration_var = tk.IntVar(value=getattr(self.app, 'min_song_duration', 30))
+        min_duration_spin = tk.Spinbox(min_duration_frame,
+                                    from_=10, to=300,
+                                    textvariable=self.min_duration_var,
+                                    font=('Segoe UI', 11),
+                                    bg=self.colors['bg_secondary'],
+                                    fg=self.colors['text'],
+                                    buttonbackground=self.colors['accent'],
+                                    width=10,
+                                    command=self.update_min_duration)
+        min_duration_spin.pack(side='left', padx=10)
+
+        tk.Label(min_duration_frame, text="seconds",
+                font=('Segoe UI', 10),
+                bg=self.colors['bg_card'],
+                fg=self.colors['text_secondary']).pack(side='left')
+
+        help_label = tk.Label(min_duration_frame,
+                            text="(minimum length of one song)",
+                            font=('Segoe UI', 9),
+                            bg=self.colors['bg_card'],
+                            fg=self.colors['text_secondary'])
+        help_label.pack(side='left', padx=(10, 0))
 
         driver_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         driver_frame.pack(fill='x', pady=10)
@@ -411,26 +420,25 @@ class InfiniLoopGUI:
 
         self.driver_var = tk.StringVar(value=self.app.audio_driver)
         driver_menu = ttk.Combobox(driver_frame,
-                                   textvariable=self.driver_var,
-                                   values=["pulse", "alsa", "dsp"],
-                                   state="readonly",
-                                   width=15)
+                                textvariable=self.driver_var,
+                                values=["pulse", "alsa", "dsp"],
+                                state="readonly",
+                                width=15)
         driver_menu.pack(side='left', padx=10)
         driver_menu.bind('<<ComboboxSelected>>', self.update_driver)
-
 
         debug_card = self.create_card(settings_frame, "🐛 Debug")
 
         self.debug_var = tk.BooleanVar(value=self.app.debug_mode)
         debug_check = tk.Checkbutton(debug_card,
-                                     text="Enable debug mode",
-                                     variable=self.debug_var,
-                                     font=('Segoe UI', 11),
-                                     bg=self.colors['bg_card'],
-                                     fg=self.colors['text'],
-                                     selectcolor=self.colors['bg_secondary'],
-                                     activebackground=self.colors['bg_card'],
-                                     command=self.toggle_debug)
+                                    text="Enable debug mode",
+                                    variable=self.debug_var,
+                                    font=('Segoe UI', 11),
+                                    bg=self.colors['bg_card'],
+                                    fg=self.colors['text'],
+                                    selectcolor=self.colors['bg_secondary'],
+                                    activebackground=self.colors['bg_card'],
+                                    command=self.toggle_debug)
         debug_check.pack(anchor='w', pady=5)
 
         validate_btn = tk.Button(debug_card,
@@ -447,11 +455,11 @@ class InfiniLoopGUI:
                                 command=self.validate_files)
         validate_btn.pack(anchor='w', pady=10)
 
+
     def create_log_tab(self):
 
         log_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
         self.notebook.add(log_frame, text="📋 Log")
-
 
         log_container = tk.Frame(log_frame, bg=self.colors['border'])
         log_container.pack(fill='both', expand=True, padx=10, pady=10)
@@ -469,7 +477,6 @@ class InfiniLoopGUI:
         log_scrollbar.pack(side='right', fill='y')
         self.log_text.config(yscrollcommand=log_scrollbar.set)
 
-
         clear_btn = tk.Button(log_frame,
                              text="🗑️  Clear Log",
                              font=('Segoe UI', 10),
@@ -486,15 +493,16 @@ class InfiniLoopGUI:
 
 
     def create_benchmark_tab(self):
-        bench_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
-        self.notebook.add(bench_frame, text="📈 Benchmark")
 
-        card = self.create_card(bench_frame, "📊 Benchmark Performance")
+        bench_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
+        self.notebook.add(bench_frame, text="📈 Statistics")
+
+        card = self.create_card(bench_frame, "📊 Song generation statistics")
 
         self.benchmark_var = tk.BooleanVar(value=self.app.benchmark_enabled)
         bench_check = tk.Checkbutton(
             card,
-            text="Enable benchmark tracking",
+            text="Enable statistics (local only)",
             variable=self.benchmark_var,
             font=('Segoe UI', 11),
             bg=self.colors['bg_card'],
@@ -505,7 +513,6 @@ class InfiniLoopGUI:
         )
         bench_check.pack(anchor='w', pady=(0, 10))
 
-        # ✅ Stile leggibile SOLO per la tabella Benchmark
         style = ttk.Style()
         style.configure("Benchmark.Treeview",
             background="white",
@@ -524,7 +531,6 @@ class InfiniLoopGUI:
             foreground=[("selected", "white")]
         )
 
-        # 📊 Tabella con medie per durata
         self.average_tree = ttk.Treeview(
             card,
             columns=("dur", "avg"),
@@ -538,13 +544,12 @@ class InfiniLoopGUI:
         self.average_tree.column("avg", anchor='center', width=220)
         self.average_tree.pack(fill='x', expand=False, pady=(0, 10))
 
-        # 🔁 Forza caricamento dati prima dell’aggiornamento tabella
         self.app.load_benchmark_data()
         self.update_benchmark_table()
 
         reset_btn = tk.Button(
             card,
-            text="🗑️  Reset Benchmark Data",
+            text="🗑️  Reset Data",
             font=('Segoe UI', 10),
             bg=self.colors['danger'],
             fg='white',
@@ -560,21 +565,23 @@ class InfiniLoopGUI:
 
 
     def toggle_benchmark(self):
+
         self.app.benchmark_enabled = self.benchmark_var.get()
         self.save_settings()
 
 
     def update_benchmark_table(self):
+
         try:
             if not hasattr(self, "average_tree"):
-                return  # Tabella non ancora creata
+                return
 
             for row in self.average_tree.get_children():
                 self.average_tree.delete(row)
 
             data = self.app.benchmark_data
 
-            # 📊 Calcola medie per durata
+
             buckets = {}
             for entry in data:
                 dur = entry["duration_requested"]
@@ -591,10 +598,8 @@ class InfiniLoopGUI:
             self.capture_log(f"⚠️ Failed to update benchmark table: {e}")
 
 
-
-
-
     def reset_benchmark_data(self):
+
         self.app.reset_benchmark_data()
         self.update_benchmark_table()
 
@@ -613,14 +618,12 @@ class InfiniLoopGUI:
                                      fg=self.colors['text'])
         self.status_label.pack(side='left', padx=15, pady=10)
 
-
         self.generation_label = tk.Label(status_frame,
                                          text="",
                                          font=('Segoe UI', 10),
                                          bg=self.colors['bg_secondary'],
                                          fg=self.colors['text_secondary'])
         self.generation_label.pack(side='left', padx=15)
-
 
         self.progress_label = tk.Label(status_frame,
                                        text="",
@@ -629,18 +632,17 @@ class InfiniLoopGUI:
                                        fg=self.colors['accent'])
         self.progress_label.pack(side='right', padx=15)
 
+
     def create_card(self, parent, title):
 
         card = tk.Frame(parent, bg=self.colors['bg_card'], relief='raised', bd=2)
         card.pack(fill='x', padx=10, pady=10)
-
 
         title_label = tk.Label(card, text=title,
                               font=('Segoe UI', 12, 'bold'),
                               bg=self.colors['bg_card'],
                               fg=self.colors['accent'])
         title_label.pack(anchor='w', padx=15, pady=(10, 5))
-
 
         content = tk.Frame(card, bg=self.colors['bg_card'])
         content.pack(fill='both', expand=True, padx=15, pady=(5, 15))
@@ -658,20 +660,24 @@ class InfiniLoopGUI:
         widget.bind("<Enter>", on_enter)
         widget.bind("<Leave>", on_leave)
 
+
     def on_entry_focus_in(self, event):
 
         if self.prompt_entry.get() == "e.g. ambient chill loop, jazz piano...":
             self.prompt_entry.delete(0, 'end')
+
 
     def on_entry_focus_out(self, event):
 
         if not self.prompt_entry.get():
             self.prompt_entry.insert(0, "e.g. ambient chill loop, jazz piano...")
 
+
     def set_preset(self, preset):
 
         self.prompt_entry.delete(0, 'end')
         self.prompt_entry.insert(0, preset)
+
 
     def capture_log(self, message):
 
@@ -679,7 +685,6 @@ class InfiniLoopGUI:
         timestamp = datetime.now().strftime("%H:%M:%S")
         formatted_msg = f"[{timestamp}] {message}\n"
         self.log_queue.put(formatted_msg)
-
 
         if "🎧 ORA IN RIPRODUZIONE:" in message or "Sample generato" in message or "Ottenuto loop perfetto" in message:
 
@@ -691,9 +696,8 @@ class InfiniLoopGUI:
             messagebox.warning("Warning", "Please enter a music prompt!")
             return
 
-        self.app.last_prompt = prompt  # ✅ Salva anche in app
-        self.save_settings()  # ✅ Salva su file
-
+        self.app.last_prompt = prompt
+        self.save_settings()
         self.is_running = True
         self.start_button.config(state='disabled')
         self.stop_button.config(state='normal')
@@ -704,9 +708,11 @@ class InfiniLoopGUI:
         thread = threading.Thread(target=self._run_loop, args=(prompt,), daemon=True)
         thread.start()
 
+
     def _run_loop(self, prompt):
 
         self.app.start_loop(prompt)
+
 
     def stop_loop(self):
 
@@ -718,14 +724,13 @@ class InfiniLoopGUI:
         self.status_indicator.config(text="🔴")
         self.status_label.config(text="🔴 STOPPED")
 
-
         self.current_loop_file = None
         self.last_title = None
         self.last_artist = None
 
-
         for var in self.np_info.values():
             var.set("---")
+
 
     def save_loop(self):
 
@@ -744,6 +749,7 @@ class InfiniLoopGUI:
             else:
                 messagebox.showerror("Error", "Unable to save loop")
 
+
     def validate_files(self):
 
         current_valid = self.app.validate_audio_file(self.app.CURRENT)
@@ -754,6 +760,7 @@ class InfiniLoopGUI:
 
         messagebox.showinfo("File Validation", msg)
 
+
     def clear_log(self):
 
         self.log_text.delete(1.0, 'end')
@@ -763,19 +770,21 @@ class InfiniLoopGUI:
         self.app.duration = self.duration_var.get()
         self.save_settings()
 
+
     def update_driver(self, event=None):
 
         self.app.audio_driver = self.driver_var.get()
         os.environ["SDL_AUDIODRIVER"] = self.app.audio_driver
         self.save_settings()
 
+
     def toggle_debug(self):
 
         self.app.debug_mode = self.debug_var.get()
         self.save_settings()
 
-    def update_loop(self):
 
+    def update_loop(self):
 
         update_now_playing = False
         while not self.log_queue.empty():
@@ -788,26 +797,37 @@ class InfiniLoopGUI:
                 self.log_text.insert('end', msg)
                 self.log_text.see('end')
 
-
         if self.app.is_playing:
+
             if self.app.is_generating:
                 self.generation_label.config(text=f"{self.app.generation_status}")
                 self.progress_label.config(text="⏳")
             else:
                 self.generation_label.config(text="")
-                self.progress_label.config(text="")
 
+                if hasattr(self.app, 'current_loop_start_time') and self.app.current_loop_start_time:
+                    timing = self.app.get_current_loop_timing()
+
+                    if timing['min_time_satisfied']:
+                        if timing['can_swap']:
+                            timing_text = f"✅ {timing['elapsed']:.0f}s (ready)"
+                        else:
+                            timing_text = f"⏳ {timing['elapsed']:.0f}s (waiting NEXT)"
+                    else:
+                        remaining = timing['remaining_min_time']
+                        timing_text = f"⏱️ {timing['elapsed']:.0f}s / {self.app.min_song_duration}s"
+
+                    self.progress_label.config(text=timing_text)
+                else:
+                    self.progress_label.config(text="")
 
             current_file = self.app.CURRENT if hasattr(self.app, 'CURRENT') else None
 
             if update_now_playing or (current_file and current_file != self.current_loop_file):
-
                 self.current_loop_file = current_file
-
 
                 new_title = self.app.get_random_title()
                 new_artist = self.app.get_random_artist()
-
 
                 while new_title == self.last_title:
                     new_title = self.app.get_random_title()
@@ -817,10 +837,8 @@ class InfiniLoopGUI:
                 self.last_title = new_title
                 self.last_artist = new_artist
 
-
                 self.np_info['title'].set(new_title)
                 self.np_info['artist'].set(new_artist)
-
 
                 try:
                     duration = self.app.get_duration(self.app.CURRENT)
@@ -831,24 +849,43 @@ class InfiniLoopGUI:
                 except:
                     self.np_info['duration'].set("---")
 
-
                 if hasattr(self.app, 'PROMPT') and self.app.PROMPT:
                     self.np_info['genre'].set(self.app.PROMPT)
 
+            if hasattr(self.app, 'current_loop_start_time') and self.app.current_loop_start_time:
+                timing = self.app.get_current_loop_timing()
+                try:
+                    base_duration = self.app.get_duration(self.app.CURRENT)
+                    if base_duration > 0:
+                        if timing['min_time_satisfied']:
+                            status_icon = "✅" if timing['can_swap'] else "⏳"
+                            duration_text = f"{base_duration:.1f}s loop • {status_icon} {timing['elapsed']:.0f}s played"
+                        else:
+                            remaining = timing['remaining_min_time']
+                            duration_text = f"{base_duration:.1f}s loop • ⏱️ {remaining:.0f}s left"
+
+                        self.np_info['duration'].set(duration_text)
+                except:
+                    pass
+
         else:
+
             self.generation_label.config(text="")
             self.progress_label.config(text="")
+
 
             self.current_loop_file = None
             self.last_title = None
             self.last_artist = None
 
-
         self.root.after(100, self.update_loop)
 
+
     def save_settings(self):
+
         settings = {
             "duration": self.app.duration,
+            "min_song_duration": getattr(self.app, 'min_song_duration', 30),
             "audio_driver": self.app.audio_driver,
             "debug_mode": self.app.debug_mode,
             "benchmark_enabled": self.benchmark_var.get(),
@@ -860,27 +897,30 @@ class InfiniLoopGUI:
 
 
     def load_settings(self):
+
         try:
             with open("infiniloop_settings.json", "r") as f:
                 settings = json.load(f)
+
             self.app.duration = settings.get("duration", self.app.duration)
             self.duration_var.set(self.app.duration)
+
+            self.app.min_song_duration = settings.get("min_song_duration", 30)
+            if hasattr(self, 'min_duration_var'):
+                self.min_duration_var.set(self.app.min_song_duration)
 
             self.app.audio_driver = settings.get("audio_driver", self.app.audio_driver)
             self.driver_var.set(self.app.audio_driver)
 
-            # ✅ Ripristina ultimo prompt usato
             last_prompt = settings.get("last_prompt", "")
             if last_prompt:
                 self.prompt_entry.delete(0, 'end')
                 self.prompt_entry.insert(0, last_prompt)
                 self.app.last_prompt = last_prompt
 
-
             self.app.debug_mode = settings.get("debug_mode", self.app.debug_mode)
             self.debug_var.set(self.app.debug_mode)
 
-            # ✅ Carica stato benchmark
             self.app.benchmark_enabled = settings.get("benchmark_enabled", True)
             if hasattr(self, 'benchmark_var'):
                 self.benchmark_var.set(self.app.benchmark_enabled)
@@ -907,14 +947,12 @@ class InfiniLoopGUI:
             self.save_settings()
             self.root.destroy()
 
-def main():
 
+def main():
 
     os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
-
     root = tk.Tk()
-
 
     try:
         root.iconphoto(False, tk.PhotoImage(data='''
@@ -929,9 +967,7 @@ def main():
     except:
         pass
 
-
     app = InfiniLoopGUI(root)
-
 
     root.update_idletasks()
     width = 700
@@ -940,8 +976,8 @@ def main():
     y = (root.winfo_screenheight() // 2) - (height // 2)
     root.geometry(f'{width}x{height}+{x}+{y}')
 
-
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()

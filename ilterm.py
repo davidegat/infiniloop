@@ -26,9 +26,12 @@ from scipy.spatial.distance import cosine
 
 import json
 
+
 class InfiniLoopTerminal:
 
+
     def __init__(self):
+
         self.base_dir = os.path.abspath(".")
         self.FILE1 = os.path.join(self.base_dir, "music1.wav")
         self.FILE2 = os.path.join(self.base_dir, "music2.wav")
@@ -37,6 +40,8 @@ class InfiniLoopTerminal:
         self.CROSSFADE_MS = 1500
         self.CROSSFADE_SEC = self.CROSSFADE_MS / 1000
         self.PROMPT, self.model, self.duration = "", "medium", 8
+
+        self.min_song_duration = 30
 
         self.audio_driver = "alsa" if os.path.exists("/proc/asound") and os.access("/dev/snd", os.R_OK | os.X_OK) else "pulse"
 
@@ -59,6 +64,9 @@ class InfiniLoopTerminal:
         self.next_audio_buffer = None
         self.next_audio_sr = None
 
+        self.current_loop_start_time = None
+        self.min_duration_satisfied = False
+
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGTERM, self.signal_handler)
         os.system("cls" if os.name == "nt" else "clear")
@@ -76,6 +84,7 @@ class InfiniLoopTerminal:
 
 
     def load_benchmark_data(self):
+
         self.benchmark_file = "benchdata.json"
         self.benchmark_data = []
 
@@ -86,19 +95,22 @@ class InfiniLoopTerminal:
             except Exception as e:
                 self.log_message(f"⚠️ Failed to load benchmark data: {e}")
 
+
     def save_benchmark_data(self):
+
         if not hasattr(self, "benchmark_file"):
             self.benchmark_file = "benchdata.json"
         if not hasattr(self, "benchmark_data"):
             self.benchmark_data = []
-
         try:
             with open(self.benchmark_file, "w") as f:
                 json.dump(self.benchmark_data, f, indent=2)
         except Exception as e:
             self.log_message(f"⚠️ Failed to save benchmark data: {e}")
 
+
     def reset_benchmark_data(self):
+
         self.benchmark_data = []
         if hasattr(self, "benchmark_file") and os.path.exists(self.benchmark_file):
             try:
@@ -106,6 +118,7 @@ class InfiniLoopTerminal:
                 self.log_message("🧹 Benchmark data cleared")
             except Exception as e:
                 self.log_message(f"⚠️ Failed to delete benchmark file: {e}")
+
 
     def cleanup_temp_files(self):
 
@@ -119,10 +132,14 @@ class InfiniLoopTerminal:
                     )
             self._temp_files_to_cleanup.clear()
 
+
     def on_generation_complete(self):
+
         pass
 
+
     def __del__(self):
+
         try:
 
             if hasattr(self, "thread_pool"):
@@ -143,7 +160,7 @@ class InfiniLoopTerminal:
 
     def signal_handler(self, signum, frame):
 
-        print("\n🛑 Interrupt detected, stopping...")
+        print("\n🛑 Interrupt detected, stopping")
         self.stop_loop()
 
         self.kill_all_ffplay_processes()
@@ -200,6 +217,7 @@ class InfiniLoopTerminal:
 
         return True
 
+
     @contextlib.contextmanager
 
     def safe_temp_file(self, suffix=".wav"):
@@ -220,9 +238,8 @@ class InfiniLoopTerminal:
     def find_optimal_zero_crossing(self, y, sample, window_size=512):
 
         sr = 22050
-        max_deviation_ms = 2
+        max_deviation_ms = 0.3
         max_deviation_samples = int(max_deviation_ms * sr / 1000)
-
 
         win = min(max_deviation_samples, len(y) // 200, window_size // 4)
         s, e = max(0, sample - win), min(len(y), sample + win)
@@ -235,15 +252,11 @@ class InfiniLoopTerminal:
         if not len(zeroes):
             return sample
 
-
         distances = np.abs(zeroes - sample)
         amps = np.abs(y[zeroes]) + np.abs(y[zeroes + 1])
 
-
         distance_scores = 1.0 / (distances + 1)
         amplitude_scores = 1.0 / (amps + 1e-8)
-
-
         combined_scores = distance_scores * 0.7 + amplitude_scores * 0.3
 
         best_idx = np.argmax(combined_scores)
@@ -282,16 +295,11 @@ class InfiniLoopTerminal:
         if not len(beats):
             return 0.5
 
-
         if len(beats) > 1:
             beat_intervals = np.diff(beats)
-
             median_interval = np.median(beat_intervals)
-
             interval_std = np.std(beat_intervals)
             consistency = 1.0 - min(interval_std / median_interval, 1.0)
-
-
             base_tolerance = median_interval * (0.08 + 0.12 * (1 - consistency))
             tol = max(base_tolerance, sr * 0.005)
         else:
@@ -299,17 +307,18 @@ class InfiniLoopTerminal:
 
 
         def distance_to_nearest_beat(pos):
+
             return np.min(np.abs(beats - pos))
 
+
         def alignment_score(distance, tolerance):
+
             if distance <= tolerance:
 
                 return 1.0 - (distance / tolerance) * 0.2
             else:
-
                 excess = distance - tolerance
                 return max(0.0, np.exp(-excess / (tolerance * 0.5)))
-
 
         start_dist = distance_to_nearest_beat(start)
         end_dist = distance_to_nearest_beat(end)
@@ -317,16 +326,13 @@ class InfiniLoopTerminal:
         start_score = alignment_score(start_dist, tol)
         end_score = alignment_score(end_dist, tol)
 
-
         base_score = (start_score + end_score) / 2
-
 
         perfect_alignment_bonus = 0.0
         if start_score > 0.9 and end_score > 0.9:
             perfect_alignment_bonus = 0.1
         elif start_score > 0.8 and end_score > 0.8:
             perfect_alignment_bonus = 0.05
-
 
         duration_samples = end - start
         if len(beats) > 2:
@@ -336,13 +342,11 @@ class InfiniLoopTerminal:
             if beat_count_error < 0.1:
                 perfect_alignment_bonus += 0.05
 
-
         structure_penalty = 0.0
+
         if len(beats) > 3:
             avg_beat_interval = np.mean(beat_intervals)
             loop_duration_beats = duration_samples / avg_beat_interval
-
-
             ideal_lengths = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32]
             closest_ideal = min(ideal_lengths, key=lambda x: abs(x - loop_duration_beats))
             length_error = abs(loop_duration_beats - closest_ideal)
@@ -358,7 +362,8 @@ class InfiniLoopTerminal:
 
 
     def find_perfect_loop_simple(self, y, sr):
-        self.log_message("🥁 Switching to Beat-focused algorithm...")
+
+        self.log_message("🥁 Switching to Beat-focused algorithm")
         try:
             tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units="samples")
             if len(beats) < 2:
@@ -373,6 +378,7 @@ class InfiniLoopTerminal:
             bpm, avg, beats, cons = 120.0, float(0.5 * sr), np.arange(0, len(y), int(0.5 * sr)), 0.5
 
         beat_dur, total_dur = avg / sr, len(y) / sr
+
         def structures():
             if len(beats) >= 8:
                 return [(4,"1 measure"), (8,"2 measures"), (16,"4 measures"), (12,"3 measures"), (2,"half measure"), (6,"1.5 measures")]
@@ -413,9 +419,10 @@ class InfiniLoopTerminal:
         if not candidates: raise Exception("No candidates found")
         best = sorted(candidates, key=lambda x: x["score"], reverse=True)[0]
         if best["score"] < 0.15: raise Exception(f"Best score too low: {best['score']:.3f}")
-        self.log_message("🎯 Beat-preserving zero-crossing...\n")
+        self.log_message("🎯 Beat-preserving zero-crossing\n")
 
         s, e = best["start"], best["end"]
+
         try:
             small_win = min(512, int(avg * 0.1))
             s_opt = self.find_optimal_zero_crossing(y, s, window_size=small_win)
@@ -433,7 +440,9 @@ class InfiniLoopTerminal:
             self.log_message(f"❌ Zero-crossing optimization failed: {e}")
 
         dur = (best["end"] - best["start"]) / sr
-        self.log_message("✅ Potential loop found!\n              Checking duration...\n")
+
+        self.log_message("✅ Potential loop found!\n               Checking duration\n")
+
         return {
             "start_sample": best["start"],
             "end_sample": best["end"],
@@ -445,6 +454,7 @@ class InfiniLoopTerminal:
 
 
     def find_perfect_loop(self, y, sr):
+
         try:
             return self.find_perfect_loop_advanced(y, sr)
         except Exception as e:
@@ -453,6 +463,7 @@ class InfiniLoopTerminal:
 
 
     def find_perfect_loop_advanced(self, y, sr):
+
         self.log_message("🧠 Initial loop detection:")
         if not len(y) or sr <= 0:
             raise Exception("Invalid input: empty audio from AI?")
@@ -468,6 +479,7 @@ class InfiniLoopTerminal:
 
         hop, n_fft = 256, 2048
         S = librosa.stft(y, n_fft=n_fft, hop_length=hop)
+
         if not S.size:
             raise Exception("Empty STFT")
 
@@ -553,6 +565,7 @@ class InfiniLoopTerminal:
 
 
     def process_loop_detection(self, input_file, output_file):
+
         MIN_LOOP_DURATION = 2.6
         MAX_LOOP_ATTEMPTS = 1
 
@@ -603,10 +616,10 @@ class InfiniLoopTerminal:
                             continue
                         else:
                             raise Exception(
-                                f"{initial_duration:.1f} seconds is too short\n"
+                                f"Too short ({initial_duration:.1f}s)\n"
                             )
 
-                    self.log_message("🎯 Zero-crossing optimization...")
+                    self.log_message("🎯 Zero-crossing optimization")
                     s_opt, e_opt = (
                         self.find_optimal_zero_crossing(y, pos) for pos in (s, e)
                     )
@@ -674,7 +687,7 @@ class InfiniLoopTerminal:
                     if not self.validate_audio_file(output_file):
                         raise Exception("Output validation failed")
 
-                    self.log_message(f"🧬 Loop ready! {final_duration:.1f}s\n")
+                    self.log_message(f"🧬 Next loop ready! {final_duration:.1f}s\n")
 
                     del y
                     del y_loop
@@ -743,145 +756,30 @@ class InfiniLoopTerminal:
 
 
     def normalize_audio_advanced(self, y, sr):
-        try:
-            rms_original = np.sqrt(np.mean(y**2))
-            peak_original = np.max(np.abs(y))
 
-            if rms_original < 1e-8:
-                self.log_message("❌ Nearly silent audio, applying gain")
+        try:
+            TARGET_PEAK = 0.7
+            current_peak = np.max(np.abs(y))
+
+            if current_peak < 1e-8:
                 return y * 0.1
 
+            gain = TARGET_PEAK / current_peak
+            y_normalized = y * gain
 
-            if self.volume_history:
-                target_rms_final = np.mean(self.volume_history)
-                self.log_message(f"📈 Adaptive RMS target: {target_rms_final:.3f}")
-            else:
-                target_rms_final = 0.10
+            self.log_message(f"🎚️ Peak norm: {current_peak:.3f} → {TARGET_PEAK:.3f} (gain: {gain:.2f}x)")
 
-            meter = pyln.Meter(sr)
-            try:
-                loudness = meter.integrated_loudness(y)
+            final_peak = np.max(np.abs(y_normalized))
+            if final_peak > 0.95:
+                y_normalized *= (0.95 / final_peak)
 
-                if loudness < -50:
-                    self.log_message(f"❌ Very low loudness ({loudness:.1f}), using RMS")
-                    y_normalized = y * (target_rms_final / rms_original)
-                else:
-                    target_lufs = -16.0
-                    y_normalized = pyln.normalize.loudness(y, loudness, target_lufs)
-                    self.log_message(f"🎚️ LUFS: {loudness:.1f} → {target_lufs}")
-
-            except Exception as lufs_error:
-                self.log_message(f"❌ LUFS failed: {lufs_error}, using RMS")
-                y_normalized = y * (target_rms_final / rms_original)
-
-            peak_after_lufs = np.max(np.abs(y_normalized))
-            max_allowed_peak = 0.95
-
-            if peak_after_lufs > max_allowed_peak:
-                peak_reduction = max_allowed_peak / peak_after_lufs
-                y_normalized *= peak_reduction
-                self.log_message(f"🎚️ Peak: {peak_after_lufs:.3f} → {max_allowed_peak}")
-
-
-            rms_final = np.sqrt(np.mean(y_normalized**2))
-            rms_tolerance = 0.03
-
-            if abs(rms_final - target_rms_final) > rms_tolerance:
-                rms_adjustment = target_rms_final / rms_final
-                y_normalized *= rms_adjustment
-                final_peak = np.max(np.abs(y_normalized))
-                if final_peak > max_allowed_peak:
-                    y_normalized *= (max_allowed_peak / final_peak)
-
-                rms_final_adjusted = np.sqrt(np.mean(y_normalized**2))
-                self.log_message(f"🎚️ RMS cons: {rms_final:.3f} → {rms_final_adjusted:.3f}")
-                rms_final = rms_final_adjusted
-
-
-            self.volume_history.append(rms_final)
-            if len(self.volume_history) > self.max_volume_history:
-                self.volume_history.pop(0)
-
-            y_normalized = self.spectral_balance_adjustment(y_normalized, sr)
             return y_normalized
 
         except Exception as e:
-            self.log_message(f"❌ Normalization failed: {e}")
+            self.log_message(f"❌ Normalizzazione fallita: {e}")
             rms = np.sqrt(np.mean(y**2))
             if rms > 0:
                 return y * (0.1 / rms)
-            return y
-
-    def spectral_balance_adjustment(self, y, sr):
-
-        try:
-
-            mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=64)
-            mel_db = librosa.power_to_db(mel_spec)
-
-
-            low_energy = np.mean(mel_db[0:16])
-            mid_energy = np.mean(mel_db[16:48])
-            high_energy = np.mean(mel_db[48:64])
-
-
-            target_low = -20.0
-            target_mid = -15.0
-            target_high = -25.0
-
-
-            low_adj = min(0.1, max(-0.1, (target_low - low_energy) * 0.02))
-            mid_adj = min(0.1, max(-0.1, (target_mid - mid_energy) * 0.02))
-            high_adj = min(0.1, max(-0.1, (target_high - high_energy) * 0.02))
-
-
-            if abs(low_adj) > 0.05 or abs(mid_adj) > 0.05 or abs(high_adj) > 0.05:
-                y_balanced = self.apply_gentle_eq(y, sr, low_adj, mid_adj, high_adj)
-                self.log_message(f"🎛️ Spectral balance: L{low_adj:+.2f} M{mid_adj:+.2f} H{high_adj:+.2f}\n")
-                return y_balanced
-
-            return y
-
-        except Exception as e:
-            self.log_message(f"❌ Spectral balance skipped: {e}")
-            return y
-
-    def apply_gentle_eq(self, y, sr, low_gain, mid_gain, high_gain):
-
-        try:
-            from scipy.signal import butter, sosfilt
-
-
-            low_freq = 250
-            high_freq = 4000
-
-
-            sos_low = butter(2, low_freq, btype='low', fs=sr, output='sos')
-            sos_mid = butter(2, [low_freq, high_freq], btype='band', fs=sr, output='sos')
-            sos_high = butter(2, high_freq, btype='high', fs=sr, output='sos')
-
-
-            y_low = sosfilt(sos_low, y)
-            y_mid = sosfilt(sos_mid, y)
-            y_high = sosfilt(sos_high, y)
-
-
-            y_low *= (10 ** (low_gain / 20))
-            y_mid *= (10 ** (mid_gain / 20))
-            y_high *= (10 ** (high_gain / 20))
-
-
-            y_eq = y_low + y_mid + y_high
-
-
-            peak = np.max(np.abs(y_eq))
-            if peak > 0.95:
-                y_eq *= (0.95 / peak)
-
-            return y_eq
-
-        except Exception as e:
-            self.log_message(f"❌ EQ failed: {e}")
             return y
 
 
@@ -892,7 +790,7 @@ class InfiniLoopTerminal:
 
             p, m, d = self.PROMPT, self.model, self.duration
             self.generation_status = f"Generating '{p}'"
-            self.log_message("🎼 Generating new sample...\n")
+            self.log_message("🎼 Generating new sample\n")
 
             with self.safe_temp_file() as raw, self.safe_temp_file() as proc:
                 self.debug_file_state("PRE_GENERATION", raw)
@@ -906,7 +804,7 @@ class InfiniLoopTerminal:
                 self.debug_file_state("POST_GENERATION", raw)
                 self._normalize_audio(raw)
 
-                self.generation_status = "Loop analysis running..."
+                self.generation_status = "Loop analysis running"
                 self.process_loop_detection(raw, proc)
 
                 self._finalize_audio(outfile, proc)
@@ -918,7 +816,7 @@ class InfiniLoopTerminal:
         except subprocess.TimeoutExpired:
             self._handle_timeout()
         except Exception as e:
-            self.log_message(f"❌ General generation failure: {e}")
+            self.log_message(f"❌ Failed!")
             self.generation_status = "Error"
             raise
         finally:
@@ -948,7 +846,7 @@ class InfiniLoopTerminal:
             "generation_time": round(elapsed, 3)
         })
         self.save_benchmark_data()
-        self.log_message("📈 Benchmark stats updated...\n")
+        self.log_message("📈 Benchmark stats updated\n")
 
     def _normalize_audio(self, path):
         if not self.validate_audio_file(path):
@@ -1022,9 +920,7 @@ class InfiniLoopTerminal:
             return "UNKNOWN ARTIST"
 
 
-    def loop_current_crossfade_blocking(
-        self, filepath, crossfade_sec_unused, stop_event
-    ):
+    def loop_current_crossfade_blocking(self, filepath, crossfade_sec_unused, stop_event):
 
         try:
             if not self.validate_audio_file(filepath):
@@ -1109,8 +1005,13 @@ class InfiniLoopTerminal:
 
 
     def safe_file_swap(self):
+
         with self.swap_lock:
             try:
+
+                if not self.can_swap_now():
+                    self.log_message(f"⏱️ Waiting for minimum duration ({self.min_song_duration}s)")
+                    return False
 
                 with self.next_file_lock:
                     if not self.validate_audio_file(self.NEXT):
@@ -1119,7 +1020,7 @@ class InfiniLoopTerminal:
                 env = os.environ.copy()
                 env["SDL_AUDIODRIVER"] = self.audio_driver
 
-                self.log_message("🎵 Mixing loops...\n")
+                self.log_message("🎵 Both loops ready, mixing\n")
 
                 next_process = subprocess.Popen(
                     [
@@ -1174,6 +1075,10 @@ class InfiniLoopTerminal:
 
                 self.stop_event = threading.Event()
 
+
+                self.current_loop_start_time = time.time()
+                self.min_duration_satisfied = False
+
                 return True
 
             except Exception as e:
@@ -1183,7 +1088,13 @@ class InfiniLoopTerminal:
 
 
     def run_loop(self):
+
         self.stop_event = threading.Event()
+
+
+        self.current_loop_start_time = time.time()
+        self.min_duration_satisfied = False
+
         self.loop_thread = threading.Thread(
             target=self.loop_current_crossfade_blocking,
             args=(self.CURRENT, self.CROSSFADE_SEC, self.stop_event),
@@ -1201,6 +1112,12 @@ class InfiniLoopTerminal:
                 if not self.is_playing:
                     break
 
+
+                self.wait_for_swap_opportunity()
+
+                if not self.is_playing:
+                    break
+
                 if not self.safe_file_swap():
                     self.log_message("❌ Swap failed, regenerating...")
                     continue
@@ -1212,7 +1129,70 @@ class InfiniLoopTerminal:
 
             except Exception as e:
                 consecutive_errors += 1
-                self.log_message(f"❌ Error! {str(e)}")
+                self.log_message(f"❌ {str(e)}")
+
+
+    def can_swap_now(self):
+
+        if not self.current_loop_start_time:
+            return True
+
+        elapsed = time.time() - self.current_loop_start_time
+        min_time_reached = elapsed >= self.min_song_duration
+
+        if min_time_reached and not self.min_duration_satisfied:
+            self.min_duration_satisfied = True
+            self.log_message(f"✅ Song ended, waiting next loop")
+
+        if not min_time_reached:
+            return False
+
+        return self.validate_audio_file(self.NEXT)
+
+
+
+    def wait_for_swap_opportunity(self):
+
+        while self.is_playing and not self.can_swap_now():
+            if not self.current_loop_start_time:
+                break
+
+            elapsed = time.time() - self.current_loop_start_time
+            remaining = max(0, self.min_song_duration - elapsed)
+
+            if remaining > 0:
+
+                if elapsed % 30 < 0.5:
+                    self.log_message(f"⏱️ Current loop: {elapsed:.1f}s, {remaining:.1f}s left")
+            else:
+
+                if not self.validate_audio_file(self.NEXT):
+                    if elapsed % 10 < 0.5:
+                        self.log_message(f"⏳ Waiting for NEXT file generation (elapsed: {elapsed:.1f}s)")
+
+            time.sleep(0.5)
+
+
+    def get_current_loop_timing(self):
+
+        if not self.current_loop_start_time:
+            return {
+                'elapsed': 0,
+                'remaining_min_time': self.min_song_duration,
+                'min_time_satisfied': False,
+                'can_swap': False
+            }
+
+        elapsed = time.time() - self.current_loop_start_time
+        remaining = max(0, self.min_song_duration - elapsed)
+        min_satisfied = elapsed >= self.min_song_duration
+
+        return {
+            'elapsed': elapsed,
+            'remaining_min_time': remaining,
+            'min_time_satisfied': min_satisfied,
+            'can_swap': self.can_swap_now()
+        }
 
 
     def main_loop(self):
@@ -1231,7 +1211,7 @@ class InfiniLoopTerminal:
                 ]:
                     if not self.validate_audio_file(file_path):
                         self.log_message(
-                            f"📁 Generating initial sample ({file_name})..."
+                            f"📁 Generating initial sample ({file_name})"
                         )
 
                         future = self.thread_pool.submit(
@@ -1390,7 +1370,6 @@ class InfiniLoopTerminal:
 
 
     def print_status(self):
-
         status = "🟢 PLAYING" if self.is_playing else "🔴 STOPPED"
         generation = "🎼 YES" if self.is_generating else "💤 NO"
 
@@ -1398,10 +1377,20 @@ class InfiniLoopTerminal:
         print(f"   Status:       {status}")
         print(f"   Prompt:       '{self.PROMPT}'")
         print(f"   Gen. duration: {self.duration}s")
+        print(f"   Min song dur.: {self.min_song_duration}s")
         print(f"   Audio driver: {self.audio_driver}")
         print(f"   Generating:   {generation}")
         if self.is_generating:
             print(f"   Gen. status:  {self.generation_status}")
+
+        if self.is_playing and self.current_loop_start_time:
+            elapsed = time.time() - self.current_loop_start_time
+            remaining = max(0, self.min_song_duration - elapsed)
+            print(f"   Loop elapsed: {elapsed:.1f}s")
+            if remaining > 0:
+                print(f"   Min dur. left: {remaining:.1f}s")
+            else:
+                print(f"   Min dur.:     ✅ Satisfied")
 
         print(f"\n📂 FILE STATUS:")
         with self.file_lock:
@@ -1491,8 +1480,9 @@ def interactive_mode(app):
             elif cmd[0] == "set":
                 if len(cmd) < 2:
                     print("❌ Available options:")
-                    print("    duration  - Generated sample duration")
-                    print("    driver    - System audio driver")
+                    print("    duration     - Generated sample duration")
+                    print("    minduration  - Minimum song duration")
+                    print("    driver       - System audio driver")
                     print("💡 Use 'set <option>' to change")
                     continue
 
@@ -1508,6 +1498,21 @@ def interactive_mode(app):
                             print(f"✅ Duration: {app.duration}s")
                         else:
                             print("❌ Duration must be between 5 and 30 seconds")
+                    except ValueError:
+                        print("❌ Non-numeric value")
+
+                elif option == "minduration":
+                    print("\n⏱️ MINIMUM SONG DURATION:")
+                    print("    Range: 10-300 seconds (5 minutes)")
+                    print("    Current loop will play at least this long before switching")
+                    print("    Tip: 30-60s for variety, 120s+ for longer listening")
+                    try:
+                        min_dur = int(input(f"Minimum duration in seconds [current: {app.min_song_duration}s]: "))
+                        if 10 <= min_dur <= 300:
+                            app.min_song_duration = min_dur
+                            print(f"✅ Minimum song duration: {app.min_song_duration}s")
+                        else:
+                            print("❌ Minimum duration must be between 10 and 300 seconds")
                     except ValueError:
                         print("❌ Non-numeric value")
 
@@ -1530,7 +1535,7 @@ def interactive_mode(app):
                         print("❌ Invalid driver")
                 else:
                     print(f"❌ Option '{option}' not recognized")
-                    print("💡 Options: duration, driver")
+                    print("💡 Options: duration, minduration, driver")
 
             elif cmd[0] == "help":
                 print("\n🆘 AVAILABLE COMMANDS:")
@@ -1547,6 +1552,7 @@ def interactive_mode(app):
                 print("   quit/exit/q         - Exit program")
                 print("\n⚙️ CONFIGURABLE OPTIONS:")
                 print("   set duration        - Change generation duration (5-30s)")
+                print("   set minduration     - Change minimum song duration (10-300s)")
                 print("   set driver          - Change audio driver (pulse/alsa/dsp)")
                 print("\n💡 EXAMPLES:")
                 print("   start 'ambient chill loop'")
@@ -1554,6 +1560,7 @@ def interactive_mode(app):
                 print("   save my_loop.wav")
                 print("   validate both")
                 print("   debug on")
+                print("   set minduration     - Set minimum time before switching loops")
 
             elif cmd[0] in ["quit", "exit", "q"]:
                 app.stop_loop()
@@ -1594,12 +1601,6 @@ Fixed settings:
   AI Model: Medium (balanced)
   Crossfade: 1ms (minimum)
 
-APPLIED FIXES:
-  ✅ Race condition in file swapping eliminated
-  ✅ Complete audio validation implemented
-  ✅ Safe temporary files with context manager
-  ✅ Swap synchronized with natural loop end
-  ✅ Debug mode for troubleshooting
         """,
     )
 
@@ -1838,12 +1839,6 @@ Fixed settings:
   AI Model: Medium (balanced)
   Crossfade: 1ms (minimum)
 
-APPLIED FIXES:
-  ✅ Race condition in file swapping eliminated
-  ✅ Complete audio validation implemented
-  ✅ Safe temporary files with context manager
-  ✅ Swap synchronized with natural loop end
-  ✅ Debug mode for troubleshooting
         """,
     )
 
