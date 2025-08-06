@@ -727,7 +727,7 @@ class InfiniLoopTerminal:
         if not candidates: raise Exception("No candidates found")
         best = sorted(candidates, key=lambda x: x["score"], reverse=True)[0]
         if best["score"] < 0.15: raise Exception(f"Best score too low: {best['score']:.3f}")
-        self.log_message("🎯 Beat-safe zero-crossing\n")
+        self.log_message("🎯 Beat-safe zero-crossing")
 
         s, e = best["start"], best["end"]
 
@@ -748,7 +748,7 @@ class InfiniLoopTerminal:
             self.log_message(f"❌ Zero-crossing failed")
 
         dur = (best["end"] - best["start"]) / sr
-        self.log_message("✅ Loop found! Checking duration\n")
+        self.log_message("✅ Loop found! Checking duration")
 
         return {
             "start_sample": best["start"],

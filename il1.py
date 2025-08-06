@@ -270,12 +270,10 @@ class InfiniLoopGUI:
         self.notebook.pack(fill='both', expand=True, pady=(20, 0))
 
         self.create_controls_tab()
-        self.create_settings_tab()
-
         self.create_log_tab()
-
         self.app.load_benchmark_data()
         self.create_benchmark_tab()
+        self.create_settings_tab()
 
         self.create_status_bar(main_container)
 
@@ -708,7 +706,7 @@ class InfiniLoopGUI:
     def create_log_tab(self):
 
         log_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
-        self.notebook.add(log_frame, text="📋 Log")
+        self.notebook.add(log_frame, text="📋 Console")
 
         log_container = tk.Frame(log_frame, bg=self.colors['border'])
         log_container.pack(fill='both', expand=True, padx=10, pady=10)
