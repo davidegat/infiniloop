@@ -39,9 +39,10 @@ class InfiniLoopTerminal:
 
         self.CROSSFADE_MS = 1500
         self.CROSSFADE_SEC = self.CROSSFADE_MS / 1000
-        self.PROMPT, self.model, self.duration = "", "medium", 8
+        self.PROMPT, self.model, self.duration = "", "small", 8
 
         self.min_song_duration = 30
+        self.min_sample_duration = 2.6
 
         self.audio_driver = "alsa" if os.path.exists("/proc/asound") and os.access("/dev/snd", os.R_OK | os.X_OK) else "pulse"
 
@@ -548,7 +549,7 @@ class InfiniLoopTerminal:
                 break
 
         if best["score"] < 0.15:
-            raise Exception("No interesting loop.")
+            raise Exception("No interesting loops.")
 
         dur = (best["end"] - best["start"]) / sr
         if dur < 1.5:
@@ -566,14 +567,14 @@ class InfiniLoopTerminal:
 
     def process_loop_detection(self, input_file, output_file):
 
-        MIN_LOOP_DURATION = 2.6
+        MIN_LOOP_DURATION = self.min_sample_duration
         MAX_LOOP_ATTEMPTS = 1
 
         try:
             self.debug_file_state("PRE_LOOP_DETECTION", input_file)
 
             if not self.validate_audio_file(input_file):
-                raise Exception(f"Invalid input file: {input_file}")
+                raise Exception(f"Corrupted input file!")
 
             y, sr = librosa.load(input_file, sr=None, mono=True)
 

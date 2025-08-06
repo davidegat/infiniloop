@@ -60,11 +60,10 @@ class InfiniLoopGUI:
 
 
     def setup_styles(self):
-
         style = ttk.Style()
         style.theme_use('clam')
 
-
+        # Stili base
         style.configure(".",
             background=self.colors['bg'],
             foreground=self.colors['text'],
@@ -72,13 +71,13 @@ class InfiniLoopGUI:
             focuscolor='none',
             relief='flat')
 
-
+        # Frame cards
         style.configure("Card.TFrame",
             background=self.colors['bg_card'],
             relief='raised',
             borderwidth=2)
 
-
+        # Labels
         style.configure("Heading.TLabel",
             background=self.colors['bg'],
             foreground=self.colors['accent'],
@@ -89,7 +88,7 @@ class InfiniLoopGUI:
             foreground=self.colors['accent'],
             font=('Segoe UI', 24, 'bold'))
 
-
+        # Buttons
         style.configure("Accent.TButton",
             background=self.colors['accent'],
             foreground='white',
@@ -115,6 +114,7 @@ class InfiniLoopGUI:
         style.map("Danger.TButton",
             background=[('active', '#ff5c4c')])
 
+        # Notebook
         style.configure("TNotebook",
             background=self.colors['bg'],
             borderwidth=0)
@@ -130,6 +130,31 @@ class InfiniLoopGUI:
             foreground=[('selected', self.colors['text'])],
             padding=[('selected', [20, 12])])
 
+        # ← AGGIUNTO: Stile per Combobox
+        style.configure("TCombobox",
+            fieldbackground=self.colors['bg_secondary'],
+            background=self.colors['bg_secondary'],
+            foreground=self.colors['text'],
+            bordercolor=self.colors['border'],
+            arrowcolor=self.colors['text'],
+            focuscolor='none',
+            selectbackground=self.colors['accent'],
+            selectforeground='white')
+
+        style.map("TCombobox",
+            fieldbackground=[('readonly', self.colors['bg_secondary']),
+                            ('focus', self.colors['bg_secondary'])],
+            background=[('readonly', self.colors['bg_secondary'])],
+            foreground=[('readonly', self.colors['text'])],
+            arrowcolor=[('readonly', self.colors['text'])],
+            selectbackground=[('readonly', self.colors['accent'])],
+            selectforeground=[('readonly', 'white')])
+
+        # Stile per il dropdown del Combobox
+        self.root.option_add('*TCombobox*Listbox.background', self.colors['bg_secondary'])
+        self.root.option_add('*TCombobox*Listbox.foreground', self.colors['text'])
+        self.root.option_add('*TCombobox*Listbox.selectBackground', self.colors['accent'])
+        self.root.option_add('*TCombobox*Listbox.selectForeground', 'white')
 
     def create_ui(self):
 
@@ -190,7 +215,6 @@ class InfiniLoopGUI:
 
 
     def create_controls_tab(self):
-
         controls_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
         self.notebook.add(controls_frame, text="🎛️ Controls")
 
@@ -216,12 +240,12 @@ class InfiniLoopGUI:
                 bg=self.colors['bg_card'], fg=self.colors['text']).pack(anchor='w', pady=(0, 5))
 
         self.prompt_entry = tk.Entry(prompt_frame,
-                                     font=('Segoe UI', 11),
-                                     bg=self.colors['bg_secondary'],
-                                     fg=self.colors['text'],
-                                     insertbackground=self.colors['accent'],
-                                     relief='flat',
-                                     bd=10)
+                                    font=('Segoe UI', 11),
+                                    bg=self.colors['bg_secondary'],
+                                    fg=self.colors['text'],
+                                    insertbackground=self.colors['accent'],
+                                    relief='flat',
+                                    bd=10)
         self.prompt_entry.pack(fill='x', pady=(0, 10))
         self.prompt_entry.bind('<Return>', lambda e: self.start_loop())
         self.prompt_entry.insert(0, "e.g. ambient chill loop, jazz piano...")
@@ -245,21 +269,20 @@ class InfiniLoopGUI:
             "Synthwave": "80s retro synthwave, seamless nointro loop"
         }
 
-
         for name, prompt in presets.items():
             btn = tk.Button(preset_frame,
-                           text=name,
-                           font=('Segoe UI', 9),
-                           bg=self.colors['bg_secondary'],
-                           fg=self.colors['text'],
-                           activebackground=self.colors['accent'],
-                           activeforeground='white',
-                           relief='flat',
-                           bd=0,
-                           padx=15,
-                           pady=5,
-                           cursor='hand2',
-                           command=lambda p=prompt: self.set_preset(p))
+                        text=name,
+                        font=('Segoe UI', 9),
+                        bg=self.colors['bg_secondary'],
+                        fg=self.colors['text'],
+                        activebackground=self.colors['accent'],
+                        activeforeground='white',
+                        relief='flat',
+                        bd=0,
+                        padx=15,
+                        pady=5,
+                        cursor='hand2',
+                        command=lambda p=prompt: self.set_preset(p))
             btn.pack(side='left', padx=2)
             self.bind_hover(btn)
 
@@ -267,49 +290,49 @@ class InfiniLoopGUI:
         button_frame.pack(fill='x', pady=10)
 
         self.start_button = tk.Button(button_frame,
-                                      text="▶️  START LOOP",
-                                      font=('Segoe UI', 14, 'bold'),
-                                      bg=self.colors['success'],
-                                      fg='white',
-                                      activebackground='#00f094',
-                                      activeforeground='white',
-                                      relief='flat',
-                                      bd=0,
-                                      padx=30,
-                                      pady=15,
-                                      cursor='hand2',
-                                      command=self.start_loop)
+                                    text="▶️  START",
+                                    font=('Segoe UI', 14, 'bold'),
+                                    bg=self.colors['success'],
+                                    fg='white',
+                                    activebackground='#00f094',
+                                    activeforeground='white',
+                                    relief='flat',
+                                    bd=0,
+                                    padx=30,
+                                    pady=15,
+                                    cursor='hand2',
+                                    command=self.start_loop)
         self.start_button.pack(side='left', fill='x', expand=True, padx=(0, 5))
 
         self.stop_button = tk.Button(button_frame,
-                                     text="⏹️  STOP",
-                                     font=('Segoe UI', 14, 'bold'),
-                                     bg=self.colors['danger'],
-                                     fg='white',
-                                     activebackground='#ff5c4c',
-                                     activeforeground='white',
-                                     relief='flat',
-                                     bd=0,
-                                     padx=30,
-                                     pady=15,
-                                     cursor='hand2',
-                                     state='disabled',
-                                     command=self.stop_loop)
+                                    text="⏹️  STOP",
+                                    font=('Segoe UI', 14, 'bold'),
+                                    bg=self.colors['danger'],
+                                    fg='white',
+                                    activebackground='#ff5c4c',
+                                    activeforeground='white',
+                                    relief='flat',
+                                    bd=0,
+                                    padx=30,
+                                    pady=15,
+                                    cursor='hand2',
+                                    state='disabled',
+                                    command=self.stop_loop)
         self.stop_button.pack(side='left', fill='x', expand=True, padx=(5, 0))
 
         save_button = tk.Button(prompt_frame,
-                               text="💾  Save Current Loop",
-                               font=('Segoe UI', 11, 'bold'),
-                               bg=self.colors['accent'],
-                               fg='white',
-                               activebackground=self.colors['accent_hover'],
-                               activeforeground='white',
-                               relief='flat',
-                               bd=0,
-                               padx=20,
-                               pady=10,
-                               cursor='hand2',
-                               command=self.save_loop)
+                            text="💾  Save Current Loop",
+                            font=('Segoe UI', 11, 'bold'),
+                            bg=self.colors['accent'],
+                            fg='white',
+                            activebackground=self.colors['accent_hover'],
+                            activeforeground='white',
+                            relief='flat',
+                            bd=0,
+                            padx=20,
+                            pady=10,
+                            cursor='hand2',
+                            command=self.save_loop)
         save_button.pack(fill='x', pady=(5, 0))
 
         np_frame = self.create_card(scrollable_frame, "🎧 Loop info")
@@ -321,10 +344,11 @@ class InfiniLoopGUI:
             'genre': tk.StringVar(value="---")
         }
 
+        # ← Modifica: aggiunto "Model:" nella lista
         for label, var in [("Title:", self.np_info['title']),
-                           ("Artist:", self.np_info['artist']),
-                           ("Duration:", self.np_info['duration']),
-                           ("Genre:", self.np_info['genre'])]:
+                        ("Artist:", self.np_info['artist']),
+                        ("Duration:", self.np_info['duration']),
+                        ("Genre:", self.np_info['genre'])]:
             row = tk.Frame(np_frame, bg=self.colors['bg_card'])
             row.pack(fill='x', pady=5)
             tk.Label(row, text=label,
@@ -345,18 +369,51 @@ class InfiniLoopGUI:
         self.app.min_song_duration = self.min_duration_var.get()
         self.save_settings()
 
+    def update_model(self, event=None):
+        """Aggiorna il modello AI nell'app e salva le impostazioni"""
+        self.app.model = self.model_var.get()
+        self.save_settings()
+
+    def update_min_sample_duration(self):
+        """Aggiorna min_sample_duration nell'app e salva le impostazioni"""
+        self.app.min_sample_duration = self.min_sample_var.get()
+        self.save_settings()
 
     def create_settings_tab(self):
-
         settings_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
         self.notebook.add(settings_frame, text="⚙️ Settings")
 
         settings_card = self.create_card(settings_frame, "⚙️ Configuration")
 
+        # Selezione modello AI
+        model_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
+        model_frame.pack(fill='x', pady=10)
+
+        tk.Label(model_frame, text="AI Model:",
+                font=('Segoe UI', 11),
+                bg=self.colors['bg_card'],
+                fg=self.colors['text']).pack(side='left')
+
+        self.model_var = tk.StringVar(value=self.app.model)
+        model_menu = ttk.Combobox(model_frame,
+                                textvariable=self.model_var,
+                                values=["small", "medium", "large"],
+                                state="readonly",
+                                width=15)
+        model_menu.pack(side='left', padx=10)
+        model_menu.bind('<<ComboboxSelected>>', self.update_model)
+
+        model_help = tk.Label(model_frame,
+                            text="(prioritizes variety over sound quality)",
+                            font=('Segoe UI', 9),
+                            bg=self.colors['bg_card'],
+                            fg=self.colors['text_secondary'])
+        model_help.pack(side='left', padx=(10, 0))
+
         duration_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         duration_frame.pack(fill='x', pady=10)
 
-        tk.Label(duration_frame, text="Generation duration:",
+        tk.Label(duration_frame, text="Sample length:",
                 font=('Segoe UI', 11),
                 bg=self.colors['bg_card'],
                 fg=self.colors['text']).pack(side='left')
@@ -381,7 +438,7 @@ class InfiniLoopGUI:
         min_duration_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         min_duration_frame.pack(fill='x', pady=10)
 
-        tk.Label(min_duration_frame, text="Minimum song duration:",
+        tk.Label(min_duration_frame, text="Song duration:",
                 font=('Segoe UI', 11),
                 bg=self.colors['bg_card'],
                 fg=self.colors['text']).pack(side='left')
@@ -409,6 +466,41 @@ class InfiniLoopGUI:
                             bg=self.colors['bg_card'],
                             fg=self.colors['text_secondary'])
         help_label.pack(side='left', padx=(10, 0))
+
+        # ← AGGIUNTO: Minimum sample duration
+        min_sample_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
+        min_sample_frame.pack(fill='x', pady=10)
+
+        tk.Label(min_sample_frame, text="Minimum loop length:",
+                font=('Segoe UI', 11),
+                bg=self.colors['bg_card'],
+                fg=self.colors['text']).pack(side='left')
+
+        self.min_sample_var = tk.DoubleVar(value=getattr(self.app, 'min_sample_duration', 2.6))
+        min_sample_spin = tk.Spinbox(min_sample_frame,
+                                    from_=1.0, to=10.0,
+                                    increment=0.1,
+                                    textvariable=self.min_sample_var,
+                                    font=('Segoe UI', 11),
+                                    bg=self.colors['bg_secondary'],
+                                    fg=self.colors['text'],
+                                    buttonbackground=self.colors['accent'],
+                                    width=10,
+                                    format="%.1f",
+                                    command=self.update_min_sample_duration)
+        min_sample_spin.pack(side='left', padx=10)
+
+        tk.Label(min_sample_frame, text="seconds",
+                font=('Segoe UI', 10),
+                bg=self.colors['bg_card'],
+                fg=self.colors['text_secondary']).pack(side='left')
+
+        sample_help_label = tk.Label(min_sample_frame,
+                                    text="(minimum acceptable loop length)",
+                                    font=('Segoe UI', 9),
+                                    bg=self.colors['bg_card'],
+                                    fg=self.colors['text_secondary'])
+        sample_help_label.pack(side='left', padx=(10, 0))
 
         driver_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         driver_frame.pack(fill='x', pady=10)
@@ -454,6 +546,7 @@ class InfiniLoopGUI:
                                 cursor='hand2',
                                 command=self.validate_files)
         validate_btn.pack(anchor='w', pady=10)
+
 
 
     def create_log_tab(self):
@@ -612,7 +705,7 @@ class InfiniLoopGUI:
 
 
         self.status_label = tk.Label(status_frame,
-                                     text="🔴 Ready",
+                                     text=f"🔴 Ready - Model: {self.app.model}",
                                      font=('Segoe UI', 10, 'bold'),
                                      bg=self.colors['bg_secondary'],
                                      fg=self.colors['text'])
@@ -703,7 +796,7 @@ class InfiniLoopGUI:
         self.stop_button.config(state='normal')
         self.prompt_entry.config(state='disabled')
         self.status_indicator.config(text="🟢")
-        self.status_label.config(text="🟢 PLAYING")
+        self.status_label.config(text=f"🟢 PLAYING")
 
         thread = threading.Thread(target=self._run_loop, args=(prompt,), daemon=True)
         thread.start()
@@ -715,14 +808,13 @@ class InfiniLoopGUI:
 
 
     def stop_loop(self):
-
         self.app.stop_loop()
         self.is_running = False
         self.start_button.config(state='normal')
         self.stop_button.config(state='disabled')
         self.prompt_entry.config(state='normal')
         self.status_indicator.config(text="🔴")
-        self.status_label.config(text="🔴 STOPPED")
+        self.status_label.config(text=f"🔴 STOPPED - Model: {self.app.model}")  # ← Modifica qui
 
         self.current_loop_file = None
         self.last_title = None
@@ -783,9 +875,7 @@ class InfiniLoopGUI:
         self.app.debug_mode = self.debug_var.get()
         self.save_settings()
 
-
     def update_loop(self):
-
         update_now_playing = False
         while not self.log_queue.empty():
             msg = self.log_queue.get()
@@ -798,7 +888,6 @@ class InfiniLoopGUI:
                 self.log_text.see('end')
 
         if self.app.is_playing:
-
             if self.app.is_generating:
                 self.generation_label.config(text=f"{self.app.generation_status}")
                 self.progress_label.config(text="⏳")
@@ -869,11 +958,8 @@ class InfiniLoopGUI:
                     pass
 
         else:
-
             self.generation_label.config(text="")
             self.progress_label.config(text="")
-
-
             self.current_loop_file = None
             self.last_title = None
             self.last_artist = None
@@ -882,10 +968,11 @@ class InfiniLoopGUI:
 
 
     def save_settings(self):
-
         settings = {
+            "model": self.app.model,
             "duration": self.app.duration,
             "min_song_duration": getattr(self.app, 'min_song_duration', 30),
+            "min_sample_duration": getattr(self.app, 'min_sample_duration', 2.6),  # ← AGGIUNTO
             "audio_driver": self.app.audio_driver,
             "debug_mode": self.app.debug_mode,
             "benchmark_enabled": self.benchmark_var.get(),
@@ -896,11 +983,15 @@ class InfiniLoopGUI:
             json.dump(settings, f)
 
 
+    # PASSO 6: Modificare load_settings in il1.py
     def load_settings(self):
-
         try:
             with open("infiniloop_settings.json", "r") as f:
                 settings = json.load(f)
+
+            self.app.model = settings.get("model", self.app.model)
+            if hasattr(self, 'model_var'):
+                self.model_var.set(self.app.model)
 
             self.app.duration = settings.get("duration", self.app.duration)
             self.duration_var.set(self.app.duration)
@@ -908,6 +999,11 @@ class InfiniLoopGUI:
             self.app.min_song_duration = settings.get("min_song_duration", 30)
             if hasattr(self, 'min_duration_var'):
                 self.min_duration_var.set(self.app.min_song_duration)
+
+            # ← AGGIUNTO: Caricamento min_sample_duration
+            self.app.min_sample_duration = settings.get("min_sample_duration", 2.6)
+            if hasattr(self, 'min_sample_var'):
+                self.min_sample_var.set(self.app.min_sample_duration)
 
             self.app.audio_driver = settings.get("audio_driver", self.app.audio_driver)
             self.driver_var.set(self.app.audio_driver)
