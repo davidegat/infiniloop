@@ -146,7 +146,6 @@ MusicGPT will download the selected model on first use. The very first generatio
 This will download the required model and give you an idea of generation times before using INFINI LOOP.
 
 ## Usage
-**Please note: it has been reported that, when prompt includes "4/4", results in loop quality can improve.**
 
 ### GUI Version (`il1.py`) - Recommended
 
@@ -514,7 +513,6 @@ MusicGPT scaricherà il modello selezionato al primo utilizzo. La primissima gen
 Questo scaricherà il modello richiesto e ti darà un'idea dei tempi di generazione prima di usare INFINI LOOP.
 
 ## Utilizzo
-**Nota bene: è stato evidenziato che includere "4/4" nel prompt può produrre loop migliori**
 
 ### Versione GUI (`il1.py`) - Raccomandata
 
