@@ -319,7 +319,8 @@ This project is released under the Creative Commons Attribution-NonCommercial 4.
 - ❌ Commercial use without permission
 - ❌ Distribution without attribution
 
-For commercial licensing, please contact the authors.
+**If you obtain a loop by using INFINI LOOP, anyway, you are not allowed to use it commercially.**
+For commercial use of this software, please contact the authors.
 
 ## Credits
 
@@ -350,7 +351,7 @@ Una volta configurato e in esecuzione, la tua macchina diventa una stazione musi
 
 INFINI LOOP è alimentato da MusicGPT (https://github.com/gabotechs/MusicGPT) e i modelli MusicGen di Meta (https://huggingface.co/spaces/facebook/MusicGen). Secondo Meta, il modello è stato addestrato su dati con licenza dalle seguenti fonti: la Meta Music Initiative Sound Collection, la collezione musicale Shutterstock e la collezione musicale Pond5. Vedi il documento per maggiori dettagli sul set di addestramento e il preprocessing corrispondente.
 
-Tutti i file audio (e le statistiche) generati con INFINI LOOP sono prodotti localmente e non vengono inviati a, nè fanno uso di, servizi esterni. La musica generata dai modelli MusicGen è interamente di proprietà dell'utente, che mantiene tutti i diritti per usare, distribuire, modificare e commercializzare senza restrizioni. **Se hai creato un loop usando INFINI LOOP, tuttavia, non sei autorizato ad utilizzarlo per scopi commerciali.**
+Tutti i file audio (e le statistiche) generati con INFINI LOOP sono prodotti localmente e non vengono inviati a, nè fanno uso di, servizi esterni. La musica generata dai modelli MusicGen è interamente di proprietà dell'utente, che mantiene tutti i diritti per usare, distribuire, modificare e commercializzare senza restrizioni. **Se hai creato un loop usando INFINI LOOP, tuttavia, non sei autorizzato ad utilizzarlo per scopi commerciali.**
 
 Versione GUI:
 
@@ -663,7 +664,8 @@ Questo progetto è rilasciato sotto la Licenza Creative Commons Attribution-NonC
 - ❌ Uso commerciale senza permesso
 - ❌ Distribuzione senza attribuzione
 
-Per licenze commerciali, contatta gli autori.
+**Se hai creato un loop usando INFINI LOOP, tuttavia, non sei autorizzato ad utilizzarlo per scopi commerciali.**
+Per l'uso commerciale di questo software, contatta gli autori.
 
 ## Crediti
 
