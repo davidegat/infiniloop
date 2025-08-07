@@ -1194,13 +1194,11 @@ class InfiniLoopTerminal:
                 self._handle_subprocess_err(e)
             else:
                 self.generation_status = "Stopped"
-                raise Exception("Generation stopped by user")
         except subprocess.TimeoutExpired:
             if not self.stop_requested:
                 self._handle_timeout()
             else:
                 self.generation_status = "Stopped"
-                raise Exception("Generation stopped by user")
         except Exception as e:
             if "stopped by user" in str(e).lower():
                 self.generation_status = "Stopped"
@@ -1237,7 +1235,7 @@ class InfiniLoopTerminal:
             while True:
 
                 if self.current_generation_process is None:
-                    raise Exception("Generation process was terminated\n")
+                    raise Exception("Generation stopped\n")
 
                 poll_result = self.current_generation_process.poll()
                 if poll_result is not None:
@@ -1245,9 +1243,8 @@ class InfiniLoopTerminal:
                     break
 
                 if self.stop_requested:
-                    self.logging_system("🛑 Generation stopped")
+
                     self._terminate_generation_process()
-                    raise Exception("Generation stopped by user")
 
                 time.sleep(0.1)
 
@@ -1258,7 +1255,7 @@ class InfiniLoopTerminal:
                     stdout, stderr = self.current_generation_process.communicate()
                     self.current_generation_process = None
                 else:
-                    raise Exception("Generation process was terminated")
+                    raise Exception("Generation stopped\n")
 
             if returncode != 0:
                 raise subprocess.CalledProcessError(returncode, "musicgpt", stderr)
@@ -1331,9 +1328,8 @@ class InfiniLoopTerminal:
     def _handle_subprocess_err(self, e):
 
         if self.stop_requested and e.returncode == -9:
-            self.logging_system("🛑 Generation stopped by user")
             self.generation_status = "Stopped"
-            raise Exception("Generation stopped by user")
+            raise Exception("Generation stopped")
         else:
 
             self.logging_system(f"❌ Generation error: {e}\n{e.stderr.strip()}")
