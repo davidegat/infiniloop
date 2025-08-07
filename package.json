@@ -1,0 +1,33 @@
+{
+  "name": "infiniloop",
+  "version": "1.0.0",
+  "description": "Local AI-powered music loop generator with real-time playback, loop detection, and GUI.",
+  "main": "il1.py",
+  "scripts": {
+    "start": "python3 il1.py"
+  },
+  "keywords": [
+    "ai",
+    "music",
+    "loop",
+    "generation",
+    "python",
+    "librosa",
+    "tkinter"
+  ],
+  "author": "gat (Davide)",
+  "license": "CC-BY-NC-4.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davidegat/infiniloop"
+  },
+  "dependencies": {
+    "librosa": "*",
+    "numpy": "*",
+    "soundfile": "*",
+    "pydub": "*",
+    "scipy": "*",
+    "psutil": "*",
+    "pyloudnorm": "*"
+  }
+}
