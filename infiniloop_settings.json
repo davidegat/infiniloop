@@ -1,12 +1,12 @@
 {
   "model": "small",
-  "duration": 12,
+  "duration": 11,
   "min_song_duration": 60,
-  "min_sample_duration": 4.0,
+  "min_sample_duration": 3.5,
   "audio_driver": "alsa",
   "debug_mode": false,
   "benchmark_enabled": true,
-  "last_prompt": "slow calm lofi hiphop, music for studying, 4/4, punchy drums, tight bass, nointro seamless loop",
+  "last_prompt": "jamaican, slow reggae track, relaxing rhythm, 4/4 nointro seamless loop",
   "presets": {
     "Ambient": "ambient, electronic, stargazing on a calm night, 4/4 nointro seamless loop",
     "Reggae": "jamaican, slow reggae track, relaxing rhythm, 4/4 nointro seamless loop",
