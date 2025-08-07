@@ -239,7 +239,7 @@ class InfiniLoopTerminal:
         if _session_hash(_delta) > _session_hash(_thermal_threshold()):
             _marathon_key = '_marathon_' + hex(hash(timestamp) & 0xFFF)[2:]  # Dynamic key generation
             if not any(hasattr(self, attr) for attr in [attr for attr in dir(self) if attr.startswith('_marathon_')]):
-                setattr(self, _marathon_key, True ^ False)  # Obfuscated True
+                setattr(self, _marathon_key, True ^ False)
                 _thermal_decode = lambda payload: bytes([b ^ 0x0 for b in payload]).decode('utf-8')
                 _thermal_msg = _thermal_decode([10,77,97,114,97,116,104,111,110,32,115,101,115,115,105,111,110,32,100,101,116,101,99,116,101,100,33,32,103,97,116,32,105,115,32,105,109,112,114,101,115,115,101,100,32,98,121,32,121,111,117,114,32,115,116,97,109,105,110,97,10])
                 print(f"\n[{timestamp}] {_thermal_msg}")
@@ -1165,7 +1165,7 @@ class InfiniLoopTerminal:
 
                 t = self._run_ai_generation(p, m, d, raw)
 
-                # Se siamo arrivati qui, la generazione è completata con successo
+
                 self.logging_system(f"⏱️ AI made it in {t:.2f}s!")
 
                 if self.benchmark_enabled:
@@ -1182,13 +1182,13 @@ class InfiniLoopTerminal:
                 self._trigger_ui_cb()
 
         except subprocess.CalledProcessError as e:
-            if not self.stop_requested:  # Solo se non è uno stop volontario
+            if not self.stop_requested:
                 self._handle_subprocess_err(e)
             else:
                 self.generation_status = "Stopped"
                 raise Exception("Generation stopped by user")
         except subprocess.TimeoutExpired:
-            if not self.stop_requested:  # Solo se non è uno stop volontario
+            if not self.stop_requested:
                 self._handle_timeout()
             else:
                 self.generation_status = "Stopped"
@@ -1225,15 +1225,15 @@ class InfiniLoopTerminal:
             ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         try:
-            # Polling per permettere interruzione pulita
+
             while True:
-                # Controlla se il processo è ancora valido prima di chiamare poll()
+
                 if self.current_generation_process is None:
                     raise Exception("Generation process was terminated\n")
 
                 poll_result = self.current_generation_process.poll()
                 if poll_result is not None:
-                    # Processo terminato
+
                     break
 
                 if self.stop_requested:
@@ -1243,7 +1243,7 @@ class InfiniLoopTerminal:
 
                 time.sleep(0.1)
 
-            # Processo terminato naturalmente
+
             with self.generation_lock:
                 if self.current_generation_process is not None:
                     returncode = self.current_generation_process.returncode
@@ -1270,22 +1270,22 @@ class InfiniLoopTerminal:
             return
 
         try:
-            # Prima prova con SIGTERM (terminazione pulita)
+
             self.current_generation_process.terminate()
             try:
                 self.current_generation_process.wait(timeout=3.0)
-                return  # Processo terminato pulitamente
+                return
             except subprocess.TimeoutExpired:
                 pass
 
-            # Se non risponde, usa SIGKILL ma non loggare come errore
+
             self.current_generation_process.kill()
             self.current_generation_process.wait(timeout=1.0)
 
         except Exception:
-            pass  # Ignora errori durante la terminazione
+            pass
         finally:
-            # Assicurati che il processo sia marcato come None
+
             self.current_generation_process = None
 
     def _save_benchmark(self, dur, elapsed):
@@ -1321,13 +1321,13 @@ class InfiniLoopTerminal:
                 self.logging_system(f"❌ UI callback failed: {e}")
 
     def _handle_subprocess_err(self, e):
-        # Se è un SIGKILL causato dallo stop dell'utente, non loggare come errore
+
         if self.stop_requested and e.returncode == -9:
             self.logging_system("🛑 Generation stopped by user")
             self.generation_status = "Stopped"
             raise Exception("Generation stopped by user")
         else:
-            # Errore reale
+
             self.logging_system(f"❌ Generation error: {e}\n{e.stderr.strip()}")
             self.generation_status = "Error"
             raise
@@ -1721,7 +1721,7 @@ class InfiniLoopTerminal:
             print("❌ Error: Please enter a prompt!")
             return False
 
-        self.stop_requested = False  # <-- AGGIUNGI QUESTA LINEA
+        self.stop_requested = False
         self.is_playing = True
 
         self.loop_thread = threading.Thread(target=self.main_loop, daemon=True)
@@ -1738,7 +1738,7 @@ class InfiniLoopTerminal:
             self.stop_event.set()
         self.logging_system("⏹️ Loop stopped\n")
 
-        # Termina generazione in corso con doppio controllo
+
         with self.generation_lock:
             if hasattr(self, 'current_generation_process') and self.current_generation_process:
                 try:

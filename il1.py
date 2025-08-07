@@ -66,7 +66,7 @@ class InfiniLoopGUI:
         if not model_dir or not os.path.exists(model_dir):
             return None
 
-        # Trova il file più grande nella cartella del modello
+
         largest_file = None
         largest_size = 0
 
@@ -94,7 +94,7 @@ class InfiniLoopGUI:
         model_path = self.get_model_path(model_name)
         if model_path and os.path.exists(model_path):
             size_bytes = os.path.getsize(model_path)
-            return round(size_bytes / (1024 * 1024), 1)  # Converti in MB
+            return round(size_bytes / (1024 * 1024), 1)
         return 0
 
 
@@ -117,7 +117,7 @@ class InfiniLoopGUI:
 
         if result:
             try:
-                # Elimina l'intera cartella del modello
+
                 shutil.rmtree(model_dir)
                 self.capture_log(f"✅ Model {model_name} deleted successfully ({size_mb} MB freed)")
                 messagebox.showinfo("Success", f"Model {model_name} deleted successfully!")
@@ -527,10 +527,7 @@ class InfiniLoopGUI:
 
 
     def update_duration_estimate(self):
-        """
-        Aggiorna la label con la stima del tempo di generazione
-        basandosi sulla durata attualmente selezionata.
-        """
+
         try:
             if not hasattr(self, 'duration_estimate_label'):
                 return
@@ -539,7 +536,7 @@ class InfiniLoopGUI:
             estimated_time = self.get_estimated_generation_time(current_duration)
 
             if estimated_time is not None:
-                # Formatta il tempo stimato
+
                 if estimated_time < 60:
                     time_text = f"~{int(round(estimated_time))}s"
                 else:
@@ -555,22 +552,18 @@ class InfiniLoopGUI:
                 self.duration_estimate_label.config(text="")
 
         except Exception as e:
-            # In caso di errore, non mostra nulla
+
             if hasattr(self, 'duration_estimate_label'):
                 self.duration_estimate_label.config(text="")
 
 
     def get_estimated_generation_time(self, target_duration):
-        """
-        Calcola il tempo stimato di generazione per una durata target
-        basandosi sui dati delle statistiche esistenti.
-        Restituisce None se non ci sono dati sufficienti.
-        """
+
         try:
             if not hasattr(self.app, 'benchmark_data') or not self.app.benchmark_data:
                 return None
 
-            # Raggruppa i dati per durata e calcola le medie
+
             duration_averages = {}
             duration_counts = {}
 
@@ -585,51 +578,51 @@ class InfiniLoopGUI:
                 duration_averages[dur] += gen_time
                 duration_counts[dur] += 1
 
-            # Calcola le medie finali
+
             for dur in duration_averages:
                 duration_averages[dur] = duration_averages[dur] / duration_counts[dur]
 
-            # Se abbiamo meno di 2 punti dati, non possiamo interpolare
+
             if len(duration_averages) < 2:
-                # Se abbiamo esattamente la durata richiesta, restituiamo quella
+
                 if target_duration in duration_averages:
                     return duration_averages[target_duration]
                 return None
 
-            # Se abbiamo esattamente la durata richiesta
+
             if target_duration in duration_averages:
                 return duration_averages[target_duration]
 
-            # Ordinamento per interpolazione
+
             sorted_durations = sorted(duration_averages.keys())
 
-            # Trova i punti per interpolazione/estrapolazione
+
             if target_duration < sorted_durations[0]:
-                # Estrapolazione verso il basso usando i primi due punti
+
                 x1, x2 = sorted_durations[0], sorted_durations[1]
             elif target_duration > sorted_durations[-1]:
-                # Estrapolazione verso l'alto usando gli ultimi due punti
+
                 x1, x2 = sorted_durations[-2], sorted_durations[-1]
             else:
-                # Interpolazione: trova i due punti che racchiudono il target
+
                 x1 = x2 = None
                 for i in range(len(sorted_durations) - 1):
                     if sorted_durations[i] <= target_duration <= sorted_durations[i + 1]:
                         x1, x2 = sorted_durations[i], sorted_durations[i + 1]
                         break
 
-                # Fallback se non troviamo i punti (non dovrebbe mai succedere)
+
                 if x1 is None:
                     x1, x2 = sorted_durations[0], sorted_durations[1]
 
             y1, y2 = duration_averages[x1], duration_averages[x2]
 
-            # Interpolazione/estrapolazione lineare: y = y1 + (y2 - y1) * (x - x1) / (x2 - x1)
-            if x2 == x1:  # Evita divisione per zero
+
+            if x2 == x1:
                 return y1
 
             estimated_time = y1 + (y2 - y1) * (target_duration - x1) / (x2 - x1)
-            return max(0, estimated_time)  # Non può essere negativo
+            return max(0, estimated_time)
 
         except Exception as e:
             return None
@@ -640,7 +633,7 @@ class InfiniLoopGUI:
 
         settings_card = self.create_card(settings_frame, "⚙️ Configuration")
 
-        # Model frame
+
         model_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         model_frame.pack(fill='x', pady=10)
 
@@ -649,7 +642,7 @@ class InfiniLoopGUI:
                 bg=self.colors['bg_card'],
                 fg=self.colors['text']).pack(side='left')
 
-        # Model control frame
+
         model_control_frame = tk.Frame(model_frame, bg=self.colors['bg_card'])
         model_control_frame.pack(side='left', padx=10, fill='x', expand=True)
 
@@ -662,11 +655,11 @@ class InfiniLoopGUI:
         self.model_menu.pack(side='left')
         self.model_menu.bind('<<ComboboxSelected>>', self.update_model)
 
-        # Delete frame
+
         delete_frame = tk.Frame(model_control_frame, bg=self.colors['bg_card'])
         delete_frame.pack(side='left', padx=(10, 0))
 
-        # Model delete buttons
+
         self.model_delete_buttons = {}
         for model in ["small", "medium", "large"]:
             btn = tk.Button(delete_frame,
@@ -712,7 +705,7 @@ class InfiniLoopGUI:
                                 width=10,
                                 command=self.update_duration)
         duration_spin.pack(side='left', padx=10)
-        # AGGIUNTO: binding per aggiornare la stima quando si cambia valore manualmente
+
         self.duration_var.trace('w', lambda *args: self.update_duration())
 
         tk.Label(duration_frame, text="seconds",
@@ -720,7 +713,7 @@ class InfiniLoopGUI:
                 bg=self.colors['bg_card'],
                 fg=self.colors['text_secondary']).pack(side='left')
 
-        # Label per la stima del tempo di generazione
+
         self.duration_estimate_label = tk.Label(duration_frame, text="",
                                             font=('Segoe UI', 9),
                                             bg=self.colors['bg_card'],
@@ -759,7 +752,7 @@ class InfiniLoopGUI:
                             fg=self.colors['text_secondary'])
         help_label.pack(side='left', padx=(10, 0))
 
-        # Min sample frame
+
         min_sample_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         min_sample_frame.pack(fill='x', pady=10)
 
@@ -839,7 +832,7 @@ class InfiniLoopGUI:
                                 command=self.validate_files)
         validate_btn.pack(anchor='w', pady=10)
 
-        # Aggiorna la stima iniziale
+
         self.update_duration_estimate()
 
 
@@ -864,11 +857,11 @@ class InfiniLoopGUI:
         log_scrollbar.pack(side='right', fill='y')
         self.log_text.config(yscrollcommand=log_scrollbar.set)
 
-        # Frame per i pulsanti
+
         button_frame = tk.Frame(log_frame, bg=self.colors['bg'])
         button_frame.pack(pady=5)
 
-        # Pulsante START
+
         self.log_start_button = tk.Button(button_frame,
                                         text="▶️ START",
                                         font=('Segoe UI', 10, 'bold'),
@@ -884,7 +877,7 @@ class InfiniLoopGUI:
                                         command=self.start_loop)
         self.log_start_button.pack(side='left', padx=5)
 
-        # Pulsante STOP
+
         self.log_stop_button = tk.Button(button_frame,
                                         text="⏹️ STOP",
                                         font=('Segoe UI', 10, 'bold'),
@@ -901,7 +894,7 @@ class InfiniLoopGUI:
                                         command=self.stop_loop)
         self.log_stop_button.pack(side='left', padx=5)
 
-        # Pulsante CLEAR LOG
+
         clear_btn = tk.Button(button_frame,
                             text="🗑️ Clear Log",
                             font=('Segoe UI', 10),
@@ -1005,7 +998,7 @@ class InfiniLoopGUI:
 
             data = self.app.benchmark_data
 
-            # Raggruppa per durata
+
             buckets = {}
             for entry in data:
                 dur = entry["duration_requested"]
@@ -1018,7 +1011,7 @@ class InfiniLoopGUI:
                 formatted = f"{avg_secs}s ({avg_mins} min)"
                 self.average_tree.insert("", "end", values=(f"{dur}s", formatted))
 
-            # Aggiorna anche la stima nella sezione settings
+
             self.update_duration_estimate()
 
         except Exception as e:
@@ -1131,11 +1124,11 @@ class InfiniLoopGUI:
         self.save_settings()
         self.is_running = True
 
-        # Aggiorna pulsanti nel tab Controls
+
         self.start_button.config(state='disabled')
         self.stop_button.config(state='normal')
 
-        # Aggiorna pulsanti nel tab Console
+
         self.log_start_button.config(state='disabled')
         self.log_stop_button.config(state='normal')
 
@@ -1146,16 +1139,16 @@ class InfiniLoopGUI:
         thread = threading.Thread(target=self._run_loop, args=(prompt,), daemon=True)
         thread.start()
 
-    # Modifica nel metodo stop_loop():
+
     def stop_loop(self):
         self.app.stop_loop()
         self.is_running = False
 
-        # Aggiorna pulsanti nel tab Controls
+
         self.start_button.config(state='normal')
         self.stop_button.config(state='disabled')
 
-        # Aggiorna pulsanti nel tab Console
+
         self.log_start_button.config(state='normal')
         self.log_stop_button.config(state='disabled')
 
@@ -1208,7 +1201,7 @@ class InfiniLoopGUI:
     def update_duration(self):
         self.app.duration = self.duration_var.get()
         self.save_settings()
-        # Aggiorna la stima del tempo di generazione
+
         self.update_duration_estimate()
 
 
@@ -1321,7 +1314,7 @@ class InfiniLoopGUI:
             "model": self.app.model,
             "duration": self.app.duration,
             "min_song_duration": getattr(self.app, 'min_song_duration', 30),
-            "min_sample_duration": getattr(self.app, 'min_sample_duration', 2.6),  # ← AGGIUNTO
+            "min_sample_duration": getattr(self.app, 'min_sample_duration', 2.6),
             "audio_driver": self.app.audio_driver,
             "debug_mode": self.app.debug_mode,
             "benchmark_enabled": self.benchmark_var.get(),
