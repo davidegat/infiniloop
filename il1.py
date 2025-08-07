@@ -74,6 +74,7 @@ class InfiniLoopGUI:
         self.update_model_ui()
         self.update_loop()
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.pending_prompt = None
 
     def get_model_path(self, model_name):
         home = os.path.expanduser("~")
@@ -195,10 +196,37 @@ class InfiniLoopGUI:
         else:
             return f"{model} (not installed)"
 
-    def on_generation_complete(self):
 
+    def on_generation_complete(self):
         if hasattr(self, "update_benchmark_table"):
             self.update_benchmark_table()
+
+        # Se c'è un prompt pending (cambio preset durante play), applicalo ora
+        if self.app.pending_prompt:
+            new_prompt = self.app.pending_prompt
+
+            # Aggiorna tutte le variabili prompt
+            self.PROMPT = new_prompt
+            self.last_prompt = new_prompt
+            self.app.PROMPT = new_prompt
+            self.app.last_prompt = new_prompt
+
+            # CORREZIONE: Riattiva temporaneamente la casella per aggiornare il testo
+            was_disabled = str(self.prompt_entry['state']) == 'disabled'
+            if was_disabled:
+                self.prompt_entry.config(state='normal')
+
+            # Aggiorna la casella di input
+            self.prompt_entry.delete(0, 'end')
+            self.prompt_entry.insert(0, new_prompt)
+
+            # Ridisabilita se era disabilitata
+            if was_disabled:
+                self.prompt_entry.config(state='disabled')
+
+            # Reset dei pending prompt
+            self.pending_prompt = None
+            self.app.pending_prompt = None
 
 
     def setup_styles(self):
@@ -299,24 +327,30 @@ class InfiniLoopGUI:
         self.root.option_add('*TCombobox*Listbox.selectForeground', 'white')
 
     def create_ui(self):
-
+        # Configura il colore di sfondo della finestra principale
         self.root.configure(bg=self.colors['bg'])
 
+        # Container principale con padding
         main_container = tk.Frame(self.root, bg=self.colors['bg'])
         main_container.pack(fill='both', expand=True, padx=20, pady=20)
 
+        # IMPORTANTE: Crea prima la status bar con side='bottom'
+        # così sarà sempre visibile in fondo
+        self.create_status_bar(main_container)
+
+        # Poi crea l'header in cima
         self.create_header(main_container)
 
+        # Infine crea il notebook che occuperà lo spazio rimanente
         self.notebook = ttk.Notebook(main_container)
-        self.notebook.pack(fill='both', expand=True, pady=(20, 0))
+        self.notebook.pack(fill='both', expand=True, pady=(20, 10))
 
+        # Crea tutte le tab
         self.create_controls_tab()
         self.create_log_tab()
         self.app.load_benchmark_data()
         self.create_benchmark_tab()
         self.create_settings_tab()
-
-        self.create_status_bar(main_container)
 
 
     def create_header(self, parent):
@@ -355,15 +389,41 @@ class InfiniLoopGUI:
 
 
     def on_preset_selected(self, event=None):
-        """Gestisce la selezione di un preset dal menu a tendina"""
         selected = self.preset_var.get()
-        if selected != "Select preset..." and selected in self.presets:
-            # Mostra un'anteprima del preset nel campo prompt
+        if selected != "Select..." and selected in self.presets:
+            new_prompt = self.presets[selected]
+
+            if self.app.is_playing:
+                # Durante il play: interrompi generazione corrente e applica subito
+                self.pending_prompt = new_prompt
+                self.app.pending_prompt = new_prompt
+
+                # NOVITÀ: Interrompi la generazione in corso
+                self.app.interrupt_current_generation()
+
+                self.capture_log(f"🎯 Preset '{selected}' applied")
+            else:
+                # Non in play: applica immediatamente
+                self.prompt_entry.delete(0, 'end')
+                self.prompt_entry.insert(0, new_prompt)
+                self.PROMPT = new_prompt
+                self.last_prompt = new_prompt
+                self.app.PROMPT = new_prompt
+                self.app.last_prompt = new_prompt
+
+
+    def _apply_pending_params(self):
+        if self.pending_prompt:
+            self.PROMPT = self.pending_prompt
+            self.last_prompt = self.pending_prompt
             self.prompt_entry.delete(0, 'end')
-            self.prompt_entry.insert(0, self.presets[selected])
+            self.prompt_entry.insert(0, self.pending_prompt)
+            self.pending_prompt = None
+
+
 
     def load_preset(self):
-        """Carica il preset selezionato nel campo prompt"""
+
         selected = self.preset_var.get()
         if selected == "Select preset...":
             messagebox.showwarning("Warning", "Please select a preset first!")
@@ -373,7 +433,7 @@ class InfiniLoopGUI:
             self.prompt_entry.insert(0, self.presets[selected])
 
     def save_preset(self):
-        """Salva il prompt corrente come nuovo preset"""
+
         current_prompt = self.prompt_entry.get().strip()
         if not current_prompt or current_prompt == "e.g. ambient chill loop, jazz piano...":
             messagebox.showwarning("Warning", "Please enter a prompt to save as preset!")
@@ -445,7 +505,7 @@ class InfiniLoopGUI:
         name_entry.bind('<Return>', lambda e: save_action())
 
     def edit_preset(self):
-        """Modifica un preset esistente"""
+
         selected = self.preset_var.get()
         if selected == "Select preset..." or selected not in self.presets:
             messagebox.showwarning("Warning", "Please select a preset to edit!")
@@ -522,7 +582,7 @@ class InfiniLoopGUI:
                 command=dialog.destroy).pack(side='left', padx=5)
 
     def delete_preset(self):
-        """Elimina un preset"""
+
         selected = self.preset_var.get()
         if selected == "Select preset..." or selected not in self.presets:
             messagebox.showwarning("Warning", "Please select a preset to delete!")
@@ -545,12 +605,12 @@ class InfiniLoopGUI:
         self.capture_log(f"✅ Deleted preset: {selected}")
 
     def update_preset_menu(self):
-        """Aggiorna il menu a tendina dei preset"""
+
         preset_names = ["Select preset..."] + list(self.presets.keys())
         self.preset_menu['values'] = preset_names
 
     def set_preset(self, preset):
-        """Funzione helper per compatibilità con il vecchio sistema"""
+
         self.prompt_entry.delete(0, 'end')
         self.prompt_entry.insert(0, preset)
 
@@ -777,7 +837,7 @@ class InfiniLoopGUI:
 
 
     def update_min_sample_duration(self):
-        """Aggiorna la durata minima del loop e notifica il backend"""
+
         old_min_sample = getattr(self.app, 'min_sample_duration', 2.6)
         self.app.min_sample_duration = self.min_sample_var.get()
 
@@ -1386,31 +1446,34 @@ class InfiniLoopGUI:
 
 
     def create_status_bar(self, parent):
-
+        # Frame della status bar con altezza fissa
         status_frame = tk.Frame(parent, bg=self.colors['bg_secondary'], height=40)
-        status_frame.pack(fill='x', pady=(10, 0))
-        status_frame.pack_propagate(False)
+        # IMPORTANTE: usa side='bottom' per posizionarla sempre in fondo
+        status_frame.pack(side='bottom', fill='x', pady=(10, 0))
+        status_frame.pack_propagate(False)  # Mantiene l'altezza fissa di 40px
 
-
+        # Label di stato principale
         self.status_label = tk.Label(status_frame,
-                                     text=f"🔴 Ready - Model: {self.app.model}",
-                                     font=('Segoe UI', 10, 'bold'),
-                                     bg=self.colors['bg_secondary'],
-                                     fg=self.colors['text'])
+                                    text=f"🔴 Ready - Model: {self.app.model}",
+                                    font=('Segoe UI', 10, 'bold'),
+                                    bg=self.colors['bg_secondary'],
+                                    fg=self.colors['text'])
         self.status_label.pack(side='left', padx=15, pady=10)
 
+        # Label per lo stato della generazione
         self.generation_label = tk.Label(status_frame,
-                                         text="",
-                                         font=('Segoe UI', 10),
-                                         bg=self.colors['bg_secondary'],
-                                         fg=self.colors['text_secondary'])
+                                        text="",
+                                        font=('Segoe UI', 10),
+                                        bg=self.colors['bg_secondary'],
+                                        fg=self.colors['text_secondary'])
         self.generation_label.pack(side='left', padx=15)
 
+        # Label per il progresso
         self.progress_label = tk.Label(status_frame,
-                                       text="",
-                                       font=('Segoe UI', 10),
-                                       bg=self.colors['bg_secondary'],
-                                       fg=self.colors['accent'])
+                                    text="",
+                                    font=('Segoe UI', 10),
+                                    bg=self.colors['bg_secondary'],
+                                    fg=self.colors['accent'])
         self.progress_label.pack(side='right', padx=15)
 
 
@@ -1476,20 +1539,29 @@ class InfiniLoopGUI:
         self.app.start_loop(prompt)
 
     def start_loop(self):
-        prompt = self.prompt_entry.get().strip()
+        # Usa il prompt pending se presente (cambio preset durante play)
+        if self.app.pending_prompt:
+            prompt = self.app.pending_prompt
+            self.app.pending_prompt = None  # Reset dopo uso
+            self.pending_prompt = None
+        else:
+            prompt = self.prompt_entry.get().strip()
+
         if prompt == "e.g. ambient chill loop, jazz piano..." or not prompt:
-            messagebox.warning("Warning", "Please enter a music prompt!")
+            messagebox.showwarning("Warning", "Please enter a music prompt!")
             return
 
+        # Sincronizza il prompt in GUI e backend
+        self.PROMPT = prompt
+        self.last_prompt = prompt
+        self.app.PROMPT = prompt
         self.app.last_prompt = prompt
+
         self.save_settings()
         self.is_running = True
 
-
         self.start_button.config(state='disabled')
         self.stop_button.config(state='normal')
-
-
         self.log_start_button.config(state='disabled')
         self.log_stop_button.config(state='normal')
 
@@ -1499,6 +1571,7 @@ class InfiniLoopGUI:
 
         thread = threading.Thread(target=self._run_loop, args=(prompt,), daemon=True)
         thread.start()
+
 
 
     def stop_loop(self):
@@ -1560,7 +1633,7 @@ class InfiniLoopGUI:
 
 
     def update_duration(self):
-        """Aggiorna la durata del sample e notifica il backend"""
+
         old_duration = self.app.duration
         self.app.duration = self.duration_var.get()
 
@@ -1699,7 +1772,7 @@ class InfiniLoopGUI:
 
 
     def export_presets(self):
-        """Esporta i preset in un file JSON"""
+
         filename = filedialog.asksaveasfilename(
             defaultextension=".json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
@@ -1726,7 +1799,7 @@ class InfiniLoopGUI:
 
 
     def import_presets(self):
-        """Importa i preset da un file JSON"""
+
         filename = filedialog.askopenfilename(
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
             title="Import Presets"
@@ -1781,7 +1854,7 @@ class InfiniLoopGUI:
                 button_frame.pack(pady=20)
 
                 def merge_presets():
-                    """Unisce i preset importati con quelli esistenti (sovrascrive i conflitti)"""
+
                     self.presets.update(imported_presets)
                     self.update_preset_menu()
                     self.update_preset_counts()
@@ -1791,7 +1864,7 @@ class InfiniLoopGUI:
                     messagebox.showinfo("Success", f"Imported {len(imported_presets)} presets successfully!")
 
                 def add_new_only():
-                    """Aggiunge solo i preset che non esistono già"""
+
                     new_presets = {k: v for k, v in imported_presets.items() if k not in self.presets}
                     if new_presets:
                         self.presets.update(new_presets)
@@ -1806,7 +1879,7 @@ class InfiniLoopGUI:
                         messagebox.showinfo("Info", "No new presets to add (all already exist)")
 
                 def replace_all():
-                    """Sostituisce tutti i preset con quelli importati"""
+
                     self.presets = imported_presets.copy()
                     self.update_preset_menu()
                     self.update_preset_counts()
@@ -1860,7 +1933,7 @@ class InfiniLoopGUI:
                 messagebox.showerror("Error", f"Failed to import presets: {e}")
 
     def update_preset_counts(self):
-        """Aggiorna i contatori dei preset nella UI"""
+
         if hasattr(self, 'preset_count_label'):
             self.preset_count_label.config(text=str(len(self.presets)))
 
@@ -1870,7 +1943,7 @@ class InfiniLoopGUI:
 
 
     def reset_presets_to_default(self):
-        """Resetta i preset ai valori predefiniti"""
+
         if messagebox.askyesno("Reset Presets?",
                             "This will reset all presets to their default values.\n"
                             "All custom presets will be lost.\n\n"

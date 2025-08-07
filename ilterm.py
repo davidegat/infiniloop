@@ -45,7 +45,7 @@ class InfiniLoopTerminal:
         self.FILE2 = os.path.join(self.base_dir, "music2.wav")
         self.CURRENT, self.NEXT = self.FILE1, self.FILE2
 
-        self.CROSSFADE_MS = 1000
+        self.CROSSFADE_MS = 500
         self.CROSSFADE_SEC = self.CROSSFADE_MS / 1000
         self.PROMPT, self.model, self.duration = "", "small", 8
 
@@ -93,7 +93,7 @@ class InfiniLoopTerminal:
         self.current_generation_process = None
         self.generation_lock = threading.Lock()
         self._pending_params = {}
-
+        self.pending_prompt = None
 
     def update_generation_params(self, params):
 
@@ -102,21 +102,40 @@ class InfiniLoopTerminal:
         if not self.is_generating:
             self._apply_pending_params()
 
+    def interrupt_current_generation(self):
+
+        self._apply_pending_params()
+
+        with self.generation_lock:
+            if self.current_generation_process and self.is_generating:
+                try:
+
+                    self._terminate_generation_process()
+
+                except Exception as e:
+                    self.logging_system(f"⚠️ Error during generation interrupt: {e}")
+
 
     def _apply_pending_params(self):
 
-        if not self._pending_params:
-            return
+        if hasattr(self, "pending_prompt") and self.pending_prompt:
+            old_prompt = self.PROMPT
+            self.PROMPT = self.pending_prompt
+            self.last_prompt = self.pending_prompt
 
-        for param, value in self._pending_params.items():
-            if param == 'duration':
-                self.duration = value
-            elif param == 'min_song_duration':
-                self.min_song_duration = value
-            elif param == 'min_sample_duration':
-                self.min_sample_duration = value
+            self.logging_system(f"📝 Prompt updated: '{old_prompt}' → '{self.pending_prompt}'")
+            self.pending_prompt = None
 
-        self._pending_params.clear()
+        if hasattr(self, "_pending_params") and self._pending_params:
+            for param, value in self._pending_params.items():
+                if param == 'duration':
+                    self.duration = value
+                elif param == 'min_song_duration':
+                    self.min_song_duration = value
+                elif param == 'min_sample_duration':
+                    self.min_sample_duration = value
+
+            self._pending_params.clear()
 
 
     def load_benchmark_data(self):
@@ -193,6 +212,17 @@ class InfiniLoopTerminal:
         except:
             pass
 
+    def _apply_pending_params(self):
+        if hasattr(self, "pending_prompt") and self.pending_prompt:
+            self.PROMPT = self.pending_prompt
+            self.last_prompt = self.pending_prompt
+
+            if hasattr(self, "ui") and hasattr(self.ui, "prompt_entry"):
+                self.ui.prompt_entry.delete(0, 'end')
+                self.ui.prompt_entry.insert(0, self.pending_prompt)
+                self.ui.log_message(f"🎯 Applied pending prompt: {self.pending_prompt}")
+
+            self.pending_prompt = None
 
     def signal_handler(self, signum, frame):
 
@@ -1300,7 +1330,7 @@ class InfiniLoopTerminal:
             raise
 
     def _terminate_generation_process(self):
-        """Termina il processo di generazione in modo pulito"""
+
         if not self.current_generation_process:
             return
 
