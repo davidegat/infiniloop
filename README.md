@@ -25,6 +25,7 @@ Terminal version:
 - [System Requirements](#system-requirements)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Tips and Tricks](#tips-and-tricks)
 - [Technical Details](#technical-details)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
@@ -209,6 +210,29 @@ Options:
   -v, --verbose            Detailed output
   -h, --help               Show help message
 ```
+## Tips and Tricks
+
+- **Rapid Looping**: Set the song duration lower than the average AI generation time to force quick transitions. Enable statistics to monitor timing data in the Stats tab.
+- **Genre-Specific Tuning**: Different genres may require different settings. Try adjusting the minimum loop length and the sample duration for better results.  
+  Suggested keywords: *"4/4"*, *"loop"*, *"seamless"*, and specific instrument or mood terms relevant to the genre (e.g., *"dub bass"*, *"jazz piano"*, *"ambient pad"*).
+- **Shorter Samples Work Better (Sometimes)**: For some genres (like lofi or jazz), shorter audio samples tend to yield cleaner, more natural loops.
+- **Loop Quality Depends on Structure**: The system prioritizes loops that align with musical phrasing, especially 4, 8, or 16 beat segments. Prompts that imply strong structure help detection.  
+  Suggested keywords: *"4/4"*, *"nointro"*, *"loop"*, *"tight rhythm"*, *"groove locked"*.
+- **Beat Alignment Matters**: Rhythmic consistency improves loop quality. The detection system rewards predictable, well-aligned beats.  
+  Suggested keywords: *"punchy drums"*, *"tight bass"*, *"drum machine"*, *"quantized"*.
+- **Model Size vs. Variety**: Larger models (e.g., "large") offer more variety in style and instrumentation, but not necessarily better audio quality. Smaller models are faster and more consistent.
+- **Start with Presets**: The built-in presets are designed with tested keyword combinations. Use them as a base and modify as needed for your style.
+- **Zero-Crossing Enhancements**: Loop transitions are smoothed using zero-crossing detection. Samples with clean fades and minimal background noise produce better results.  
+  Suggested keywords: *"clean mix"*, *"no noise"*, *"no fade out"*.
+- **Structure Bonuses**: The system gives bonus scores to loops that match musical phrases (like 4, 8, or 16 beats). Matching the prompt and duration to a musical phrase improves results.  
+  Suggested keywords: *"8 bar phrase"*, *"tight measure"*, *"loopable section"*.
+- **Beat Consistency Matters**: The detection algorithm favors samples with stable tempo and rhythm. If you're getting inconsistent results, use terms that imply mechanical or steady timing.  
+  Suggested keywords: *"steady tempo"*, *"quantized beat"*, *"drum machine"*, *"metronome feel"*.
+- **Benchmarking Helps**: Enable benchmark tracking to compare sample duration with actual AI generation time. This helps you find efficient duration settings for your system and model.
+- **Adjust Minimum Loop Length**: If loops feel too short or too long, experiment with the minimum loop length setting. Increase for more complex loops, decrease for minimal or repetitive styles.
+
+
+
 
 ## Technical Details
 
@@ -368,6 +392,7 @@ Versione Terminale:
 - [Requisiti di Sistema](#requisiti-di-sistema)
 - [Installazione](#installazione)
 - [Utilizzo](#utilizzo)
+- [Trucchi e consigli](#trucchi-e-consigli)
 - [Dettagli Tecnici](#dettagli-tecnici)
 - [Risoluzione dei Problemi](#risoluzione-dei-problemi)
 - [Licenza](#licenza)
@@ -554,6 +579,28 @@ Opzioni:
   -v, --verbose            Output dettagliato
   -h, --help               Mostra messaggio aiuto
 ```
+
+## Trucchi e consigli ##
+
+- **Loop Rapidi**: Imposta la durata della canzone a un valore inferiore al tempo medio di generazione dell’AI per forzare transizioni rapide. Attiva le statistiche per monitorare i tempi nella scheda Statistiche.
+- **Regolazioni per Genere**: Generi diversi possono richiedere impostazioni diverse. Prova a modificare la lunghezza minima del loop e la durata del campione per ottenere risultati migliori.  
+  Parole chiave consigliate: *"4/4"*, *"loop"*, *"seamless"*, e termini specifici per strumenti o atmosfera (es. *"dub bass"*, *"jazz piano"*, *"ambient pad"*).
+- **Campioni più Corti Funzionano Meglio (a Volte)**: In alcuni generi (come lofi o jazz), campioni audio più brevi generano loop più puliti e naturali.
+- **La Qualità del Loop Dipende dalla Struttura**: Il sistema dà priorità ai loop che seguono frasi musicali ben definite, in particolare segmenti di 4, 8 o 16 battute. Prompt che suggeriscono una struttura forte aiutano il rilevamento.  
+  Parole chiave consigliate: *"4/4"*, *"nointro"*, *"loop"*, *"tight rhythm"*, *"groove locked"*.
+- **L’Allineamento del Beat è Importante**: Una ritmica coerente migliora la qualità del loop. Il sistema di rilevamento premia beat regolari e ben allineati.  
+  Parole chiave consigliate: *"punchy drums"*, *"tight bass"*, *"drum machine"*, *"quantized"*.
+- **Dimensione del Modello vs. Varietà**: I modelli più grandi (es. "large") offrono maggiore varietà nello stile e negli strumenti, ma non necessariamente una qualità audio superiore. I modelli più piccoli sono più veloci e coerenti.
+- **Usa i Preset**: I preset integrati sono progettati con combinazioni di parole chiave testate. Usali come base e modificali in base al tuo stile.
+- **Ottimizzazione Zero-Crossing**: Le transizioni nei loop sono rese più fluide grazie al rilevamento zero-crossing. I campioni con dissolvenze pulite e poco rumore di fondo danno risultati migliori.  
+  Parole chiave consigliate: *"clean mix"*, *"no noise"*, *"no fade out"*.
+- **Bonus Strutturali**: Il sistema assegna punteggi bonus ai loop che seguono frasi musicali standard (come 4, 8 o 16 battute). Abbinare il prompt e la durata a una frase musicale migliora i risultati.  
+  Parole chiave consigliate: *"8 bar phrase"*, *"tight measure"*, *"loopable section"*.
+- **Costanza del Beat**: L’algoritmo di rilevamento favorisce i campioni con tempo e ritmo stabili. Se ottieni risultati incoerenti, usa termini che suggeriscano un timing regolare o meccanico.  
+  Parole chiave consigliate: *"steady tempo"*, *"quantized beat"*, *"drum machine"*, *"metronome feel"*.
+- **Il Benchmark è Utile**: Attiva il tracciamento delle performance per confrontare la durata richiesta con il tempo reale di generazione. Questo ti aiuta a trovare le durate più efficienti per il tuo sistema e modello.
+- **Regola la Lunghezza Minima del Loop**: Se i loop risultano troppo brevi o troppo lunghi, sperimenta con il parametro di lunghezza minima. Aumentalo per strutture più complesse, riducilo per stili minimalisti o ripetitivi.
+
 
 ## Dettagli Tecnici
 
