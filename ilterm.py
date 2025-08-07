@@ -643,7 +643,7 @@ class InfiniLoopTerminal:
     def find_perfect_loop_beats(self, y, sr, initial_result=None):
 
         if initial_result is not None:
-            self.logging_system("🥁 Zero-crossing optimization")
+            self.logging_system("🥁 Zero-crossing optimization\n")
         else:
             self.logging_system("🥁 Retrying focusing on beat")
 
@@ -1229,7 +1229,7 @@ class InfiniLoopTerminal:
             while True:
                 # Controlla se il processo è ancora valido prima di chiamare poll()
                 if self.current_generation_process is None:
-                    raise Exception("Generation process was terminated")
+                    raise Exception("Generation process was terminated\n")
 
                 poll_result = self.current_generation_process.poll()
                 if poll_result is not None:
@@ -1736,7 +1736,7 @@ class InfiniLoopTerminal:
 
         if hasattr(self, "stop_event"):
             self.stop_event.set()
-        self.logging_system("⏹️ Loop stopped")
+        self.logging_system("⏹️ Loop stopped\n")
 
         # Termina generazione in corso con doppio controllo
         with self.generation_lock:
