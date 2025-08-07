@@ -1226,18 +1226,31 @@ class InfiniLoopTerminal:
 
         try:
             # Polling per permettere interruzione pulita
-            while self.current_generation_process.poll() is None:
+            while True:
+                # Controlla se il processo è ancora valido prima di chiamare poll()
+                if self.current_generation_process is None:
+                    raise Exception("Generation process was terminated")
+
+                poll_result = self.current_generation_process.poll()
+                if poll_result is not None:
+                    # Processo terminato
+                    break
+
                 if self.stop_requested:
                     self.logging_system("🛑 Generation stopped")
                     self._terminate_generation_process()
+                    raise Exception("Generation stopped by user")
+
                 time.sleep(0.1)
 
             # Processo terminato naturalmente
-            returncode = self.current_generation_process.returncode
-            stdout, stderr = self.current_generation_process.communicate()
-
             with self.generation_lock:
-                self.current_generation_process = None
+                if self.current_generation_process is not None:
+                    returncode = self.current_generation_process.returncode
+                    stdout, stderr = self.current_generation_process.communicate()
+                    self.current_generation_process = None
+                else:
+                    raise Exception("Generation process was terminated")
 
             if returncode != 0:
                 raise subprocess.CalledProcessError(returncode, "musicgpt", stderr)
@@ -1271,6 +1284,9 @@ class InfiniLoopTerminal:
 
         except Exception:
             pass  # Ignora errori durante la terminazione
+        finally:
+            # Assicurati che il processo sia marcato come None
+            self.current_generation_process = None
 
     def _save_benchmark(self, dur, elapsed):
         self.benchmark_data.append({
@@ -1716,17 +1732,21 @@ class InfiniLoopTerminal:
 
     def stop_loop(self):
         self.is_playing = False
-        self.stop_requested = True  # <-- AGGIUNGI QUESTA LINEA
+        self.stop_requested = True
 
         if hasattr(self, "stop_event"):
             self.stop_event.set()
         self.logging_system("⏹️ Loop stopped")
 
-        # Termina generazione in corso
+        # Termina generazione in corso con doppio controllo
         with self.generation_lock:
-            if self.current_generation_process:
-                self._terminate_generation_process()
-                self.current_generation_process = None
+            if hasattr(self, 'current_generation_process') and self.current_generation_process:
+                try:
+                    self._terminate_generation_process()
+                except Exception as e:
+                    self.logging_system(f"⚠️ Error stopping generation: {e}")
+                finally:
+                    self.current_generation_process = None
 
         self.thread_pool.shutdown(wait=False, cancel_futures=True)
         self.thread_pool = ThreadPoolExecutor(
