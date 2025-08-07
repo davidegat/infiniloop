@@ -17,7 +17,7 @@ from tkinter import ttk, messagebox, filedialog, font
 import json
 from queue import Queue
 import random
-
+import shutil
 
 from ilterm import InfiniLoopTerminal
 
@@ -53,6 +53,19 @@ class InfiniLoopGUI:
             'text_secondary': '#a0a0b0',
             'border': '#0f4c75'
         }
+
+        # Preset predefiniti che possono essere sovrascritti dal file di configurazione
+        self.default_presets = {
+            "Ambient":   "ambient, electronic, stargazing on a calm night, 4/4 nointro seamless loop",
+            "Reggae":    "jamaican, slow reggae track, relaxing rhythm, 4/4 nointro seamless loop",
+            "EDM":       "disco, driving drum machine, synthesizer, bass, piano, clubby, 4/4, nointro seamless loop",
+            "Rock":      "rock, guitars, drum, bass, up-lifting, moody, 4/4, nointro seamless loop",
+            "Lofi Rap":  "slow calm lofi hiphop, music for studying, 4/4, punchy drums, tight bass, nointro seamless loop",
+            "Synthwave": "80s retro synthwave, punchy drums, tight bass, nointro seamless loop"
+        }
+
+        # I preset effettivi che useremo (verranno caricati dalle impostazioni o dai default)
+        self.presets = self.default_presets.copy()
 
         self.setup_styles()
         self.create_ui()
@@ -341,6 +354,207 @@ class InfiniLoopGUI:
         self.status_indicator.pack(side='right', padx=10)
 
 
+    def on_preset_selected(self, event=None):
+        """Gestisce la selezione di un preset dal menu a tendina"""
+        selected = self.preset_var.get()
+        if selected != "Select preset..." and selected in self.presets:
+            # Mostra un'anteprima del preset nel campo prompt
+            self.prompt_entry.delete(0, 'end')
+            self.prompt_entry.insert(0, self.presets[selected])
+
+    def load_preset(self):
+        """Carica il preset selezionato nel campo prompt"""
+        selected = self.preset_var.get()
+        if selected == "Select preset...":
+            messagebox.showwarning("Warning", "Please select a preset first!")
+            return
+        if selected in self.presets:
+            self.prompt_entry.delete(0, 'end')
+            self.prompt_entry.insert(0, self.presets[selected])
+
+    def save_preset(self):
+        """Salva il prompt corrente come nuovo preset"""
+        current_prompt = self.prompt_entry.get().strip()
+        if not current_prompt or current_prompt == "e.g. ambient chill loop, jazz piano...":
+            messagebox.showwarning("Warning", "Please enter a prompt to save as preset!")
+            return
+
+        # Finestra di dialogo per il nome del preset
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Save Preset")
+        dialog.geometry("400x150")
+        dialog.configure(bg=self.colors['bg'])
+
+        # Centra la finestra
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Preset name:",
+                font=('Segoe UI', 11),
+                bg=self.colors['bg'],
+                fg=self.colors['text']).pack(pady=10)
+
+        name_entry = tk.Entry(dialog,
+                            font=('Segoe UI', 11),
+                            bg=self.colors['bg_secondary'],
+                            fg=self.colors['text'],
+                            width=30)
+        name_entry.pack(pady=5)
+        name_entry.focus()
+
+        button_frame = tk.Frame(dialog, bg=self.colors['bg'])
+        button_frame.pack(pady=20)
+
+        def save_action():
+            name = name_entry.get().strip()
+            if not name:
+                messagebox.showwarning("Warning", "Please enter a preset name!")
+                return
+
+            if name in self.presets:
+                if not messagebox.askyesno("Overwrite?", f"Preset '{name}' already exists. Overwrite?"):
+                    return
+
+            self.presets[name] = current_prompt
+            self.update_preset_menu()
+            self.preset_var.set(name)
+            self.save_settings()
+            self.capture_log(f"✅ Saved preset: {name}")
+            dialog.destroy()
+
+        tk.Button(button_frame, text="Save",
+                font=('Segoe UI', 10),
+                bg=self.colors['success'],
+                fg='white',
+                relief='flat',
+                bd=0,
+                padx=20,
+                pady=8,
+                command=save_action).pack(side='left', padx=5)
+
+        tk.Button(button_frame, text="Cancel",
+                font=('Segoe UI', 10),
+                bg=self.colors['danger'],
+                fg='white',
+                relief='flat',
+                bd=0,
+                padx=20,
+                pady=8,
+                command=dialog.destroy).pack(side='left', padx=5)
+
+        name_entry.bind('<Return>', lambda e: save_action())
+
+    def edit_preset(self):
+        """Modifica un preset esistente"""
+        selected = self.preset_var.get()
+        if selected == "Select preset..." or selected not in self.presets:
+            messagebox.showwarning("Warning", "Please select a preset to edit!")
+            return
+
+        # Finestra di dialogo per modificare il preset
+        dialog = tk.Toplevel(self.root)
+        dialog.title(f"Edit Preset: {selected}")
+        dialog.geometry("500x200")
+        dialog.configure(bg=self.colors['bg'])
+
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text=f"Editing: {selected}",
+                font=('Segoe UI', 12, 'bold'),
+                bg=self.colors['bg'],
+                fg=self.colors['accent']).pack(pady=10)
+
+        tk.Label(dialog, text="Prompt:",
+                font=('Segoe UI', 10),
+                bg=self.colors['bg'],
+                fg=self.colors['text']).pack(anchor='w', padx=20)
+
+        prompt_text = tk.Text(dialog,
+                            font=('Segoe UI', 10),
+                            bg=self.colors['bg_secondary'],
+                            fg=self.colors['text'],
+                            height=4,
+                            width=50,
+                            wrap='word')
+        prompt_text.pack(padx=20, pady=5, fill='both', expand=True)
+        prompt_text.insert('1.0', self.presets[selected])
+        prompt_text.focus()
+
+        button_frame = tk.Frame(dialog, bg=self.colors['bg'])
+        button_frame.pack(pady=15)
+
+        def save_action():
+            new_prompt = prompt_text.get('1.0', 'end-1c').strip()
+            if not new_prompt:
+                messagebox.showwarning("Warning", "Prompt cannot be empty!")
+                return
+
+            self.presets[selected] = new_prompt
+            self.save_settings()
+            self.capture_log(f"✅ Updated preset: {selected}")
+
+            # Se il preset modificato è attualmente selezionato, aggiorna il campo prompt
+            if self.preset_var.get() == selected:
+                self.prompt_entry.delete(0, 'end')
+                self.prompt_entry.insert(0, new_prompt)
+
+            dialog.destroy()
+
+        tk.Button(button_frame, text="Save",
+                font=('Segoe UI', 10),
+                bg=self.colors['success'],
+                fg='white',
+                relief='flat',
+                bd=0,
+                padx=20,
+                pady=8,
+                command=save_action).pack(side='left', padx=5)
+
+        tk.Button(button_frame, text="Cancel",
+                font=('Segoe UI', 10),
+                bg=self.colors['danger'],
+                fg='white',
+                relief='flat',
+                bd=0,
+                padx=20,
+                pady=8,
+                command=dialog.destroy).pack(side='left', padx=5)
+
+    def delete_preset(self):
+        """Elimina un preset"""
+        selected = self.preset_var.get()
+        if selected == "Select preset..." or selected not in self.presets:
+            messagebox.showwarning("Warning", "Please select a preset to delete!")
+            return
+
+        # Non permettere di eliminare i preset predefiniti (opzionale)
+        if selected in self.default_presets:
+            if not messagebox.askyesno("Delete Default Preset?",
+                                    f"'{selected}' is a default preset. Are you sure you want to delete it?\n\n"
+                                    "It can be restored by resetting presets."):
+                return
+        else:
+            if not messagebox.askyesno("Delete Preset?", f"Delete preset '{selected}'?"):
+                return
+
+        del self.presets[selected]
+        self.update_preset_menu()
+        self.preset_var.set("Select preset...")
+        self.save_settings()
+        self.capture_log(f"✅ Deleted preset: {selected}")
+
+    def update_preset_menu(self):
+        """Aggiorna il menu a tendina dei preset"""
+        preset_names = ["Select preset..."] + list(self.presets.keys())
+        self.preset_menu['values'] = preset_names
+
+    def set_preset(self, preset):
+        """Funzione helper per compatibilità con il vecchio sistema"""
+        self.prompt_entry.delete(0, 'end')
+        self.prompt_entry.insert(0, preset)
+
+
     def create_controls_tab(self):
         controls_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
         self.notebook.add(controls_frame, text="🎛️ Controls")
@@ -379,39 +593,72 @@ class InfiniLoopGUI:
         self.prompt_entry.bind('<FocusIn>', self.on_entry_focus_in)
         self.prompt_entry.bind('<FocusOut>', self.on_entry_focus_out)
 
+        # Sistema preset migliorato con menu a tendina
         preset_frame = tk.Frame(prompt_frame, bg=self.colors['bg_card'])
         preset_frame.pack(fill='x', pady=(0, 10))
 
-        tk.Label(preset_frame, text="Presets:",
+        tk.Label(preset_frame, text="Prompts:",
                 font=('Segoe UI', 10),
                 bg=self.colors['bg_card'],
                 fg=self.colors['text_secondary']).pack(side='left', padx=(0, 10))
 
-        presets = {
-            "Ambient":   "ambient, electronic, stargazing on a calm night, 4/4 nointro seamless loop",
-            "Reggae":    "tropical, slow reggae-infused track, relaxing, laid-back rhythm, 4/4 nointro seamless loop",
-            "EDM":       "disco, driving drum machine, synthesizer, bass, piano, clubby, 4/4, nointro seamless loop",
-            "Rock":      "rock, guitars, drum, bass, up-lifting, moody, 4/4, nointro seamless loop",
-            "Lofi Rap":  "slow calm lofi hiphop, music for studying, 4/4, punchy drums, tight bass, nointro seamless loop",
-            "Synthwave": "80s retro synthwave, punchy drums, tight bass, nointro seamless loop"
-        }
+        # Combobox per i preset
+        self.preset_var = tk.StringVar(value="Select...")
+        preset_names = ["Select preset..."] + list(self.presets.keys())
+        self.preset_menu = ttk.Combobox(preset_frame,
+                                        textvariable=self.preset_var,
+                                        values=preset_names,
+                                        state="readonly",
+                                        width=20)
+        self.preset_menu.pack(side='left', padx=(0, 5))
+        self.preset_menu.bind('<<ComboboxSelected>>', self.on_preset_selected)
 
-        for name, prompt in presets.items():
-            btn = tk.Button(preset_frame,
-                        text=name,
-                        font=('Segoe UI', 9),
-                        bg=self.colors['bg_secondary'],
-                        fg=self.colors['text'],
-                        activebackground=self.colors['accent'],
-                        activeforeground='white',
-                        relief='flat',
-                        bd=0,
-                        padx=15,
-                        pady=5,
-                        cursor='hand2',
-                        command=lambda p=prompt: self.set_preset(p))
-            btn.pack(side='left', padx=2)
-            self.bind_hover(btn)
+        # Pulsanti per gestire i preset
+
+        save_btn = tk.Button(preset_frame,
+                            text="Save prompt",
+                            font=('Segoe UI', 9),
+                            bg=self.colors['success'],
+                            fg='white',
+                            activebackground='#00f094',
+                            activeforeground='white',
+                            relief='flat',
+                            bd=0,
+                            padx=10,
+                            pady=5,
+                            cursor='hand2',
+                            command=self.save_preset)
+        save_btn.pack(side='left', padx=2)
+
+        edit_btn = tk.Button(preset_frame,
+                            text="Edit prompt",
+                            font=('Segoe UI', 9),
+                            bg=self.colors['bg_secondary'],
+                            fg=self.colors['text'],
+                            activebackground=self.colors['accent'],
+                            activeforeground='white',
+                            relief='flat',
+                            bd=0,
+                            padx=10,
+                            pady=5,
+                            cursor='hand2',
+                            command=self.edit_preset)
+        edit_btn.pack(side='left', padx=2)
+
+        delete_btn = tk.Button(preset_frame,
+                            text="Delete prompt",
+                            font=('Segoe UI', 9),
+                            bg=self.colors['danger'],
+                            fg='white',
+                            activebackground='#ff5c4c',
+                            activeforeground='white',
+                            relief='flat',
+                            bd=0,
+                            padx=10,
+                            pady=5,
+                            cursor='hand2',
+                            command=self.delete_preset)
+        delete_btn.pack(side='left', padx=2)
 
         button_frame = tk.Frame(prompt_frame, bg=self.colors['bg_card'])
         button_frame.pack(fill='x', pady=10)
@@ -469,7 +716,6 @@ class InfiniLoopGUI:
             'duration': tk.StringVar(value="---"),
             'genre': tk.StringVar(value="---")
         }
-
 
         for label, var in [("Title:", self.np_info['title']),
                         ("Artist:", self.np_info['artist']),
@@ -861,6 +1107,91 @@ class InfiniLoopGUI:
                                 cursor='hand2',
                                 command=self.validate_files)
         validate_btn.pack(anchor='w', pady=10)
+
+        # ===== NUOVA SEZIONE: Presets Management =====
+        presets_card = self.create_card(settings_frame, "🎵 Presets Management")
+
+        tk.Label(presets_card,
+                text="Manage your music generation presets",
+                font=('Segoe UI', 10),
+                bg=self.colors['bg_card'],
+                fg=self.colors['text_secondary']).pack(anchor='w', pady=(0, 10))
+
+        preset_info_frame = tk.Frame(presets_card, bg=self.colors['bg_card'])
+        preset_info_frame.pack(fill='x', pady=5)
+
+        tk.Label(preset_info_frame,
+                text=f"Total presets: ",
+                font=('Segoe UI', 10),
+                bg=self.colors['bg_card'],
+                fg=self.colors['text']).pack(side='left')
+
+        self.preset_count_label = tk.Label(preset_info_frame,
+                                        text=str(len(self.presets)),
+                                        font=('Segoe UI', 10, 'bold'),
+                                        bg=self.colors['bg_card'],
+                                        fg=self.colors['accent'])
+        self.preset_count_label.pack(side='left')
+
+        tk.Label(preset_info_frame,
+                text=f"  •  Custom: ",
+                font=('Segoe UI', 10),
+                bg=self.colors['bg_card'],
+                fg=self.colors['text']).pack(side='left')
+
+        custom_count = len([p for p in self.presets if p not in self.default_presets])
+        self.custom_preset_count_label = tk.Label(preset_info_frame,
+                                                text=str(custom_count),
+                                                font=('Segoe UI', 10, 'bold'),
+                                                bg=self.colors['bg_card'],
+                                                fg=self.colors['success'])
+        self.custom_preset_count_label.pack(side='left')
+
+        button_frame = tk.Frame(presets_card, bg=self.colors['bg_card'])
+        button_frame.pack(fill='x', pady=10)
+
+        reset_presets_btn = tk.Button(button_frame,
+                                    text="🔄  Reset to Defaults",
+                                    font=('Segoe UI', 10),
+                                    bg=self.colors['danger'],
+                                    fg='white',
+                                    activebackground='#ff5c4c',
+                                    relief='flat',
+                                    bd=0,
+                                    padx=15,
+                                    pady=8,
+                                    cursor='hand2',
+                                    command=self.reset_presets_to_default)
+        reset_presets_btn.pack(side='left', padx=5)
+
+        export_btn = tk.Button(button_frame,
+                            text="📤  Export Presets",
+                            font=('Segoe UI', 10),
+                            bg=self.colors['accent'],
+                            fg='white',
+                            activebackground=self.colors['accent_hover'],
+                            relief='flat',
+                            bd=0,
+                            padx=15,
+                            pady=8,
+                            cursor='hand2',
+                            command=self.export_presets)
+        export_btn.pack(side='left', padx=5)
+
+        import_btn = tk.Button(button_frame,
+                            text="📥  Import Presets",
+                            font=('Segoe UI', 10),
+                            bg=self.colors['accent'],
+                            fg='white',
+                            activebackground=self.colors['accent_hover'],
+                            relief='flat',
+                            bd=0,
+                            padx=15,
+                            pady=8,
+                            cursor='hand2',
+                            command=self.import_presets)
+        import_btn.pack(side='left', padx=5)
+        # ===== FINE NUOVA SEZIONE =====
 
         # Aggiorna la stima del tempo di durata
         self.update_duration_estimate()
@@ -1359,12 +1690,197 @@ class InfiniLoopGUI:
             "audio_driver": self.app.audio_driver,
             "debug_mode": self.app.debug_mode,
             "benchmark_enabled": self.benchmark_var.get(),
-            "last_prompt": getattr(self.app, "last_prompt", self.prompt_entry.get().strip())
+            "last_prompt": getattr(self.app, "last_prompt", self.prompt_entry.get().strip()),
+            "presets": self.presets  # Salva i preset personalizzati
         }
 
         with open("infiniloop_settings.json", "w") as f:
-            json.dump(settings, f)
+            json.dump(settings, f, indent=2)
 
+
+    def export_presets(self):
+        """Esporta i preset in un file JSON"""
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            title="Export Presets"
+        )
+
+        if filename:
+            try:
+                export_data = {
+                    "infiniloop_presets": True,
+                    "version": "1.0",
+                    "presets": self.presets,
+                    "exported_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+
+                with open(filename, 'w') as f:
+                    json.dump(export_data, f, indent=2)
+
+                self.capture_log(f"✅ Exported {len(self.presets)} presets to {filename}")
+                messagebox.showinfo("Success", f"Exported {len(self.presets)} presets successfully!")
+            except Exception as e:
+                self.capture_log(f"❌ Failed to export presets: {e}")
+                messagebox.showerror("Error", f"Failed to export presets: {e}")
+
+
+    def import_presets(self):
+        """Importa i preset da un file JSON"""
+        filename = filedialog.askopenfilename(
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            title="Import Presets"
+        )
+
+        if filename:
+            try:
+                with open(filename, 'r') as f:
+                    import_data = json.load(f)
+
+                # Verifica che sia un file di preset valido
+                if not import_data.get("infiniloop_presets"):
+                    messagebox.showerror("Error", "Invalid preset file!")
+                    return
+
+                imported_presets = import_data.get("presets", {})
+
+                if not imported_presets:
+                    messagebox.showwarning("Warning", "No presets found in file!")
+                    return
+
+                # Chiedi all'utente come gestire i conflitti
+                merge_dialog = tk.Toplevel(self.root)
+                merge_dialog.title("Import Presets")
+                merge_dialog.geometry("400x200")
+                merge_dialog.configure(bg=self.colors['bg'])
+                merge_dialog.transient(self.root)
+                merge_dialog.grab_set()
+
+                tk.Label(merge_dialog,
+                        text=f"Found {len(imported_presets)} presets to import",
+                        font=('Segoe UI', 12, 'bold'),
+                        bg=self.colors['bg'],
+                        fg=self.colors['accent']).pack(pady=15)
+
+                # Controlla conflitti
+                conflicts = [name for name in imported_presets if name in self.presets]
+                if conflicts:
+                    tk.Label(merge_dialog,
+                            text=f"⚠️ {len(conflicts)} presets already exist",
+                            font=('Segoe UI', 10),
+                            bg=self.colors['bg'],
+                            fg=self.colors['text_secondary']).pack(pady=5)
+
+                tk.Label(merge_dialog,
+                        text="How would you like to import?",
+                        font=('Segoe UI', 11),
+                        bg=self.colors['bg'],
+                        fg=self.colors['text']).pack(pady=10)
+
+                button_frame = tk.Frame(merge_dialog, bg=self.colors['bg'])
+                button_frame.pack(pady=20)
+
+                def merge_presets():
+                    """Unisce i preset importati con quelli esistenti (sovrascrive i conflitti)"""
+                    self.presets.update(imported_presets)
+                    self.update_preset_menu()
+                    self.update_preset_counts()
+                    self.save_settings()
+                    self.capture_log(f"✅ Merged {len(imported_presets)} presets (overwrote {len(conflicts)} conflicts)")
+                    merge_dialog.destroy()
+                    messagebox.showinfo("Success", f"Imported {len(imported_presets)} presets successfully!")
+
+                def add_new_only():
+                    """Aggiunge solo i preset che non esistono già"""
+                    new_presets = {k: v for k, v in imported_presets.items() if k not in self.presets}
+                    if new_presets:
+                        self.presets.update(new_presets)
+                        self.update_preset_menu()
+                        self.update_preset_counts()
+                        self.save_settings()
+                        self.capture_log(f"✅ Added {len(new_presets)} new presets (skipped {len(conflicts)} existing)")
+                        merge_dialog.destroy()
+                        messagebox.showinfo("Success", f"Added {len(new_presets)} new presets!")
+                    else:
+                        merge_dialog.destroy()
+                        messagebox.showinfo("Info", "No new presets to add (all already exist)")
+
+                def replace_all():
+                    """Sostituisce tutti i preset con quelli importati"""
+                    self.presets = imported_presets.copy()
+                    self.update_preset_menu()
+                    self.update_preset_counts()
+                    self.save_settings()
+                    self.capture_log(f"✅ Replaced all presets with {len(imported_presets)} imported presets")
+                    merge_dialog.destroy()
+                    messagebox.showinfo("Success", f"Replaced with {len(imported_presets)} presets!")
+
+                tk.Button(button_frame, text="Merge (Overwrite)",
+                        font=('Segoe UI', 10),
+                        bg=self.colors['accent'],
+                        fg='white',
+                        relief='flat',
+                        bd=0,
+                        padx=15,
+                        pady=8,
+                        command=merge_presets).pack(side='left', padx=5)
+
+                tk.Button(button_frame, text="Add New Only",
+                        font=('Segoe UI', 10),
+                        bg=self.colors['success'],
+                        fg='white',
+                        relief='flat',
+                        bd=0,
+                        padx=15,
+                        pady=8,
+                        command=add_new_only).pack(side='left', padx=5)
+
+                tk.Button(button_frame, text="Replace All",
+                        font=('Segoe UI', 10),
+                        bg=self.colors['danger'],
+                        fg='white',
+                        relief='flat',
+                        bd=0,
+                        padx=15,
+                        pady=8,
+                        command=replace_all).pack(side='left', padx=5)
+
+                tk.Button(button_frame, text="Cancel",
+                        font=('Segoe UI', 10),
+                        bg=self.colors['bg_secondary'],
+                        fg=self.colors['text'],
+                        relief='flat',
+                        bd=0,
+                        padx=15,
+                        pady=8,
+                        command=merge_dialog.destroy).pack(side='left', padx=5)
+
+            except Exception as e:
+                self.capture_log(f"❌ Failed to import presets: {e}")
+                messagebox.showerror("Error", f"Failed to import presets: {e}")
+
+    def update_preset_counts(self):
+        """Aggiorna i contatori dei preset nella UI"""
+        if hasattr(self, 'preset_count_label'):
+            self.preset_count_label.config(text=str(len(self.presets)))
+
+        if hasattr(self, 'custom_preset_count_label'):
+            custom_count = len([p for p in self.presets if p not in self.default_presets])
+            self.custom_preset_count_label.config(text=str(custom_count))
+
+
+    def reset_presets_to_default(self):
+        """Resetta i preset ai valori predefiniti"""
+        if messagebox.askyesno("Reset Presets?",
+                            "This will reset all presets to their default values.\n"
+                            "All custom presets will be lost.\n\n"
+                            "Continue?"):
+            self.presets = self.default_presets.copy()
+            self.update_preset_menu()
+            self.preset_var.set("Select preset...")
+            self.save_settings()
+            self.capture_log("✅ Presets reset to defaults")
+            messagebox.showinfo("Success", "Presets have been reset to defaults!")
 
 
     def load_settings(self):
@@ -1382,7 +1898,6 @@ class InfiniLoopGUI:
             self.app.min_song_duration = settings.get("min_song_duration", 30)
             if hasattr(self, 'min_duration_var'):
                 self.min_duration_var.set(self.app.min_song_duration)
-
 
             self.app.min_sample_duration = settings.get("min_sample_duration", 2.6)
             if hasattr(self, 'min_sample_var'):
@@ -1404,11 +1919,22 @@ class InfiniLoopGUI:
             if hasattr(self, 'benchmark_var'):
                 self.benchmark_var.set(self.app.benchmark_enabled)
 
+            # Carica i preset salvati
+            saved_presets = settings.get("presets", None)
+            if saved_presets:
+                self.presets = saved_presets
+                # Aggiorna il menu a tendina se esiste già
+                if hasattr(self, 'preset_menu'):
+                    self.update_preset_menu()
+
             os.environ["SDL_AUDIODRIVER"] = self.app.audio_driver
 
             if hasattr(self, 'model_menu'):
                 self.update_model_ui()
 
+        except FileNotFoundError:
+            # Il file non esiste ancora, usa i valori predefiniti
+            self.capture_log("ℹ️ No settings file found, using defaults")
         except Exception as e:
             self.capture_log(f"⚠️ Failed to load settings: {e}")
 
