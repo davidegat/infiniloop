@@ -496,12 +496,15 @@ class InfiniLoopGUI:
             label_value.pack(side='left', fill='x', expand=True)
 
 
-
-
     def update_min_duration(self):
-
+        old_min_duration = getattr(self.app, 'min_song_duration', 30)
         self.app.min_song_duration = self.min_duration_var.get()
+
+        if hasattr(self.app, 'update_generation_params'):
+            self.app.update_generation_params({'min_song_duration': self.app.min_song_duration})
+
         self.save_settings()
+
 
     def update_model(self, event=None):
 
@@ -529,9 +532,20 @@ class InfiniLoopGUI:
 
 
     def update_min_sample_duration(self):
-
+        """Aggiorna la durata minima del loop e notifica il backend"""
+        old_min_sample = getattr(self.app, 'min_sample_duration', 2.6)
         self.app.min_sample_duration = self.min_sample_var.get()
+
+        # Notifica il backend del cambiamento
+        if hasattr(self.app, 'update_generation_params'):
+            self.app.update_generation_params({'min_sample_duration': self.app.min_sample_duration})
+
         self.save_settings()
+
+        # Log del cambiamento
+        if old_min_sample != self.app.min_sample_duration:
+            self.capture_log(f"🔄 Loop length changed: {old_min_sample:.1f}s → {self.app.min_sample_duration:.1f}s (applied to next generation)")
+
 
 
     def update_duration_estimate(self):
@@ -635,13 +649,14 @@ class InfiniLoopGUI:
         except Exception as e:
             return None
 
+
     def create_settings_tab(self):
         settings_frame = tk.Frame(self.notebook, bg=self.colors['bg'])
         self.notebook.add(settings_frame, text="⚙️ Settings")
 
         settings_card = self.create_card(settings_frame, "⚙️ Configuration")
 
-
+        # AI Model section
         model_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         model_frame.pack(fill='x', pady=10)
 
@@ -649,7 +664,6 @@ class InfiniLoopGUI:
                 font=('Segoe UI', 11),
                 bg=self.colors['bg_card'],
                 fg=self.colors['text']).pack(side='left')
-
 
         model_control_frame = tk.Frame(model_frame, bg=self.colors['bg_card'])
         model_control_frame.pack(side='left', padx=10, fill='x', expand=True)
@@ -663,10 +677,8 @@ class InfiniLoopGUI:
         self.model_menu.pack(side='left')
         self.model_menu.bind('<<ComboboxSelected>>', self.update_model)
 
-
         delete_frame = tk.Frame(model_control_frame, bg=self.colors['bg_card'])
         delete_frame.pack(side='left', padx=(10, 0))
-
 
         self.model_delete_buttons = {}
         for model in ["small", "medium", "large"]:
@@ -694,6 +706,7 @@ class InfiniLoopGUI:
                             fg=self.colors['text_secondary'])
         model_help.pack(side='left', padx=(10, 0))
 
+        # Sample length section
         duration_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         duration_frame.pack(fill='x', pady=10)
 
@@ -714,13 +727,15 @@ class InfiniLoopGUI:
                                 command=self.update_duration)
         duration_spin.pack(side='left', padx=10)
 
+        # Binding più reattivi per Sample length
         self.duration_var.trace('w', lambda *args: self.update_duration())
+        duration_spin.bind('<Return>', lambda e: self.update_duration())
+        duration_spin.bind('<FocusOut>', lambda e: self.update_duration())
 
         tk.Label(duration_frame, text="seconds",
                 font=('Segoe UI', 10),
                 bg=self.colors['bg_card'],
                 fg=self.colors['text_secondary']).pack(side='left')
-
 
         self.duration_estimate_label = tk.Label(duration_frame, text="",
                                             font=('Segoe UI', 9),
@@ -728,6 +743,7 @@ class InfiniLoopGUI:
                                             fg=self.colors['text_secondary'])
         self.duration_estimate_label.pack(side='left', padx=(10, 0))
 
+        # Song duration section
         min_duration_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         min_duration_frame.pack(fill='x', pady=10)
 
@@ -748,6 +764,11 @@ class InfiniLoopGUI:
                                     command=self.update_min_duration)
         min_duration_spin.pack(side='left', padx=10)
 
+        # Binding più reattivi per Song duration
+        self.min_duration_var.trace('w', lambda *args: self.update_min_duration())
+        min_duration_spin.bind('<Return>', lambda e: self.update_min_duration())
+        min_duration_spin.bind('<FocusOut>', lambda e: self.update_min_duration())
+
         tk.Label(min_duration_frame, text="seconds",
                 font=('Segoe UI', 10),
                 bg=self.colors['bg_card'],
@@ -760,7 +781,7 @@ class InfiniLoopGUI:
                             fg=self.colors['text_secondary'])
         help_label.pack(side='left', padx=(10, 0))
 
-
+        # Loop length section
         min_sample_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         min_sample_frame.pack(fill='x', pady=10)
 
@@ -783,6 +804,11 @@ class InfiniLoopGUI:
                                     command=self.update_min_sample_duration)
         min_sample_spin.pack(side='left', padx=10)
 
+        # Binding più reattivi per Loop length
+        self.min_sample_var.trace('w', lambda *args: self.update_min_sample_duration())
+        min_sample_spin.bind('<Return>', lambda e: self.update_min_sample_duration())
+        min_sample_spin.bind('<FocusOut>', lambda e: self.update_min_sample_duration())
+
         tk.Label(min_sample_frame, text="seconds",
                 font=('Segoe UI', 10),
                 bg=self.colors['bg_card'],
@@ -795,6 +821,7 @@ class InfiniLoopGUI:
                                     fg=self.colors['text_secondary'])
         sample_help_label.pack(side='left', padx=(10, 0))
 
+        # Audio driver section
         driver_frame = tk.Frame(settings_card, bg=self.colors['bg_card'])
         driver_frame.pack(fill='x', pady=10)
 
@@ -812,6 +839,7 @@ class InfiniLoopGUI:
         driver_menu.pack(side='left', padx=10)
         driver_menu.bind('<<ComboboxSelected>>', self.update_driver)
 
+        # Debug section
         debug_card = self.create_card(settings_frame, "🐛 Debug")
 
         self.debug_var = tk.BooleanVar(value=self.app.debug_mode)
@@ -840,7 +868,7 @@ class InfiniLoopGUI:
                                 command=self.validate_files)
         validate_btn.pack(anchor='w', pady=10)
 
-
+        # Aggiorna la stima del tempo di durata
         self.update_duration_estimate()
 
 
@@ -1207,10 +1235,21 @@ class InfiniLoopGUI:
 
 
     def update_duration(self):
+        """Aggiorna la durata del sample e notifica il backend"""
+        old_duration = self.app.duration
         self.app.duration = self.duration_var.get()
-        self.save_settings()
 
+        # Notifica il backend del cambiamento se sta generando
+        if hasattr(self.app, 'update_generation_params'):
+            self.app.update_generation_params({'duration': self.app.duration})
+
+        self.save_settings()
         self.update_duration_estimate()
+
+        # Log del cambiamento
+        if old_duration != self.app.duration:
+            self.capture_log(f"🔄 Sample length changed: {old_duration}s → {self.app.duration}s (applied to next generation)")
+
 
 
     def update_driver(self, event=None):

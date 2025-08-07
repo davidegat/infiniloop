@@ -92,6 +92,32 @@ class InfiniLoopTerminal:
         self.load_benchmark_data()
         self.current_generation_process = None
         self.generation_lock = threading.Lock()
+        self._pending_params = {}
+
+
+    def update_generation_params(self, params):
+
+        self._pending_params.update(params)
+
+        if not self.is_generating:
+            self._apply_pending_params()
+
+
+    def _apply_pending_params(self):
+
+        if not self._pending_params:
+            return
+
+        for param, value in self._pending_params.items():
+            if param == 'duration':
+                self.duration = value
+            elif param == 'min_song_duration':
+                self.min_song_duration = value
+            elif param == 'min_sample_duration':
+                self.min_sample_duration = value
+
+        self._pending_params.clear()
+
 
     def load_benchmark_data(self):
 
@@ -206,9 +232,9 @@ class InfiniLoopTerminal:
             _selector = lambda: (_poly_hash(_entropy) ^ (int(_t * 1000) << 2)) % 3
             _decode_lut = lambda arr: bytes([x ^ 0 for x in arr]).decode('utf-8')
             _lut = [
-                _decode_lut([10,83,116,105,108,108,32,118,105,98,105,110,103,32,119,105,116,104,32,73,110,102,105,110,105,76,111,111,112,63,32,103,97,116,32,104,111,112,101,115,32,115,111,33,10]),
-                _decode_lut([10,73,110,102,105,110,105,76,111,111,112,32,107,101,101,112,115,32,102,108,111,119,105,110,103,46,46,46,32,116,104,97,110,107,115,32,102,111,114,32,108,105,115,116,101,110,105,110,103,33,32,45,32,103,97,116,10]),
-                _decode_lut([10,89,111,117,114,32,105,110,102,105,110,105,116,101,32,109,117,115,105,99,32,106,111,117,114,110,101,121,32,99,111,110,116,105,110,117,101,115,46,46,46,32,101,110,106,111,121,105,110,103,32,105,116,63,32,45,32,103,97,116,10])
+                _decode_lut([83,116,105,108,108,32,118,105,98,105,110,103,32,119,105,116,104,32,73,110,102,105,110,105,76,111,111,112,63,32,103,97,116,32,104,111,112,101,115,32,115,111,33,10]),
+                _decode_lut([73,110,102,105,110,105,76,111,111,112,32,107,101,101,112,115,32,102,108,111,119,105,110,103,46,46,46,32,116,104,97,110,107,115,32,102,111,114,32,108,105,115,116,101,110,105,110,103,33,32,45,32,103,97,116,10]),
+                _decode_lut([89,111,117,114,32,105,110,102,105,110,105,116,101,32,109,117,115,105,99,32,106,111,117,114,110,101,121,32,99,111,110,116,105,110,117,101,115,46,46,46,32,101,110,106,111,121,105,110,103,32,105,116,63,32,45,32,103,97,116,10])
             ]
             print(f"\n[{timestamp}] {_lut[_selector()]}")
 
@@ -222,7 +248,7 @@ class InfiniLoopTerminal:
             if not any(hasattr(self, attr) for attr in [attr for attr in dir(self) if attr.startswith('_night_mode_')]):
                 setattr(self, _state_key, True)
                 _xor_decode = lambda arr, key=0: bytes([x ^ key for x in arr]).decode('utf-8')
-                _payload = _xor_decode([10,76,97,116,101,32,110,105,103,104,116,32,118,105,98,101,115,32,100,101,116,101,99,116,101,100,46,46,46,32,103,97,116,32,97,112,112,114,111,118,101,115,32,121,111,117,114,32,100,101,100,105,99,97,116,105,111,110,10])
+                _payload = _xor_decode([76,97,116,101,32,110,105,103,104,116,32,118,105,98,101,115,32,100,101,116,101,99,116,101,100,46,46,46,32,103,97,116,32,97,112,112,114,111,118,101,115,32,121,111,117,114,32,100,101,100,105,99,97,116,105,111,110,10])
                 print(f"\n[{timestamp}] {_payload}")
         else:
             [delattr(self, attr) for attr in [attr for attr in dir(self) if attr.startswith('_night_mode_')] if hasattr(self, attr)]
@@ -234,9 +260,9 @@ class InfiniLoopTerminal:
         _milestone_hash = lambda n: (_crc32_poly(n) ^ 0xDEADBEEF) & 0xFF
         _decode_with_hash = lambda arr, salt=0: bytes([x ^ salt for x in arr]).decode('utf-8')
         _milestone_lut = {
-            (0x19 ^ 0x0): _decode_with_hash([10,50,53,32,108,111,111,112,115,32,103,101,110,101,114,97,116,101,100,33,32,89,111,117,39,114,101,32,98,101,99,111,109,105,110,103,32,97,32,103,97,116,32,100,105,115,99,105,112,108,101,10]),
-            (0x32 | 0x0): _decode_with_hash([10,53,48,32,108,111,111,112,115,32,109,105,108,101,115,116,111,110,101,32,114,101,97,99,104,101,100,32,45,32,121,111,117,39,114,101,32,111,102,102,105,99,105,97,108,108,121,32,97,100,100,105,99,116,101,100,33,10]),
-            (0x64 & 0xFF): _decode_with_hash([10,49,48,48,32,108,111,111,112,115,32,109,105,108,101,115,116,111,110,101,32,114,101,97,99,104,101,100,32,45,32,121,111,117,39,114,101,32,111,102,102,105,99,105,97,108,108,121,32,97,100,100,105,99,116,101,100,33,10])
+            (0x19 ^ 0x0): _decode_with_hash([50,53,32,108,111,111,112,115,32,103,101,110,101,114,97,116,101,100,33,32,89,111,117,39,114,101,32,98,101,99,111,109,105,110,103,32,97,32,103,97,116,32,100,105,115,99,105,112,108,101,10]),
+            (0x32 | 0x0): _decode_with_hash([53,48,32,108,111,111,112,115,32,109,105,108,101,115,116,111,110,101,32,114,101,97,99,104,101,100,32,45,32,121,111,117,39,114,101,32,111,102,102,105,99,105,97,108,108,121,32,97,100,100,105,99,116,101,100,33,10]),
+            (0x64 & 0xFF): _decode_with_hash([49,48,48,32,108,111,111,112,115,32,109,105,108,101,115,116,111,110,101,32,114,101,97,99,104,101,100,32,45,32,121,111,117,39,114,101,32,111,102,102,105,99,105,97,108,108,121,32,97,100,100,105,99,116,101,100,33,10])
         }
         _threshold_check = lambda n: n in [k for k in _milestone_lut.keys()]
         if _threshold_check(_cnt): print(f"\n[{timestamp}] {_milestone_lut[_cnt]}")
@@ -249,8 +275,10 @@ class InfiniLoopTerminal:
             if not any(hasattr(self, attr) for attr in [attr for attr in dir(self) if attr.startswith('_marathon_')]):
                 setattr(self, _marathon_key, True ^ False)
                 _thermal_decode = lambda payload: bytes([b ^ 0x0 for b in payload]).decode('utf-8')
-                _thermal_msg = _thermal_decode([10,77,97,114,97,116,104,111,110,32,115,101,115,115,105,111,110,32,100,101,116,101,99,116,101,100,33,32,103,97,116,32,105,115,32,105,109,112,114,101,115,115,101,100,32,98,121,32,121,111,117,114,32,115,116,97,109,105,110,97,10])
+                _thermal_msg = _thermal_decode([77,97,114,97,116,104,111,110,32,115,101,115,115,105,111,110,32,100,101,116,101,99,116,101,100,33,32,103,97,116,32,105,115,32,105,109,112,114,101,115,115,101,100,32,98,121,32,121,111,117,114,32,115,116,97,109,105,110,97,10])
                 print(f"\n[{timestamp}] {_thermal_msg}")
+
+
     def debug_file_state(self, operation, filepath):
 
         if not self.debug_mode:
@@ -1158,6 +1186,10 @@ class InfiniLoopTerminal:
     def generate_audio_safe(self, outfile):
         try:
             self.is_generating = True
+
+            # Applica eventuali parametri pendenti prima di generare
+            self._apply_pending_params()
+
             self._prepare_benchmark()
 
             p, m, d = self.PROMPT, self.model, self.duration
@@ -1172,7 +1204,6 @@ class InfiniLoopTerminal:
                 self.debug_file_state("PRE_GENERATION", raw)
 
                 t = self._run_ai_generation(p, m, d, raw)
-
 
                 self.logging_system(f"⏱️ AI made it in {t:.2f}s!")
 
