@@ -8,7 +8,7 @@ Once set up and running, your machine becomes a local AI music station, continuo
 
 INFINI LOOP is powered by MusicGPT (https://github.com/gabotechs/MusicGPT) and MusicGen models by Meta (https://huggingface.co/spaces/facebook/MusicGen). According to Meta, the model was trained on licensed data from the following sources: the Meta Music Initiative Sound Collection, Shutterstock music collection, and the Pond5 music collection. See the paper for more details about the training set and corresponding preprocessing.
 
-All audios (and statistics) generated with INFINI LOOP are produced locally and never sent to, or require, any external service. Music generated with MusicGen models is entirely owned by the user, who retains full rights to use, distribute, modify, and commercialize it without restrictions. **If you obtain a loop by using INFINI LOOP, anyway, you are not allowed to use it commercially.**
+All audios (and statistics) generated with INFINI LOOP are produced locally and never sent to, or require, any external service. Music generated with MusicGen models is entirely owned by the user, who retains full rights to use, distribute, modify, and commercialize it without restrictions. **If you obtain a loop by using INFINI LOOP, anyway, you are not allowed to use it commercially.** (See [License](#license))
 
 GUI version:
 
@@ -374,7 +374,7 @@ Una volta configurato e in esecuzione, la tua macchina diventa una stazione musi
 
 INFINI LOOP è alimentato da MusicGPT (https://github.com/gabotechs/MusicGPT) e i modelli MusicGen di Meta (https://huggingface.co/spaces/facebook/MusicGen). Secondo Meta, il modello è stato addestrato su dati con licenza dalle seguenti fonti: la Meta Music Initiative Sound Collection, la collezione musicale Shutterstock e la collezione musicale Pond5. Vedi il documento per maggiori dettagli sul set di addestramento e il preprocessing corrispondente.
 
-Tutti i file audio (e le statistiche) generati con INFINI LOOP sono prodotti localmente e non vengono inviati a, nè fanno uso di, servizi esterni. La musica generata dai modelli MusicGen è interamente di proprietà dell'utente, che mantiene tutti i diritti per usare, distribuire, modificare e commercializzare senza restrizioni. **Se hai creato un loop usando INFINI LOOP, tuttavia, non sei autorizzato ad utilizzarlo per scopi commerciali.**
+Tutti i file audio (e le statistiche) generati con INFINI LOOP sono prodotti localmente e non vengono inviati a, nè fanno uso di, servizi esterni. La musica generata dai modelli MusicGen è interamente di proprietà dell'utente, che mantiene tutti i diritti per usare, distribuire, modificare e commercializzare senza restrizioni. **Se hai creato un loop usando INFINI LOOP, tuttavia, non sei autorizzato ad utilizzarlo per scopi commerciali.** (Vedi [Licenza](#licenza))
 
 Versione GUI:
 
