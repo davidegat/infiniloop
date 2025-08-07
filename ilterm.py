@@ -1088,7 +1088,6 @@ class InfiniLoopTerminal:
                         if elapsed < self.min_song_duration:
                             self.logging_system("🧬 Waiting for song ending\n")
 
-
                     del y
                     del y_loop
                     gc.collect()
@@ -1428,7 +1427,7 @@ class InfiniLoopTerminal:
             print(f"   Title:   {title}")
             print(f"   Artist:  {artist}")
             print(f"   Loop:    {duration:.1f} seconds")
-            print(f"   Genre:   {self.PROMPT}\n")
+            print(f"   Prompt:  {self.PROMPT}\n")
 
             env = os.environ.copy()
             env["SDL_AUDIODRIVER"] = self.audio_driver
@@ -1771,7 +1770,7 @@ class InfiniLoopTerminal:
 
         if hasattr(self, "stop_event"):
             self.stop_event.set()
-        self.logging_system("⏹️ Loop stopped\n")
+        self.logging_system("⏹️ Loop stopped")
 
 
         with self.generation_lock:

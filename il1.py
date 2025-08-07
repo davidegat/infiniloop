@@ -388,10 +388,10 @@ class InfiniLoopGUI:
                 fg=self.colors['text_secondary']).pack(side='left', padx=(0, 10))
 
         presets = {
-            "Ambient":   "ambient ethereal slow pads, punchy drums, tight bass, 4/4 nointro seamless loop",
-            "Reggae":    "slow reggae dub bass groove, punchy drums, tight bass, echo, 4/4 nointro seamless loop",
-            "EDM":       "chill EDM disco, synth, punchy drums, tight bass, 4/4 nointro seamless loop",
-            "Rock":      "90s rock, electric guitar, heavy punchy drums, tight bass, 4/4 nointro loop",
+            "Ambient":   "ambient, electronic, stargazing on a calm night, 4/4 nointro seamless loop",
+            "Reggae":    "tropical, slow reggae-infused track, relaxing, laid-back rhythm, 4/4 nointro seamless loop",
+            "EDM":       "disco, driving drum machine, synthesizer, bass, piano, clubby, 4/4, nointro seamless loop",
+            "Rock":      "rock, guitars, drum, bass, up-lifting, moody, 4/4, nointro seamless loop",
             "Lofi Rap":  "slow calm lofi hiphop, music for studying, 4/4, punchy drums, tight bass, nointro seamless loop",
             "Synthwave": "80s retro synthwave, punchy drums, tight bass, nointro seamless loop"
         }
@@ -415,7 +415,6 @@ class InfiniLoopGUI:
 
         button_frame = tk.Frame(prompt_frame, bg=self.colors['bg_card'])
         button_frame.pack(fill='x', pady=10)
-
         self.start_button = tk.Button(button_frame,
                                     text="▶️  START",
                                     font=('Segoe UI', 14, 'bold'),
@@ -475,7 +474,7 @@ class InfiniLoopGUI:
         for label, var in [("Title:", self.np_info['title']),
                         ("Artist:", self.np_info['artist']),
                         ("Duration:", self.np_info['duration']),
-                        ("Genre:", self.np_info['genre'])]:
+                        ("Prompt:", self.np_info['genre'])]:
             row = tk.Frame(np_frame, bg=self.colors['bg_card'])
             row.pack(fill='x', pady=5)
             tk.Label(row, text=label,
@@ -542,11 +541,6 @@ class InfiniLoopGUI:
 
         self.save_settings()
 
-        # Log del cambiamento
-        if old_min_sample != self.app.min_sample_duration:
-            self.capture_log(f"🔄 Loop length changed: {old_min_sample:.1f}s → {self.app.min_sample_duration:.1f}s (applied to next generation)")
-
-
 
     def update_duration_estimate(self):
 
@@ -569,7 +563,7 @@ class InfiniLoopGUI:
                     else:
                         time_text = f"~{mins}m {secs}s"
 
-                self.duration_estimate_label.config(text=f"({time_text} generation estimated time)")
+                self.duration_estimate_label.config(text=f"({time_text} estimated generation time)")
             else:
                 self.duration_estimate_label.config(text="")
 
@@ -1248,7 +1242,7 @@ class InfiniLoopGUI:
 
         # Log del cambiamento
         if old_duration != self.app.duration:
-            self.capture_log(f"🔄 Sample length changed: {old_duration}s → {self.app.duration}s (applied to next generation)")
+            self.capture_log(f"🔄 Sample length: {self.app.duration}s")
 
 
 
