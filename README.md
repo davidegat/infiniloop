@@ -12,7 +12,7 @@ All audios (and statistics) generated with INFINI LOOP are produced locally and 
 
 GUI version:
 
-[Kooha-2025-08-07-01-13-39.webm](https://github.com/user-attachments/assets/78ce1e6d-f334-40b1-b754-4628a281688a)
+[Kooha-2025-08-07-02-49-42.webm](https://github.com/user-attachments/assets/410cd31e-7a3e-4932-a73f-c118d45d50b7)
 
 Terminal version:
 
@@ -354,7 +354,7 @@ Tutti i file audio (e le statistiche) generati con INFINI LOOP sono prodotti loc
 
 Versione GUI:
 
-[Kooha-2025-08-07-01-13-39.webm](https://github.com/user-attachments/assets/78ce1e6d-f334-40b1-b754-4628a281688a)
+[Kooha-2025-08-07-02-49-42.webm](https://github.com/user-attachments/assets/410cd31e-7a3e-4932-a73f-c118d45d50b7)
 
 Versione Terminale:
 
