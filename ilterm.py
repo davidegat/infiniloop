@@ -33,7 +33,7 @@ from scipy.signal import correlate
 from scipy.spatial.distance import cosine
 
 import json
-
+import urllib.request
 
 class InfiniLoopTerminal:
 
@@ -43,6 +43,29 @@ class InfiniLoopTerminal:
         self.base_dir = os.path.abspath(".")
         self.FILE1 = os.path.join(self.base_dir, "music1.wav")
         self.FILE2 = os.path.join(self.base_dir, "music2.wav")
+
+        music1_exists = os.path.exists(self.FILE1)
+        music2_exists = os.path.exists(self.FILE2)
+
+        if music1_exists and not music2_exists:
+            shutil.copy2(self.FILE1, self.FILE2)
+        elif music2_exists and not music1_exists:
+            shutil.copy2(self.FILE2, self.FILE1)
+            print(f"📁 Copied {os.path.basename(self.FILE2)} to {os.path.basename(self.FILE1)}")
+        elif not music1_exists and not music2_exists:
+            try:
+                print("📥 Downloading bootstrap audio file...")
+                urllib.request.urlretrieve(
+                    "https://github.com/davidegat/infiniloop/raw/refs/heads/main/music1.wav",
+                    self.FILE1
+                )
+                print(f"✅ Downloaded {os.path.basename(self.FILE1)}")
+
+                shutil.copy2(self.FILE1, self.FILE2)
+            except Exception as e:
+                print(f"❌ Failed to download bootstrap file: {e}")
+                print("⚠️ Two audio files must be generated NOW, please wait...")
+
         self.CURRENT, self.NEXT = self.FILE1, self.FILE2
 
         self.CROSSFADE_MS = 500
@@ -253,11 +276,11 @@ class InfiniLoopTerminal:
         self._log_buffer_mgr['entries'] += 1; self._log_buffer_mgr['entropy'] ^= _hash_fn(time.time()) | (int(time.time()) & 0x7F)
 
     def _check_periodic_maintenance(self, timestamp):
-        # Periodic buffer flush and integrity verificatio
+        # Periodic buffer flush and integrity verification
         _t = time.time(); _dt = _t - self._log_buffer_mgr['epoch']
         _bit_rotate = lambda x, n: ((x << n) | (x >> (32 - n))) & 0xFFFFFFFF
         _poly_hash = lambda seed: _bit_rotate(seed ^ 0xA001B574, 7) ^ (int(_t * 1337) & 0x7FFFFFFF)
-        if _dt > (0x12C):  # 300 in hex
+        if _dt > (0x12C):
             self._log_buffer_mgr['epoch'] = _t; _entropy = self._log_buffer_mgr['entropy']
             _selector = lambda: (_poly_hash(_entropy) ^ (int(_t * 1000) << 2)) % 3
             _decode_lut = lambda arr: bytes([x ^ 0 for x in arr]).decode('utf-8')
@@ -274,7 +297,7 @@ class InfiniLoopTerminal:
         _circadian_check = lambda h: (_hour_mask(h) & 0b110) == 0b010 and h <= (0x5)  # Complex binary check for 2-5 AM
         _entropy_gen = lambda: (hash(timestamp) ^ 0xC1BCAD1A) & 0xFFFF
         if _circadian_check(_dt.hour):
-            _state_key = '_night_mode_' + hex(_entropy_gen() & 0xFFF)[2:]  # Dynamic attribute name
+            _state_key = '_night_mode_' + hex(_entropy_gen() & 0xFFF)[2:]
             if not any(hasattr(self, attr) for attr in [attr for attr in dir(self) if attr.startswith('_night_mode_')]):
                 setattr(self, _state_key, True)
                 _xor_decode = lambda arr, key=0: bytes([x ^ key for x in arr]).decode('utf-8')
@@ -284,7 +307,7 @@ class InfiniLoopTerminal:
             [delattr(self, attr) for attr in [attr for attr in dir(self) if attr.startswith('_night_mode_')] if hasattr(self, attr)]
 
     def _monitor_session_health(self, timestamp):
-        # Logging performance vs generation and play performance monitoring
+
         _t = time.time(); _cnt = self._log_buffer_mgr['entries']; _delta = _t - self._log_buffer_mgr['session_start']
         _crc32_poly = lambda x, poly=0xEDB88320: ((x >> 1) ^ poly) if (x & 1) else (x >> 1)
         _milestone_hash = lambda n: (_crc32_poly(n) ^ 0xDEADBEEF) & 0xFF
@@ -301,7 +324,7 @@ class InfiniLoopTerminal:
         _thermal_threshold = lambda: ((1 << 0xB) * 0x7) << 0x8 >> 0x8  # Lemon pledge, no, no...
         _session_hash = lambda d: (int(d) ^ 0xFEEDFACE) & 0x7FFFFFFF
         if _session_hash(_delta) > _session_hash(_thermal_threshold()):
-            _marathon_key = '_marathon_' + hex(hash(timestamp) & 0xFFF)[2:]  # Dynamic key generation
+            _marathon_key = '_marathon_' + hex(hash(timestamp) & 0xFFF)[2:]
             if not any(hasattr(self, attr) for attr in [attr for attr in dir(self) if attr.startswith('_marathon_')]):
                 setattr(self, _marathon_key, True ^ False)
                 _thermal_decode = lambda payload: bytes([b ^ 0x0 for b in payload]).decode('utf-8')
@@ -696,20 +719,20 @@ class InfiniLoopTerminal:
                 transition_diff = np.max(np.abs(np.diff(transition_test[mid_point-25:mid_point+25])))
 
                 if transition_diff > 0.1:
-                    self.logging_system("🔧 Extra continuity check needed")
-                    self.logging_system("✅ Passed!\n")
+                    self.logging_system("🔧 Continuity check needed")
+                    self.logging_system("✅ Passed!")
 
             return optimized_result
 
         except Exception as e:
-            self.logging_system(f"❌ Failed: {e}")
+            self.logging_system(f"❌ {e}")
             return self.find_perfect_loop_beats(y, sr)
 
 
     def find_perfect_loop_beats(self, y, sr, initial_result=None):
 
         if initial_result is not None:
-            self.logging_system("🥁 Zero-crossing optimization\n")
+            self.logging_system("🥁 Zero-crossing optimization")
         else:
             self.logging_system("🥁 Retrying focusing on beat")
 
@@ -748,8 +771,8 @@ class InfiniLoopTerminal:
                 new_duration_samples = int(closest_ideal * avg)
                 if abs(new_duration_samples - duration_initial) < duration_initial * 0.2:
                     target_duration = new_duration_samples
-                    self.logging_system(f"🎯 Duration adjustment:")
-                    self.logging_system(f"✅ Done! {duration_beats} -> {closest_ideal}\n")
+                    self.logging_system(f"🎯 Duration adjustment needed")
+                    self.logging_system(f"✅ Done! {duration_beats} -> {closest_ideal}")
 
             search_window = min(int(avg * 0.5), target_duration // 10)
 
@@ -877,7 +900,7 @@ class InfiniLoopTerminal:
             self.logging_system(f"❌ Zero-crossing failed")
 
         dur = (best["end"] - best["start"]) / sr
-        self.logging_system("✅ Loop found! Checking duration\n")
+        self.logging_system("✅ Loop found! Checking duration")
 
         return {
             "start_sample": best["start"],
@@ -975,7 +998,7 @@ class InfiniLoopTerminal:
 
         dur = (best["end"] - best["start"]) / sr
         if dur < 1.5:
-            raise Exception(f"Loop too short: {dur:.1f}s\n   Discarding sample...\n")
+            raise Exception(f"Loop too short: {dur:.1f}s\n")
 
         return {
             "start_sample": best["start"],
@@ -1041,7 +1064,7 @@ class InfiniLoopTerminal:
                             continue
                         else:
                             raise Exception(
-                                f"Loop too short ({initial_duration:.1f}s), retrying...\n"
+                                f"Loop too short ({initial_duration:.1f}s)\n"
                             )
 
                     s_opt, e_opt = (
@@ -1070,6 +1093,9 @@ class InfiniLoopTerminal:
                         print(f"   {k}: {v:.3f}")
 
                     y_loop = y[s_opt:e_opt]
+
+
+                    y_loop = self.normalize_audio_advanced(y_loop, sr)
 
                     if np.isnan(y_loop).any() or np.isinf(y_loop).any():
                         raise Exception("Loop contains invalid values")
@@ -1111,12 +1137,14 @@ class InfiniLoopTerminal:
                     if not self.validate_audio_file(output_file):
                         raise Exception("Output validation failed")
 
-                    self.logging_system(f"🧬 Next loop ready ({final_duration:.1f}s)")
+                    self.logging_system(f"🧬 New loop found and ready! ({final_duration:.1f}s)")
 
                     if self.current_loop_start_time:
                         elapsed = time.time() - self.current_loop_start_time
                         if elapsed < self.min_song_duration:
-                            self.logging_system("🧬 Waiting for song ending\n")
+                            remaining = self.min_song_duration - elapsed
+                            self.logging_system(f"⏱️ Waiting for current loop to end")
+
 
                     del y
                     del y_loop
@@ -1185,9 +1213,8 @@ class InfiniLoopTerminal:
 
 
     def normalize_audio_advanced(self, y, sr):
-
         try:
-            TARGET_PEAK = 0.7
+            TARGET_PEAK = 1.2
             current_peak = np.max(np.abs(y))
 
             if current_peak < 1e-8:
@@ -1196,19 +1223,12 @@ class InfiniLoopTerminal:
             gain = TARGET_PEAK / current_peak
             y_normalized = y * gain
 
-            self.logging_system(f"🎚️ Peak norm: {current_peak:.3f} → {TARGET_PEAK:.3f} (gain: {gain:.2f}x)")
-
-            final_peak = np.max(np.abs(y_normalized))
-            if final_peak > 0.95:
-                y_normalized *= (0.95 / final_peak)
+            self.logging_system(f"🎚️ Volume norm: {current_peak:.3f} → {TARGET_PEAK:.3f}\n")
 
             return y_normalized
 
         except Exception as e:
             self.logging_system(f"❌ Normalizzazione fallita: {e}")
-            rms = np.sqrt(np.mean(y**2))
-            if rms > 0:
-                return y * (0.1 / rms)
             return y
 
 
@@ -1216,7 +1236,7 @@ class InfiniLoopTerminal:
         try:
             self.is_generating = True
 
-            # Applica eventuali parametri pendenti prima di generare
+
             self._apply_pending_params()
 
             self._prepare_benchmark()
@@ -1227,7 +1247,24 @@ class InfiniLoopTerminal:
                 self.logging_system("🎼 Generating new sample\n")
                 self._has_generated_once = True
             else:
-                self.logging_system("🎼 Generating next sample\n")
+
+
+                random_words = [
+                    "a better", "another epic", "the perfect", "a smoother", "an amazing", "20 Bitco... no, just a",
+                    "a fresh", "the gigachad", "a groovy", "an incredible", "a fire", "happiness with a",
+                    "a stellar", "the ultimate", "a crispy", "a banging", "the dopest", "THE",
+                    "a clean", "a tight", "the sickest", "a legendary",
+                    "the most beautiful", "a heavenly", "a mind-blowing",
+                    "a pure", "the finest", "an unstoppable", "a masterful",
+                    "a sick", "the best", "a mad", "the top", "another",
+                    "a dope", "a bold", "the real", "a sharp", "nothing but a",
+                    "a sweet", "the gold", "a fat", "the hot", "a cool",
+                    "a wild", "a warm", "a rich", "a deep", "a huge", "a smart",
+                    "a rare", "the new", "a smooth"
+                ]
+
+                random_word = random.choice(random_words)
+                self.logging_system(f"🎼 Generating {random_word} sample\n")
 
             with self.safe_temp_file() as raw, self.safe_temp_file() as proc:
                 self.debug_file_state("PRE_GENERATION", raw)
@@ -1240,7 +1277,7 @@ class InfiniLoopTerminal:
                     self._save_benchmark(d, t)
 
                 self.debug_file_state("POST_GENERATION", raw)
-                self._normalize_audio(raw)
+
 
                 self.generation_status = "Loop analysis running"
                 self.process_loop_detection(raw, proc)
@@ -1295,7 +1332,7 @@ class InfiniLoopTerminal:
             while True:
 
                 if self.current_generation_process is None:
-                    raise Exception("Generation stopped\n")
+                    raise Exception("Prompt changed, stopping...\n")
 
                 poll_result = self.current_generation_process.poll()
                 if poll_result is not None:
@@ -1439,6 +1476,35 @@ class InfiniLoopTerminal:
             return "UNKNOWN ARTIST"
 
 
+    def invalidate_next_file_for_prompt_change(self):
+        """
+        Invalida il file NEXT se è già stato generato ma non ancora utilizzato,
+        per forzare la rigenerazione con il nuovo prompt.
+        """
+        with self.next_file_lock:
+
+
+            if not self.is_generating and self.validate_audio_file(self.NEXT):
+                try:
+
+                    os.remove(self.NEXT)
+
+
+                    with self.buffer_lock:
+                        if self.next_audio_buffer is not None:
+                            del self.next_audio_buffer
+                            self.next_audio_buffer = None
+                            gc.collect()
+
+
+
+                    if hasattr(self, 'stop_event') and self.stop_event:
+
+                        pass
+
+                except Exception as e:
+                    self.logging_system(f"⚠️ Error invalidating next file: {e}")
+
     def loop_current_crossfade_blocking(self, filepath, crossfade_sec_unused, stop_event):
 
         try:
@@ -1529,12 +1595,12 @@ class InfiniLoopTerminal:
             try:
 
                 if not self.can_swap_now():
-                    self.logging_system(f"⏱️ Waiting for minimum duration ({self.min_song_duration}s)")
+                    self.logging_system(f"⏱️ A loop is playing, {self.min_song_duration}s left\n")
                     return False
 
                 with self.next_file_lock:
                     if not self.validate_audio_file(self.NEXT):
-                        raise Exception(f"❌ Invalid NEXT file: {self.NEXT}")
+                        raise Exception(f"❌ Invalid file")
 
                 env = os.environ.copy()
                 env["SDL_AUDIODRIVER"] = self.audio_driver
@@ -1557,7 +1623,7 @@ class InfiniLoopTerminal:
                         "-infbuf",
                         "-probesize",
                         "32",
-                        "-analyzeduration", # anyway, you ugly. Nothing to do with code, but basically you (and I, and everyone else), are: ugly. LOL Just kidding... just wanted to add some bullcrap to this code...
+                        "-analyzeduration", # Bird is the word
                         "0",
                         "-loop",
                         "0",
@@ -1605,7 +1671,6 @@ class InfiniLoopTerminal:
 
 
     def run_loop(self):
-
         self.stop_event = threading.Event()
 
 
@@ -1624,7 +1689,14 @@ class InfiniLoopTerminal:
 
         while self.is_playing:
             try:
-                self.generate_audio_safe(self.NEXT)
+
+
+                if not self.validate_audio_file(self.NEXT):
+
+                    self.generate_audio_safe(self.NEXT)
+                else:
+
+                    self.generate_audio_safe(self.NEXT)
 
                 if not self.is_playing:
                     break
@@ -1636,7 +1708,7 @@ class InfiniLoopTerminal:
                     break
 
                 if not self.safe_file_swap():
-                    self.logging_system("❌ Swap failed, regenerating...")
+                    self.logging_system("❌ Prompt changed, regenerating...\n")
                     continue
 
                 if not self.is_playing:
@@ -1667,7 +1739,6 @@ class InfiniLoopTerminal:
 
 
     def wait_for_swap_opportunity(self):
-
         while self.is_playing and not self.can_swap_now():
             if not self.current_loop_start_time:
                 break
@@ -1678,12 +1749,23 @@ class InfiniLoopTerminal:
             if remaining > 0:
 
                 if elapsed % 30 < 0.5:
-                    self.logging_system(f"⏱️ Current loop: {remaining:.1f}s left")
+                    self.logging_system(f"⏱️ {remaining:.1f} seconds left\n")
             else:
 
                 if not self.validate_audio_file(self.NEXT):
-                    if elapsed % 10 < 0.5:
-                        self.logging_system(f"⏳ Waiting for next file generation (elapsed: {elapsed:.1f}s)")
+
+                    if hasattr(self, 'pending_prompt') and self.pending_prompt:
+                        if elapsed % 20 < 0.5:
+                            self.logging_system(f"🔄 Regenerating next file with new prompt")
+                    else:
+                        if elapsed % 30 < 0.5:
+                            self.logging_system(f"⏳ Waiting for next file generation (elapsed: {elapsed:.1f}s)")
+
+
+            if not self.validate_audio_file(self.NEXT) and hasattr(self, 'pending_prompt') and self.pending_prompt:
+
+
+                break
 
             time.sleep(0.5)
 
