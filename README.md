@@ -25,6 +25,7 @@ Terminal version:
 - [System Requirements](#system-requirements)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Test Results](#test-results)
 - [Tips and Tricks](#tips-and-tricks)
 - [Technical Details](#technical-details)
 - [Troubleshooting](#troubleshooting)
@@ -63,7 +64,7 @@ Terminal version:
 - Lowest resource consumption
 - Benchmark system for tracking generation performance
 
-## Recommended Requirements
+## System Requirements
 
 - **Operating System**: Ubuntu 22.04 LTS
 - **Python**: 3.10 or higher
@@ -209,6 +210,28 @@ Options:
   -v, --verbose            Detailed output
   -h, --help               Show help message
 ```
+
+## Test results
+
+**Test environment**  
+Garuda Linux (Wayland), KDE Plasma 6.3.5, Kernel 6.15.1-zen, Intel® Core™ Ultra 5 125H (18 threads), 30.9 GiB RAM, Intel® Arc, GEEKOM GT1 Mega.
+
+**Parameters in GUI**
+- **Sample length** → length of generated sample
+- **Song duration** → minimum play time before loop change
+- **Loop length** → minimum accepted loop length
+- Generation times estimated using local statistics (Benchmark tab)
+
+### Per-model results
+
+| Model | Size (approx.) | Recommended Sample length | Observed gen time | Suggested Song duration |
+|---|---:|---:|---:|---|
+| **small** | ~1.6 GB | 7–10 s | 22–30 s | 30 s ≈ near-continuous generation (higher CPU) • 60 s = generation pauses until end (lower CPU) |
+| **medium** | ~7 GB | 7 s | 60–70 s | 60 s ≈ near-continuous generation (higher CPU) • 90 s = generation pauses until end (lower CPU) |
+
+**How we measured**  
+Generation times were calculated using INFINI LOOP's built-in benchmarking system, visible in the *Benchmark tab*. For each generation, the software records the **Sample length** setting and the actual processing time. Data is saved and averaged across multiple sessions, providing a realistic value for your specific system.
+
 ## Tips and Tricks
 
 - **Rapid Looping**: Set the song duration lower than the average AI generation time to force quick transitions. Enable statistics to monitor timing data in the Stats tab.
@@ -391,6 +414,7 @@ Versione Terminale:
 - [Requisiti di Sistema](#requisiti-di-sistema)
 - [Installazione](#installazione)
 - [Utilizzo](#utilizzo)
+- [Test Eseguiti](#test-eseguiti)
 - [Trucchi e consigli](#trucchi-e-consigli)
 - [Dettagli Tecnici](#dettagli-tecnici)
 - [Risoluzione dei Problemi](#risoluzione-dei-problemi)
@@ -577,6 +601,28 @@ Opzioni:
   -v, --verbose            Output dettagliato
   -h, --help               Mostra messaggio aiuto
 ```
+
+## Test eseguit
+
+**Ambiente di test**  
+Garuda Linux (Wayland), KDE Plasma 6.3.5, Kernel 6.15.1-zen, Intel® Core™ Ultra 5 125H (18 thread), 30.9 GiB RAM, Intel® Arc, GEEKOM GT1 Mega.
+
+**Parametri nella GUI**
+- **Sample length** → lunghezza del campione generato
+- **Song duration** → durata minima di riproduzione del loop prima del cambio
+- **Loop length** → lunghezza minima del loop accettato
+- I tempi di generazione sono stimati usando le statistiche locali (Benchmark tab)
+
+### Risultati per modello
+
+| Modello | Dimensione (circa) | Sample length consigliata | Tempo di generazione osservato | Song duration suggerita |
+|---|---:|---:|---:|---|
+| **small** | ~1.6 GB | 7–10 s | 22–30 s | 30 s ≈ generazione quasi continua (CPU ↑) • 60 s = pausa fino a fine brano (CPU ↓) |
+| **medium** | ~7 GB | 7 s | 60–70 s | 60 s ≈ generazione quasi continua (CPU ↑) • 90 s = pausa fino a fine brano (CPU ↓) |
+
+**Come sono stati misurati**  
+I tempi di generazione sono stati calcolati utilizzando il sistema di benchmarking interno di INFINI LOOP, visibile nel *Benchmark tab*. Per ogni generazione, il software registra la durata impostata in **Sample length** e il tempo reale di elaborazione. I dati vengono salvati e mediati tra più sessioni, fornendo un valore realistico per il proprio sistema.
+
 
 ## Trucchi e consigli ##
 
