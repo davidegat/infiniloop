@@ -6,7 +6,7 @@
   "audio_driver": "alsa",
   "debug_mode": false,
   "benchmark_enabled": true,
-  "last_prompt": "classic slow west coast rap, 70 bpm, 90s street groove, rolling bass, solo guitar licks with echo, high-pitched sine lead melody, warm pad chords, layered instrumentation, polished full rich mix, slight saturation, 8 measures, 4/4, no intro, seamless loop",
+  "last_prompt": "smooth 1970s soul, 85 bpm, warm bassline, soft electric piano, gentle drums, silky strings, mellow horns, soulful male lead vibe, lush backing vocals, intimate and romantic feel, polished vintage mix, 8 measures /4/ seamless loop",
   "presets": {
     "40s Swing Band": "1940s swing big band, 120 bpm, walking bass, punchy brass section with trumpets and trombones, smooth saxophones, swing drum groove, lively dancehall vibe, no intro, seamless loop, 8 measures, 4/4",
     "70s Adult Movie": "1970s vintage adult film soundtrack, 90 bpm, funky slap bass, wah-wah guitar, warm saxophone, groovy drums, smooth electric piano, sensual and playful vibe, polished vintage mix, seamless loop",
@@ -75,6 +75,13 @@
     "Vaporwave": "vaporwave, 80 bpm, retro 80s synth pads, slow detuned chords, lo-fi drum machine, deep synth bass, nostalgic and dreamy vibe, cassette tape saturation, no intro, seamless loop, 8 measures, 4/4",
     "Westcoast": "classic slow west coast rap, 70 bpm, 90s street groove, rolling bass, solo guitar licks with echo, high-pitched sine lead melody, warm pad chords, layered instrumentation, polished full rich mix, slight saturation, 8 measures, 4/4, no intro, seamless loop",
     "Xmas Jazz": "christmas jazz lounge, 85 bpm, upright bass, soft piano, warm saxophone, gentle drums, sleigh bells, cozy holiday vibe, no intro, seamless loop",
-    "Zydeco": "zydeco, 105 bpm, upbeat accordion riffs, rhythmic washboard percussion, groovy bassline, lively Louisiana dance vibe, bright and festive, no intro, seamless loop, 8 measures, 4/4"
+    "Zydeco": "zydeco, 105 bpm, upbeat accordion riffs, rhythmic washboard percussion, groovy bassline, lively Louisiana dance vibe, bright and festive, no intro, seamless loop, 8 measures, 4/4",
+    "Neo-Soul Chill": "85 bpm, smooth bass, warm Rhodes piano, soulful female vocals, gentle percussion, intimate lounge vibe, 8 measures, 4/4, no intro, seamless loop",
+    "Retrowave Outrun": "115 bpm, driving bass arps, big gated drums, neon synth leads, 8 measures, 4/4, no intro, seamless loop",
+    "Lo-Fi Jazzhop": "85 bpm, upright bass, brushed drums, dusty piano, vinyl hiss, 8 measures, 4/4, no intro, seamless loop",
+    "Tropical House": "115 bpm, steel drums, deep bass, soft kick, airy pads, 8 measures, 4/4, no intro, seamless loop",
+    "Bossa Funk": "100 bpm, funky bass, syncopated guitar, samba percussion, 8 measures, 4/4, no intro, seamless loop",
+    "Rio Carnival": "110 bpm, surdo and repinique percussion, cavaquinho rhythm guitar, deep bass, bright brass section with trumpets and trombones, festive samba school energy, call-and-response vocals, vibrant and colorful vibe, polished carnival mix, 8 measures, 4/4, no intro, seamless loop",
+    "Halloween mix": "90 bpm, dark organ chords, eerie theremin melodies, deep bass, spooky sound effects with creaking doors and howling wind, cinematic percussion, haunting strings, playful yet creepy vibe, polished spooky mix, 8 measures, 4/4, no intro, seamless loop"
   }
 }
